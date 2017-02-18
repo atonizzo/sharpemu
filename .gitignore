@@ -1,0 +1,14 @@
+# Compiled source #
+###################
+*.o
+
+# Logs and databases #
+######################
+*.map
+memaccess.txt
+instructions.txt
+*.dbg
+*.bin
+*.*~
+
+*.dblite
