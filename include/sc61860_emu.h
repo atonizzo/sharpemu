@@ -48,7 +48,7 @@ extern uint32_t diag_level;
 //! if __DIAG__ is not defined: It returns with an error message 'y'.
 #define DIAG(_args_)  do {printf _args_ ;} while(0)
 #define ASSERT_EQ(x,y) do{if(((long)x!=(long)y)){                             \
-         DIAG(DIAG_SELECT_ALWAYS, ("---  ASSERT_EQ() FAILED ---\r\n"          \
+         DIAG(("---  ASSERT_EQ() FAILED ---\r\n"                              \
                                    "File:     %s\r\n"                         \
                                    "Function  %s\r\n"                         \
                                    "Line      %d\r\n"                         \

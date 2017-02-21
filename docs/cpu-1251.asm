@@ -3471,7 +3471,9 @@ LBL1561:            LIA     0x87
                     JP      MDL1312
 
 ; ------------------------------------------------------------------------------
-; This is the code that performs a conversion between HEX and decimal
+; This is the code that performs a conversion between HEX and decimal. At this
+;  point we have the zero terminated string to convert starting at
+;  address 0xC7B0.
 ; ------------------------------------------------------------------------------
 LBL1566:            CAL     MDL16A5
                     JRCP    LBL1596
@@ -3484,10 +3486,10 @@ LBL1566:            CAL     MDL16A5
                     LIA     0x00        ;  starting at 28.
                     LII     0x01
                     FILM
-LBL1574:            IXL                 ; Get character.
+LBL1574:            IXL                 ; Get next hex character.
                     CPIA    0x40        ; Compare with '0'.
                     JRZM    LBL1574     ; Jump taken if character is symbol.
-LBL1579:            CPIA    0x4A        ; Compare if numeric.
+LBL1579:            CPIA    0x4A        ; Check if beyond numeric.
                     JRNCP   LBL1597
                     CPIA    0x40
                     JRCP    LBL158B     ; Taken at end of conversion.
@@ -3503,7 +3505,7 @@ LBL158B:            LP      0x28        ; We come here at the end of the
                     LII     0x00        ;  conversion, when we find the termination
                     LIQ     0x29        ;  value.
                     EXW                 ; Swap high and low byte. LSB is now first.
-                    CAL     MDL0D3B
+                    CAL     MDL0D3B     ; This is where the bug is.
                     CAL     MDL1CCD
                     DX
 LBL1596:            RTN

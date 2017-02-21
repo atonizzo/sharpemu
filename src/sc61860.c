@@ -52,26 +52,45 @@ struct __cpu_state cpu_state;
 
 void sim_not_implemented(void)
 {
-    printf("Instruction not implemented at address: %04X.\r\n",
-            cpu_state.pc);
+    printf("Instruction not implemented at address: %04X, opcode: %02X\r\n",
+            cpu_state.pc,
+            read_mem(cpu_state.pc));
     exit(-1);
 }
 
 static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carryin)
 {
+//    printf("add_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
     uint16_t tmp = (a & 0x0F) + (b & 0x0F) + (carryin & 1);
-    uint8_t carry = 0;
     if (tmp > 9)
     {
         tmp -= 10;
         tmp |= 0x10;
     }
     tmp = (a & 0xF0) + (b & 0xF0) + tmp;
-    if ((tmp & 0xF0) > 0x90)
+    if (tmp > 0x90)
     {
         tmp -= 0xA0;
         tmp |= 0x100;
     }
+//    printf("result: %02x\r\n", tmp);
+    return tmp;
+}
+
+static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carryin)
+{
+//    printf("sub_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
+    int16_t tmp = (a & 0x0f) - (b & 0x0f) - carryin;
+    if (tmp < 0 )
+    {
+        tmp += 10;
+        tmp += (a & 0xf0) - (b & 0xf0) - 0x10;
+    }
+    else
+        tmp += (a & 0xf0) - (b & 0xf0);
+    if (tmp < 0 )
+        tmp = 0xa0 + 0x100;
+//    printf("result: %02x\r\n", tmp);
     return tmp;
 }
 
@@ -203,7 +222,6 @@ void sim_bcd(void)
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "adn - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
-        int8_t carryin = 0;
         do
         {
             fprintf(fp_memaccess, "adn - ");
@@ -217,7 +235,31 @@ void sim_bcd(void)
         }
         while (cpu_state.d != 0xff);
         cpu_state.flags.carry = carryin;
-        cpu_state.flags.zero = ((tmp & 0xFF) == 0);
+        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        break;
+    case 0x0d:        // "sbn"  I -> d
+                      //        repeat
+                      //            [P] - A -> [P] (BCD)
+                      //            P - 1 -> P
+                      //            d - 1 -> d
+                      //        until d=FF
+        cpu_state.d = cpu_state.scratchpad.regs.i;
+        fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d);
+        cpu_state.cycles += 7 + 3 * cpu_state.d;
+        do
+        {
+            fprintf(fp_memaccess, "sbn - ");
+            uint16_t tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+                                   cpu_state.scratchpad.regs.a,
+                                   carryin);
+            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            carryin = (tmp > 0xFF);
+            cpu_state.p -= 1;
+            cpu_state.d -= 1;
+        }
+        while (cpu_state.d != 0xff);
+        cpu_state.flags.carry = carryin;
+        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
         break;
     case 0x0e:        // "adw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
@@ -1282,10 +1324,6 @@ void sim_test(void)
                     (cpu_state.test.kon << 3) +
                     (cpu_state.test.ct2 << 1) +
                      cpu_state.test.ct1;
-//    if (read_mem(cpu_state.pc + 1) == 0x02)
-//        g_print("Counter 2 tested\r\n");
-//    if (read_mem(cpu_state.pc + 1) == 0x01)
-//        g_print("Counter 1 tested\r\n");
     test &= read_mem(cpu_state.pc + 1);
     cpu_state.flags.zero = (test == 0);
     cpu_state.cycles += 4;
