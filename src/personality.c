@@ -27,25 +27,6 @@
 #include <stdio.h>
 #include <sc61860_emu.h>
 
-model_file_descriptor_t pt[] =
-{
-    { .model_name = "pc-1251",
-      .irom = { "./rom/cpu-1251.rom", 0},
-      .erom = { "./rom/bas-1251.rom", 0x4000 },
-      .setup = pc_1251_setup,
-      .read_memory = pc_1251_read_memory,
-      .write_memory = pc_1251_write_memory,
-      .ina = pc_1251_ina,
-      .inb = pc_1251_inb,
-      .outa = pc_1251_outa,
-      .outb = pc_1251_outb,
-      .outc = pc_1251_outc,
-      .outf = pc_1251_outf,
-      .keypress = pc_1251_keypress,
-      .keyrelease = pc_1251_keyrelease,
-    },
-};
-
 int load_personality(char *model)
 {
     FILE *fp_rom;

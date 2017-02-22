@@ -28,9 +28,12 @@
 #include <string.h>
 #include <sc61860_emu.h>
 
+#include <pc1245.h>
+
 int key_pressed = 0;
 GtkWidget *lcd_label_box;
-GtkWidget *lcd_display[1][24][5][7];
+GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
+                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXEL_PER_COLUMN];
 
 // We are going to name these indexes from A1 through A8 and from B1 to B3
 //  to be consistent to the naming convention in the manual
@@ -56,23 +59,6 @@ GtkWidget *lcd_display[1][24][5][7];
 
 address_descriptor_t address_descriptors[] =
 {
-    {0x009F, "Xreg <- 0"},              {0x00A9, "Yreg <- 0"},
-    {0x00AF, "Zreg <- 0"},
-    {0x1118, "[$C6B6, $C6B5] <- X"},    {0x1125, "X <- [$C6B6, $C6B5]"},
-    {0x115E, "DP <- $F83E"},            {0x1162, "DP <- $F8BE"},
-    {0x1166, "DP <- $C6B7"},            {0x116A, "DP <- $C6DA"},
-    {0x1172, "X <- Y"},                 {0x118F, "X <- [$C6E2, $C6E1]"},
-    {0x1177, "Y <- X"},                 {0x1195, "[$0C, $0D] <-> X"},
-    {0x119A, "X <- $C7B0 (rambuf)"},
-    {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
-    {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
-    {0x11F1, "X <- [B, A - 1]"},        {0x11F5, "Y <- [B, A - 1]"},
-    {0x11F9, "Y <- 0xC7B0 (kbdbuf)"},   {0x1200, "[$1C, $1D] <- X"},
-    {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> [$1C, $1D]"},
-    {0x172B, "[B,A] <<= 1"},            {0x1731, "[B,A] >>= 1"},
-    {0x18C5, "print_prompt"},           {0x1FB1, "wr_portc"},
-    {0x1FB6, "memcpy"},
-    {0x400C, "write_lcd"},
     {0, 0}
 };
 
@@ -114,7 +100,7 @@ static GtkWidget *lcd_create_column(unsigned int character, unsigned int column)
 
     // Each column is made up of 7 pixels. Every 5 pixels there is a spacer
     //  column.
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < LCD_PIXEL_PER_COLUMN; i++)
     {
         GtkWidget *this_image =
                          gtk_image_new_from_file("./pixmaps/lcd_pixel_off.jpg");
@@ -141,7 +127,7 @@ static GtkWidget *lcd_create_spacer(void)
     GtkWidget *lcd_spacer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     // Each column is made up of 7 pixels.
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < LCD_PIXEL_PER_COLUMN; i++)
     {
         GtkWidget *this_image =
                   gtk_image_new_from_file("./pixmaps/digit_separator.jpg");
@@ -164,12 +150,11 @@ static GtkWidget *lcd_build_display(void)
     // Create a new hbox to hold the 24 LCD characters.
     GtkWidget *lcd_char_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
-    // There are 24 characters in the LCD of a PC-1251. Each character is made
-    //  up of 5 columns of pixels, each 7 pixel in height, followed by a
-    //  separator column. 24 characters x (5 pixels + 1 separator) = 144.
-    for (i = 0; i < 24; i++)
+    // Each character in the LCD is made up of 5 columns of pixels, each
+    //  7 pixel in height, followed by a separator column.
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)
     {
-        for (j = 0; j < 5; j++)
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)
         {
             GtkWidget *this_column = lcd_create_column(i, j);
             gtk_box_pack_start(GTK_BOX(lcd_char_box),
@@ -191,13 +176,195 @@ static GtkWidget *lcd_build_display(void)
     return lcd_char_box;
 }
 
-static int32_t pc_1251_setup(void)
+static void lcd_setup(void)
+{
+    memset(lcd_status, '\0', sizeof(lcd_status));
+}
+
+static void lcd_off(void)
+{
+    int i, j, k;
+
+    // Turn pixels off.
+    char image_name[128];
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
+            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
+                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
+                                        "./pixmaps/lcd_pixel_off.jpg");
+}
+
+static void lcd_service(uint16_t address, uint8_t data)
+{
+    char *format = "<span foreground=\"%s\">DEF</span>";
+    char *markup;
+    GtkWidget *this_label;
+    if (address == 0xF83C)
+    {
+        format = "<span foreground=\"%s\">DEF</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_DEF].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">P</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_P].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        if ((memory_image[0xF83D] & 4) == 0)
+            format = "<span foreground=\"%s\">G</span>";
+        else
+            format = "<span foreground=\"%s\">GRAD</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_GRAD].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">DE</span>";
+        if ((data & 8) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_DE].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3C] = data;
+        return;
+    }
+
+    if (address == 0xF83D)
+    {
+        format = "<span foreground=\"%s\">BUSY</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_BUSY].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">SHIFT</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_SHIFT].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        if ((memory_image[0xF83C] & 4) == 0)
+        format = "<span foreground=\"%s\"> RAD</span>";
+        else
+            format = "<span foreground=\"%s\">GRAD</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_GRAD].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">E</span>";
+        if ((data & 8) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_E].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3D] = data;
+        return;
+    }
+
+    if (address == 0xF83E)
+    {
+        format = "<span foreground=\"%s\">PRO</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_PRO].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">RUN</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_RUN].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">RESERVE</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_RESERVE].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3E] = data;
+        return;
+    }
+
+    uint16_t column_number;
+    if (((address >= 0xF800) && (address < 0xF83C)) ||
+                                    ((address >= 0xF840) && (address < 0xF87C)))
+    {
+        if (address < 0xF83C)
+            column_number = address - 0xF800;
+        else
+            column_number = 0xF87B - address + 60;
+        int i;
+        char image_name[32];
+        char *file_name;
+        for (i = 0; i < 7; i++)
+        {
+            if ((data & 1) == 0)
+                file_name = "./pixmaps/lcd_pixel_off.jpg";
+            else
+                file_name = "./pixmaps/lcd_pixel_on.jpg";
+            data >>= 1;
+            gtk_image_set_from_file(GTK_IMAGE(
+                       lcd_display[0][column_number / 5][column_number % 5][i]),
+                                    file_name);
+
+        }
+        lcd_status[address - 0xF800] = data;
+    }
+}
+
+static int32_t pc_1245_setup(void)
 {
     int i, j;
     memset(porta_kbd, '\0', sizeof(porta_kbd));
     memset(porta_kbd_past, '\0', sizeof(porta_kbd_past));
     memset(&keyboard_count, '\0', sizeof(keyboard_count));
 
+    __break__
     // Create a new hbox to hold the LCD labels.
     GtkWidget *lcd_label_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
 
@@ -238,12 +405,12 @@ static int32_t pc_1251_setup(void)
     lcd_off();
 }
 
-static uint8_t pc_1251_read_memory(uint16_t address)
+static uint8_t pc_1245_read_memory(uint16_t address)
 {
     return memory_image[address];
 }
 
-static void pc_1251_write_memory(uint16_t address, uint8_t value)
+static void pc_1245_write_memory(uint16_t address, uint8_t value)
 {
     // RAM memory.
     if ((address >= 0xB800) && (address < 0xC800))
@@ -263,7 +430,7 @@ static void pc_1251_write_memory(uint16_t address, uint8_t value)
 //  and only one of these bits is set at any given point in time.
 // If any of them is set, we seek the porta_kbd[] array to see if any key
 //  has been pressed.
-static void pc_1251_ina(void)
+static void pc_1245_ina(void)
 {
     uint16_t id = ((cpu_state.portb & 0x07) << 8) | cpu_state.porta;
     int i;
@@ -304,22 +471,22 @@ static void pc_1251_ina(void)
     cpu_state.scratchpad.regs.a = 0;
 }
 
-static void pc_1251_inb(void)
+static void pc_1245_inb(void)
 {
     cpu_state.scratchpad.regs.a = 0;
 }
 
-static void pc_1251_outa(void)
+static void pc_1245_outa(void)
 {
     cpu_state.porta = cpu_state.scratchpad.raw.mem[PORTA_OFFSET];
 }
 
-static void pc_1251_outb(void)
+static void pc_1245_outb(void)
 {
     cpu_state.portb = cpu_state.scratchpad.raw.mem[PORTB_OFFSET];
 }
 
-static void pc_1251_outc(void)
+static void pc_1245_outc(void)
 {
     fprintf(fp_memaccess,
             "S: %04x W: PORTC - %02X\r\n",
@@ -340,7 +507,7 @@ static void pc_1251_outc(void)
     cpu_state.portc = cpu_state.scratchpad.raw.mem[PORTC_OFFSET];
 }
 
-static void pc_1251_outf(void)
+static void pc_1245_outf(void)
 {
     cpu_state.portf = cpu_state.scratchpad.raw.mem[PORTF_OFFSET];
 }
@@ -493,7 +660,7 @@ static const keyboard_encoding_t key_map[] =
     {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A5}, // Arrow LEFT.
 };
 
-static void pc_1251_keypress(uint16_t key)
+static void pc_1245_keypress(uint16_t key)
 {
     if (key < 0x20)
         return;
@@ -526,7 +693,7 @@ static void pc_1251_keypress(uint16_t key)
     }
 }
 
-static void pc_1251_keyrelease(uint16_t key)
+static void pc_1245_keyrelease(uint16_t key)
 {
     keyboard_count.id = 0;
     keyboard_count.kbd = 0;
@@ -560,21 +727,25 @@ static void pc_1251_keyrelease(uint16_t key)
     }
 }
 
+// This structure reflects the status of the memory of the LCD. We'll use it
+//  to avoid needless repaints.
+uint8_t lcd_status[0x7C];
+
 model_file_descriptor_t pt[] =
 {
     { .model_name = "pc-1251",
-      .irom = { "./rom/cpu-1251.rom", 0},
-      .erom = { "./rom/bas-1251.rom", 0x4000 },
-      .setup = pc_1251_setup,
-      .read_memory = pc_1251_read_memory,
-      .write_memory = pc_1251_write_memory,
-      .ina = pc_1251_ina,
-      .inb = pc_1251_inb,
-      .outa = pc_1251_outa,
-      .outb = pc_1251_outb,
-      .outc = pc_1251_outc,
-      .outf = pc_1251_outf,
-      .keypress = pc_1251_keypress,
-      .keyrelease = pc_1251_keyrelease,
+      .irom = { "./rom/cpu-1245.rom", 0},
+      .erom = { "./rom/bas-1245.rom", 0x4000 },
+      .setup = pc_1245_setup,
+      .read_memory = pc_1245_read_memory,
+      .write_memory = pc_1245_write_memory,
+      .ina = pc_1245_ina,
+      .inb = pc_1245_inb,
+      .outa = pc_1245_outa,
+      .outb = pc_1245_outb,
+      .outc = pc_1245_outc,
+      .outf = pc_1245_outf,
+      .keypress = pc_1245_keypress,
+      .keyrelease = pc_1245_keyrelease,
     },
 };

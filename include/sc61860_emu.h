@@ -35,8 +35,6 @@ typedef struct
     char *text;
 } label_layout_t;
 
-#include <pc1251.h>
-
 int break_here(int);
 #define __break__                       break_here(3);
 
@@ -377,17 +375,6 @@ int32_t parse_hex(FILE *);
 
 // Personality stuff.
 extern int personality;
-uint8_t pc_1251_read_memory(uint16_t);
-void    pc_1251_write_memory(uint16_t, uint8_t);
-int32_t pc_1251_setup(void);
-void    pc_1251_ina(void);
-void    pc_1251_inb(void);
-void    pc_1251_outa(void);
-void    pc_1251_outb(void);
-void    pc_1251_outc(void);
-void    pc_1251_outf(void);
-void    pc_1251_keypress(uint16_t);
-void    pc_1251_keyrelease(uint16_t);
 void print_lcd_bitmap(uint16_t address, uint8_t data);
 
 typedef struct __address_descriptor
@@ -408,8 +395,6 @@ extern uint16_t mem_view_start_address;
 
 // LCD.
 extern uint8_t lcd_status[0x7C];
-void lcd_setup(void);
-void lcd_service(uint16_t, uint8_t);
 void lcd_paint(void);
 
 // GTK+

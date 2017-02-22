@@ -6,10 +6,11 @@
 ######################
 *.map
 memaccess.txt
+out.txt
 instructions.txt
 *.dbg
-*.bin
 *.*~
+.d/
 
 *.dblite
 .gdbinit
