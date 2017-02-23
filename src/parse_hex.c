@@ -128,7 +128,7 @@ int32_t parse_hex(FILE *fp)
                 if (data < 0)
                     return -1;
                 crc_calculated += data;
-                pt[personality].write_memory(address + i, data);
+                pt.write_memory(address + i, data);
             }
 
             error_code = compare_crc(fp, crc_calculated);

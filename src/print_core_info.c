@@ -117,7 +117,7 @@ void display_core_info(void)
                                              disassembly_buffer.line[i].opcode;
             }
 
-            uint8_t previous_instruction = pt[personality].read_memory(
+            uint8_t previous_instruction = pt.read_memory(
                            disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc);
             disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc =
                 disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc +
@@ -128,10 +128,10 @@ void display_core_info(void)
             {
                 if (previous_instruction == 0x7A)
                 {
-                    case_number_dis_tmp = pt[personality].read_memory(
+                    case_number_dis_tmp = pt.read_memory(
                         disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc + 1);
                     disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                pt[personality].read_memory(
+                                pt.read_memory(
                             disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc);
                 }
                 if (previous_instruction == 0x69)
@@ -142,7 +142,7 @@ void display_core_info(void)
                 }
                 else
                     disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                pt[personality].read_memory(
+                                pt.read_memory(
                         disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc);
             }
             else
@@ -204,9 +204,9 @@ void display_core_info(void)
                 }
 
                 uint8_t instruction =
-                     pt[personality].read_memory(disassembly_buffer.line[i].pc);
+                                  pt.read_memory(disassembly_buffer.line[i].pc);
                 if (instruction == 0x7A)
-                    case_number_dis_tmp = pt[personality].read_memory(
+                    case_number_dis_tmp = pt.read_memory(
                                              disassembly_buffer.line[i].pc + 1);
                 if (instruction == 0x69)
                     case_number_dis = case_number_dis_tmp;

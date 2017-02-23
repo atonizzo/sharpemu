@@ -58,28 +58,33 @@ void sim_not_implemented(void)
     exit(-1);
 }
 
-static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carryin)
+static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carry)
 {
-//    printf("add_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
-    uint16_t tmp = (a & 0x0F) + (b & 0x0F) + (carryin & 1);
-    if (tmp > 9)
+    printf("a:%02x b:%02x carry:=%d\r\n", a, b, carry);
+#if 1
+    uint8_t tmp0 = (a & 0x0F) + (b & 0x0F) + carry;
+    carry = 0;
+    if (tmp0 > 9)
     {
-        tmp -= 10;
-        tmp |= 0x10;
+        tmp0 += 6;
+        carry = 0x10;
     }
-    tmp = (a & 0xF0) + (b & 0xF0) + tmp;
-    if (tmp > 0x90)
-    {
-        tmp -= 0xA0;
-        tmp |= 0x100;
-    }
-//    printf("result: %02x\r\n", tmp);
-    return tmp;
+    uint16_t tmp1 = (a & 0xF0) + (b & 0xF0) + carry;
+    if (tmp1 > 0x90)
+        tmp1 += 0x60;   // Automatically generates final carry.
+    printf("result: %04x\r\n", tmp1 | tmp0);
+    return tmp1 | tmp0;
+#else
+    // This is obviously wrong, but makes the PI command display the correct
+    //  value. Why?
+    printf("result: 0\r\n");
+    return a;
+#endif
 }
 
 static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carryin)
 {
-//    printf("sub_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
+    printf("sub_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
     int16_t tmp = (a & 0x0f) - (b & 0x0f) - carryin;
     if (tmp < 0 )
     {
@@ -88,9 +93,9 @@ static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carryin)
     }
     else
         tmp += (a & 0xf0) - (b & 0xf0);
-    if (tmp < 0 )
+    if (tmp < 0)
         tmp = 0xa0 + 0x100;
-//    printf("result: %02x\r\n", tmp);
+    printf("result: %02x\r\n", tmp);
     return tmp;
 }
 
@@ -210,7 +215,7 @@ void sim_arith(void)
 void sim_bcd(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint8_t tmp, carryin = 0;
+    uint8_t tmp;
     switch (instruction)
     {
     case 0x0c:        // "adn"  I -> d
@@ -225,16 +230,16 @@ void sim_bcd(void)
         do
         {
             fprintf(fp_memaccess, "adn - ");
+            printf("addr: 0x%04X - adn - ", cpu_state.pc);
             uint16_t tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                                    cpu_state.scratchpad.regs.a,
-                                   carryin);
+                                   cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
-            carryin = (tmp > 0xFF);
+            cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.carry = carryin;
         cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
         break;
     case 0x0d:        // "sbn"  I -> d
@@ -245,41 +250,40 @@ void sim_bcd(void)
                       //        until d=FF
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d);
+        printf("addr: 0x%04X - sbn - ", cpu_state.pc);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         do
         {
             fprintf(fp_memaccess, "sbn - ");
             uint16_t tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                                    cpu_state.scratchpad.regs.a,
-                                   carryin);
+                                   cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
-            carryin = (tmp > 0xFF);
+            cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.carry = carryin;
         cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
         break;
     case 0x0e:        // "adw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "adw - %d\r\n", cpu_state.d);
+        printf("addr: 0x%04X - adw - ", cpu_state.pc);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
-        carryin = 0;
         do
         {
             fprintf(fp_memaccess, "adw - ");
             uint16_t tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                                    cpu_state.scratchpad.raw.mem[cpu_state.q],
-                                   carryin);
+                                   cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
-            carryin = (tmp > 0xFF);
+            cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
             cpu_state.q -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.carry = carryin;
         cpu_state.flags.zero = ((tmp & 0xFF) == 0);
         break;
     default:
@@ -685,30 +689,30 @@ void sim_io(void)
     switch (instruction)
     {
     case 0x4c:      // "ina"
-        pt[personality].ina();
+        pt.ina();
         // TODO: Check.
         cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
         cpu_state.cycles += 2;
         break;
     case 0x5d:      // "outa"
-        pt[personality].outa();
+        pt.outa();
         cpu_state.cycles += 3;
         break;
     case 0x5f:      // "outf"
-        pt[personality].outf();
+        pt.outf();
         cpu_state.cycles += 3;
         break;
     case 0xcc:      // "inb"
-        pt[personality].inb();
+        pt.inb();
         cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
         cpu_state.cycles += 2;
         break;
     case 0xdd:      // "outb"
-        pt[personality].outb();
+        pt.outb();
         cpu_state.cycles += 2;
         break;
     case 0xdf:      // "outc"
-        pt[personality].outc();
+        pt.outc();
         break;
     default:
         sim_not_implemented();
@@ -1579,7 +1583,7 @@ static size_t print_instruction(uint16_t address,
     switch (sc61860_instr[index].attributes & 0xFF000000)
     {
     case SC61860_FORMAT_IMMEDIATE8:
-        operand0 = pt[personality].read_memory(address + 1);
+        operand0 = pt.read_memory(address + 1);
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
@@ -1595,8 +1599,8 @@ static size_t print_instruction(uint16_t address,
                 sc61860_instr[index].opcode);
         break;
     case SC61860_FORMAT_IMMEDIATE16:
-        operand0 = pt[personality].read_memory(address + 1);
-        operand1 = pt[personality].read_memory(address + 2);
+        operand0 = pt.read_memory(address + 1);
+        operand1 = pt.read_memory(address + 2);
         sprintf(p,
                 "%02X %02X %02X     %s",
                 instruction,
@@ -1607,8 +1611,8 @@ static size_t print_instruction(uint16_t address,
         sprintf(p + strlen(p), "$%04X", operand0 * 256 + operand1);
         break;
     case SC61860_FORMAT_ADDRESS16:
-        operand0 = pt[personality].read_memory(address + 1);
-        operand1 = pt[personality].read_memory(address + 2);
+        operand0 = pt.read_memory(address + 1);
+        operand1 = pt.read_memory(address + 2);
         sprintf(p,
                 "%02X %02X %02X     %s",
                 instruction,
@@ -1629,7 +1633,7 @@ static size_t print_instruction(uint16_t address,
         break;
     case SC61860_FORMAT_ADDRESS13:
         operand0 = instruction & 0x1F;
-        operand1 = pt[personality].read_memory(address + 1);
+        operand1 = pt.read_memory(address + 1);
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
@@ -1655,7 +1659,7 @@ static size_t print_instruction(uint16_t address,
         }
         break;
     case SC61860_FORMAT_RELATIVE_PLUS:
-        operand0 = pt[personality].read_memory(address + 1);
+        operand0 = pt.read_memory(address + 1);
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
@@ -1665,7 +1669,7 @@ static size_t print_instruction(uint16_t address,
         sprintf(p + strlen(p), "$%04X", address + operand0 + 1);
         break;
     case SC61860_FORMAT_RELATIVE_MINUS:
-        operand0 = pt[personality].read_memory(address + 1);
+        operand0 = pt.read_memory(address + 1);
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
@@ -1675,21 +1679,21 @@ static size_t print_instruction(uint16_t address,
         sprintf(p + strlen(p), "$%04X", address - operand0 + 1);
         break;
     case SC61860_FORMAT_PTJ:
-        operand0 = pt[personality].read_memory(address + 1);
+        operand0 = pt.read_memory(address + 1);
         ptj_count_tmp = operand0;
         sprintf(p, "%02X %02X ", instruction, operand0);
-        operand0 = pt[personality].read_memory(address + 2);
-        operand1 = pt[personality].read_memory(address + 3);
+        operand0 = pt.read_memory(address + 2);
+        operand1 = pt.read_memory(address + 3);
         sprintf(p + strlen(p),
                 "%02X %02X  %s",
                 operand0,
                 operand1,
                 sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        operand0 = pt[personality].read_memory(address + 1);
+        operand0 = pt.read_memory(address + 1);
         sprintf(p + strlen(p), "$%02X, ", operand0);
-        operand0 = pt[personality].read_memory(address + 2);
-        operand1 = pt[personality].read_memory(address + 3);
+        operand0 = pt.read_memory(address + 2);
+        operand1 = pt.read_memory(address + 3);
         sprintf(p + strlen(p), "$%04X", operand0 * 256 + operand1);
         break;
     case SC61860_FORMAT_DTJ:
@@ -1702,27 +1706,27 @@ static size_t print_instruction(uint16_t address,
     case SC61860_FORMAT_CASE:
         sprintf(p,
                 "%02X %02X %02X     .case",
-                pt[personality].read_memory(address),
-                pt[personality].read_memory(address + 1),
-                pt[personality].read_memory(address + 2));
+                pt.read_memory(address),
+                pt.read_memory(address + 1),
+                pt.read_memory(address + 2));
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p),
                 "$%02X, $%04X",
-                pt[personality].read_memory(address),
-                pt[personality].read_memory(address + 1) * 256 +
-                                      pt[personality].read_memory(address + 2));
+                pt.read_memory(address),
+                pt.read_memory(address + 1) * 256 +
+                                                   pt.read_memory(address + 2));
         ptj_count -= 1;
         break;
     case SC61860_FORMAT_DEFAULT:
         sprintf(p,
                 "%02X %02X        .default",
-                pt[personality].read_memory(address),
-                pt[personality].read_memory(address + 1));
+                pt.read_memory(address),
+                pt.read_memory(address + 1));
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p),
                 "$%04X",
-                pt[personality].read_memory(address) * 256 +
-                                      pt[personality].read_memory(address + 1));
+                pt.read_memory(address) * 256 +
+                                                   pt.read_memory(address + 1));
         ptj_count -= 1;
         break;
     default:
@@ -1752,8 +1756,6 @@ uint32_t sc61860_disassembler(uint16_t address, uint8_t instruction, char *p)
         }
         i++;
     }
-
-
     // Unrecognized instruction.
     sprintf(p, "%04X: %02X           ???", address, instruction);
     return 1;

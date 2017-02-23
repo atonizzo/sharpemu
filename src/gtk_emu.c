@@ -177,7 +177,7 @@ static gboolean debug_next_callback(GtkWidget *widget, gpointer user_data )
 {
     // http://blog.borovsak.si/2009/06/multi-threaded-gtk-applications.html
 
-    uint8_t instruction = pt[personality].read_memory(cpu_state.pc);
+    uint8_t instruction = pt.read_memory(cpu_state.pc);
 
     // This command is accepted for the CAL and CALL
     //  instructions. It will run and stop at the
@@ -302,16 +302,10 @@ static gboolean lcd_key_pressed_event(GtkWidget   *widget,
     switch (event->type)
     {
     case GDK_KEY_PRESS:
-        g_print("Press - %04X, (%d)\r\n",
-                event->keyval,
-                (int16_t)event->keyval);
-        pt[personality].keypress(event->keyval);
+        pt.keypress(event->keyval);
         break;
     case GDK_KEY_RELEASE:
-        g_print("Release - %04X, (%d)\r\n",
-                event->keyval,
-                (int16_t)event->keyval);
-        pt[personality].keyrelease(event->keyval);
+        pt.keyrelease(event->keyval);
         break;
     }
     return TRUE;
@@ -518,7 +512,7 @@ int main(int argc, char *argv[])
                      NULL);
 
     // Setup the target device.
-    pt[personality].setup();
+    pt.setup();
 
     GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
 

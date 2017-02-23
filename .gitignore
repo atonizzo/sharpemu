@@ -6,6 +6,7 @@
 ######################
 *.map
 memaccess.txt
+instructions.txt
 out.txt
 instructions.txt
 *.dbg

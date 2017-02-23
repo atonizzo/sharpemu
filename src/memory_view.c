@@ -92,7 +92,7 @@ void print_mem_view(void)
         for (j = 0; j < 16; j++)
         {
             uint16_t this_addr = mem_view_start_address + i * 16 + j;
-            uint8_t this_byte = pt[personality].read_memory(this_addr);
+            uint8_t this_byte = pt.read_memory(this_addr);
             if (this_byte != mem_view_past[i * 16 + j])
             {
                 sprintf(label_content + strlen(label_content),
@@ -113,7 +113,7 @@ void print_mem_view(void)
         for (j = 0; j < 16; j++)
         {
             uint16_t this_addr = mem_view_start_address + i * 16 + j;
-            uint8_t this_byte = pt[personality].read_memory(this_addr);
+            uint8_t this_byte = pt.read_memory(this_addr);
             if ((this_byte >= 0x10) && (this_byte < 0x70))
             {
                 char str[16];

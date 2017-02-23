@@ -28,9 +28,11 @@
 #include <string.h>
 #include <sc61860_emu.h>
 
-int key_pressed = 0;
+#include <pc1251.h>
+
 GtkWidget *lcd_label_box;
-GtkWidget *lcd_display[1][24][5][7];
+GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
+                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXEL_PER_COLUMN];
 
 // We are going to name these indexes from A1 through A8 and from B1 to B3
 //  to be consistent to the naming convention in the manual
@@ -102,6 +104,24 @@ label_layout_t lcd_labels[15] =
     {0, 0},     {0, "SHIFT"}, {0, 0},     {0, 0},
     {0, 0},     {0, 0},       {0, "E"}
 };
+
+static void lcd_setup(void)
+{
+    memset(lcd_status, '\0', sizeof(lcd_status));
+}
+
+static void lcd_off(void)
+{
+    int i, j, k;
+
+    // Turn pixels off.
+    char image_name[128];
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
+            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
+                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
+                                        "./pixmaps/lcd_pixel_off.jpg");
+}
 
 static GtkWidget *lcd_create_column(unsigned int character, unsigned int column)
 {
@@ -189,6 +209,169 @@ static GtkWidget *lcd_build_display(void)
     }
     gtk_widget_show(GTK_WIDGET(lcd_char_box));
     return lcd_char_box;
+}
+
+static void lcd_service(uint16_t address, uint8_t data)
+{
+    char *format = "<span foreground=\"%s\">DEF</span>";
+    char *markup;
+    GtkWidget *this_label;
+    if (address == 0xF83C)
+    {
+        format = "<span foreground=\"%s\">DEF</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_DEF].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">P</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_P].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        if ((memory_image[0xF83D] & 4) == 0)
+            format = "<span foreground=\"%s\">G</span>";
+        else
+            format = "<span foreground=\"%s\">GRAD</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_GRAD].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">DE</span>";
+        if ((data & 8) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_DE].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3C] = data;
+        return;
+    }
+
+    if (address == 0xF83D)
+    {
+        format = "<span foreground=\"%s\">BUSY</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_BUSY].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">SHIFT</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_SHIFT].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        if ((memory_image[0xF83C] & 4) == 0)
+        format = "<span foreground=\"%s\"> RAD</span>";
+        else
+            format = "<span foreground=\"%s\">GRAD</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_GRAD].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">E</span>";
+        if ((data & 8) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_E].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3D] = data;
+        return;
+    }
+
+    if (address == 0xF83E)
+    {
+        format = "<span foreground=\"%s\">PRO</span>";
+        if ((data & 1) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_PRO].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">RUN</span>";
+        if ((data & 2) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_RUN].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+
+        format = "<span foreground=\"%s\">RESERVE</span>";
+        if ((data & 4) == 0)
+            markup = g_markup_printf_escaped(format, "white");
+        else
+            markup = g_markup_printf_escaped(format, "black");
+        this_label = lcd_labels[LCD_LABEL_RESERVE].id;
+        ASSERT_NE(this_label, NULL);
+        gtk_label_set_markup(GTK_LABEL(this_label), markup);
+        g_free(markup);
+        lcd_status[0x3E] = data;
+        return;
+    }
+
+    uint16_t column_number;
+    if (((address >= 0xF800) && (address < 0xF83C)) ||
+                                    ((address >= 0xF840) && (address < 0xF87C)))
+    {
+        if (address < 0xF83C)
+            column_number = address - 0xF800;
+        else
+            column_number = 0xF87B - address + 60;
+        int i;
+        char image_name[32];
+        char *file_name;
+        for (i = 0; i < 7; i++)
+        {
+            if ((data & 1) == 0)
+                file_name = "./pixmaps/lcd_pixel_off.jpg";
+            else
+                file_name = "./pixmaps/lcd_pixel_on.jpg";
+            data >>= 1;
+            gtk_image_set_from_file(GTK_IMAGE(
+                       lcd_display[0][column_number / 5][column_number % 5][i]),
+                                    file_name);
+
+        }
+        lcd_status[address - 0xF800] = data;
+    }
 }
 
 static int32_t pc_1251_setup(void)
@@ -498,7 +681,9 @@ static void pc_1251_keypress(uint16_t key)
     if (key < 0x20)
         return;
 
-    key_pressed = 1;
+    if ((key >= 0x20) && (key < 0xB0))
+        porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+
     switch (key)
     {
     case 0xFF0D:                    // Enter
@@ -516,12 +701,16 @@ static void pc_1251_keypress(uint16_t key)
     case 0xFF53:                    // ARROW-RIGHT
         porta_kbd[KEYBOARD_PORTA_INDEX_A3] |= KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFAB:                    // '+' on the numeric pad.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A1;
+        break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A5;
         break;
     default:
-        porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+        g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
+        // Discard.
         break;
     }
 }
@@ -533,6 +722,10 @@ static void pc_1251_keyrelease(uint16_t key)
     keyboard_count.count = 0;
     if (key < 0x20)
         return;
+
+    if ((key >= 0x20) && (key < 0xB0))
+        porta_kbd[key_map[key - 0x20].row] &= ~key_map[key - 0x20].mask;
+
     switch (key)
     {
     case 0xFF0D:                    // Enter
@@ -550,31 +743,38 @@ static void pc_1251_keyrelease(uint16_t key)
     case 0xFF53:                    // ARROW-RIGHT
         porta_kbd[KEYBOARD_PORTA_INDEX_A3] &= ~KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFAB:                    // '+' on the numeric pad.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A1;
+        break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A5;
         break;
     default:
-        porta_kbd[key_map[key - 0x20].row] &= ~(key_map[key - 0x20].mask);
+        g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);
+        // Discard.
         break;
     }
 }
 
-model_file_descriptor_t pt[] =
+// This structure reflects the status of the memory of the LCD. We'll use it
+//  to avoid needless repaints.
+uint8_t lcd_status[0x7C];
+
+model_file_descriptor_t pt =
 {
-    { .model_name = "pc-1251",
-      .irom = { "./rom/cpu-1251.rom", 0},
-      .erom = { "./rom/bas-1251.rom", 0x4000 },
-      .setup = pc_1251_setup,
-      .read_memory = pc_1251_read_memory,
-      .write_memory = pc_1251_write_memory,
-      .ina = pc_1251_ina,
-      .inb = pc_1251_inb,
-      .outa = pc_1251_outa,
-      .outb = pc_1251_outb,
-      .outc = pc_1251_outc,
-      .outf = pc_1251_outf,
-      .keypress = pc_1251_keypress,
-      .keyrelease = pc_1251_keyrelease,
-    },
+    .model_name = "pc-1251",
+    .irom = { "./rom/cpu-1251.rom", 0},
+    .erom = { "./rom/bas-1251.rom", 0x4000 },
+    .setup = pc_1251_setup,
+    .read_memory = pc_1251_read_memory,
+    .write_memory = pc_1251_write_memory,
+    .ina = pc_1251_ina,
+    .inb = pc_1251_inb,
+    .outa = pc_1251_outa,
+    .outb = pc_1251_outb,
+    .outc = pc_1251_outc,
+    .outf = pc_1251_outf,
+    .keypress = pc_1251_keypress,
+    .keyrelease = pc_1251_keyrelease,
 };

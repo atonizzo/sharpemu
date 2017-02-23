@@ -40,6 +40,57 @@ FILE *fp_instr;
 uint32_t diag_level;
 char user_file_name[128];
 
+static int load_roms(void)
+{
+    FILE *fp_rom;
+    int i;
+    // We need to load the internal ROM (internal to the sc61860) and
+    //  the external one, which usually sits on an external ROM chip.
+    fp_rom = fopen(pt.irom.file_name, "rb");
+    if (fp_rom == NULL)
+    {
+        printf("Cannot open %s file.\r\n", pt.irom.file_name);
+        return -1;
+    }
+
+    // Find the size of the file.
+    fseek(fp_rom, 0L, SEEK_END);
+    uint32_t file_size = ftell(fp_rom);
+    rewind(fp_rom);
+    uint16_t mem_address = pt.irom.base_address;
+
+    do
+    {
+        memory_image[mem_address] = fgetc(fp_rom);
+        mem_address += 1;
+    }
+    while (mem_address < pt.irom.base_address + file_size);
+    fclose(fp_rom);
+
+    // This is the external ROM, contoaning the BASIC interpreter.
+    fp_rom = fopen(pt.erom.file_name, "rb");
+    if (fp_rom == NULL)
+    {
+        printf("Cannot open %s file.\r\n", pt.erom.file_name);
+        return -1;
+    }
+
+    // Find the size of the file.
+    fseek(fp_rom, 0L, SEEK_END);
+    file_size = ftell(fp_rom);
+    rewind(fp_rom);
+    mem_address = pt.erom.base_address;
+
+    do
+    {
+        memory_image[mem_address] = fgetc(fp_rom);
+        mem_address += 1;
+    }
+    while (mem_address < pt.erom.base_address + file_size);
+    fclose(fp_rom);
+    return i;
+}
+
 int setup_emulator(void)
 {
     char model_name[128];
@@ -49,15 +100,7 @@ int setup_emulator(void)
     memset((void *)&breakpoint_list, 0, sizeof(breakpoint_list));
     memset((void *)&mem_view_past, 0, sizeof(mem_view_past));
 
-    // Device personality.
-    model_name[0] = '\0';
-    strcpy(model_name, "pc-1251");
-    if (model_name[0] == '\0')
-    {
-        printf("Calculator model not specified.\r\n");
-        return -1;
-    }
-    int personality = load_personality(model_name);
+    int personality = load_roms();
     if (personality < 0)
     {
         printf("Cannot load ROMS.\r\n");
@@ -183,7 +226,6 @@ int setup_emulator(void)
     cpu_state.scratchpad.regs.l  = DEFAULT_L_VALUE;
     cpu_state.scratchpad.regs.m  = DEFAULT_M_VALUE;
     cpu_state.scratchpad.regs.n  = DEFAULT_N_VALUE;
-//    cpu_state.test.rst           = 1;
     cpu_state.r                  = DEFAULT_R_VALUE;
     cpu_state.p                  = DEFAULT_P_VALUE;
     cpu_state.q                  = DEFAULT_Q_VALUE;

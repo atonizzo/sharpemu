@@ -30,7 +30,6 @@
 
 #include <pc1245.h>
 
-int key_pressed = 0;
 GtkWidget *lcd_label_box;
 GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
                             [LCD_COLUMNS_PER_CHARACTER][LCD_PIXEL_PER_COLUMN];
@@ -364,7 +363,6 @@ static int32_t pc_1245_setup(void)
     memset(porta_kbd_past, '\0', sizeof(porta_kbd_past));
     memset(&keyboard_count, '\0', sizeof(keyboard_count));
 
-    __break__
     // Create a new hbox to hold the LCD labels.
     GtkWidget *lcd_label_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
 
@@ -665,7 +663,9 @@ static void pc_1245_keypress(uint16_t key)
     if (key < 0x20)
         return;
 
-    key_pressed = 1;
+    if ((key >= 0x20) && (key < 0xB0))
+        porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+
     switch (key)
     {
     case 0xFF0D:                    // Enter
@@ -683,12 +683,15 @@ static void pc_1245_keypress(uint16_t key)
     case 0xFF53:                    // ARROW-RIGHT
         porta_kbd[KEYBOARD_PORTA_INDEX_A3] |= KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFAB:                    // '+' on the numeric pad.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A1;
+        break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A5;
         break;
     default:
-        porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+        g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
         break;
     }
 }
@@ -700,6 +703,10 @@ static void pc_1245_keyrelease(uint16_t key)
     keyboard_count.count = 0;
     if (key < 0x20)
         return;
+
+    if ((key >= 0x20) && (key < 0xB0))
+        porta_kbd[key_map[key - 0x20].row] &= ~(key_map[key - 0x20].mask);
+
     switch (key)
     {
     case 0xFF0D:                    // Enter
@@ -717,12 +724,15 @@ static void pc_1245_keyrelease(uint16_t key)
     case 0xFF53:                    // ARROW-RIGHT
         porta_kbd[KEYBOARD_PORTA_INDEX_A3] &= ~KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFAB:                    // '+' on the numeric pad.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A1;
+        break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A5;
         break;
     default:
-        porta_kbd[key_map[key - 0x20].row] &= ~(key_map[key - 0x20].mask);
+        g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);
         break;
     }
 }
@@ -731,21 +741,20 @@ static void pc_1245_keyrelease(uint16_t key)
 //  to avoid needless repaints.
 uint8_t lcd_status[0x7C];
 
-model_file_descriptor_t pt[] =
+model_file_descriptor_t pt =
 {
-    { .model_name = "pc-1251",
-      .irom = { "./rom/cpu-1245.rom", 0},
-      .erom = { "./rom/bas-1245.rom", 0x4000 },
-      .setup = pc_1245_setup,
-      .read_memory = pc_1245_read_memory,
-      .write_memory = pc_1245_write_memory,
-      .ina = pc_1245_ina,
-      .inb = pc_1245_inb,
-      .outa = pc_1245_outa,
-      .outb = pc_1245_outb,
-      .outc = pc_1245_outc,
-      .outf = pc_1245_outf,
-      .keypress = pc_1245_keypress,
-      .keyrelease = pc_1245_keyrelease,
-    },
+    .model_name = "pc-1245",
+    .irom = { "./rom/cpu-1245.rom", 0},
+    .erom = { "./rom/bas-1245.rom", 0x4000 },
+    .setup = pc_1245_setup,
+    .read_memory = pc_1245_read_memory,
+    .write_memory = pc_1245_write_memory,
+    .ina = pc_1245_ina,
+    .inb = pc_1245_inb,
+    .outa = pc_1245_outa,
+    .outb = pc_1245_outb,
+    .outc = pc_1245_outc,
+    .outf = pc_1245_outf,
+    .keypress = pc_1245_keypress,
+    .keyrelease = pc_1245_keyrelease,
 };

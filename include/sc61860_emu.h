@@ -332,7 +332,7 @@ typedef struct __model_file_descriptor
     void (* keyrelease)(uint16_t);
 } model_file_descriptor_t;
 
-extern model_file_descriptor_t pt[1];
+extern model_file_descriptor_t pt;
 
 // Instruction simulation.
 void sim_arith(void);
@@ -409,12 +409,12 @@ gboolean reg_i_key_press_callback(GtkWidget *, GdkEventButton *, gpointer);
 
 static inline uint8_t read_mem(uint16_t address)
 {
-    return pt[personality].read_memory(address);
+    return pt.read_memory(address);
 }
 
 static inline void write_mem(uint16_t address, uint8_t data)
 {
-    pt[personality].write_memory(address, data);
+    pt.write_memory(address, data);
 }
 
 // Debug.
