@@ -60,8 +60,11 @@ void sim_not_implemented(void)
 
 static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carry)
 {
-    printf("a:%02x b:%02x carry:=%d\r\n", a, b, carry);
-#if 1
+    if ((a == 0) && (carry == 0))
+        return b;
+    if ((b == 0) && (carry == 0))
+        return a;
+    printf("a:%02x b:%02x carry:=%d ", a, b, carry);
     uint8_t tmp0 = (a & 0x0F) + (b & 0x0F) + carry;
     carry = 0;
     if (tmp0 > 9)
@@ -74,18 +77,16 @@ static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carry)
         tmp1 += 0x60;   // Automatically generates final carry.
     printf("result: %04x\r\n", tmp1 | tmp0);
     return tmp1 | tmp0;
-#else
-    // This is obviously wrong, but makes the PI command display the correct
-    //  value. Why?
-    printf("result: 0\r\n");
-    return a;
-#endif
 }
 
-static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carryin)
+static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carry)
 {
-    printf("sub_bcd - a:%02x b:%02x carry:=%d ", a, b, carryin);
-    int16_t tmp = (a & 0x0f) - (b & 0x0f) - carryin;
+    if ((a == 0) && (carry == 0))
+        return b;
+    if ((b == 0) && (carry == 0))
+        return a;
+    printf("a:%02x b:%02x carry:=%d ", a, b, carry);
+    int16_t tmp = (a & 0x0f) - (b & 0x0f) - carry;
     if (tmp < 0 )
     {
         tmp += 10;
@@ -215,26 +216,32 @@ void sim_arith(void)
 void sim_bcd(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint8_t tmp;
+    uint8_t b;
+    uint16_t tmp;
     switch (instruction)
     {
     case 0x0c:        // "adn"  I -> d
+                      //        b = A
                       //        repeat
-                      //            [P] + A -> [P] (BCD)
+                      //            [P] + b -> [P] (BCD)
+                      //            b = 0
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "adn - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
+        b = cpu_state.scratchpad.regs.a;
+        cpu_state.flags.carry = 0;
         do
         {
             fprintf(fp_memaccess, "adn - ");
-            printf("addr: 0x%04X - adn - ", cpu_state.pc);
-            uint16_t tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
-                                   cpu_state.scratchpad.regs.a,
-                                   cpu_state.flags.carry);
+            printf("adn - ");
+            tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+                          b,
+                          cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            b = 0;
             cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
@@ -250,15 +257,18 @@ void sim_bcd(void)
                       //        until d=FF
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d);
-        printf("addr: 0x%04X - sbn - ", cpu_state.pc);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
+        b = cpu_state.scratchpad.regs.a;
+        cpu_state.flags.carry = 0;
         do
         {
             fprintf(fp_memaccess, "sbn - ");
-            uint16_t tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
-                                   cpu_state.scratchpad.regs.a,
-                                   cpu_state.flags.carry);
+            printf("sbn - ");
+            tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+                          b,
+                          cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            b = 0;
             cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
@@ -269,14 +279,15 @@ void sim_bcd(void)
     case 0x0e:        // "adw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "adw - %d\r\n", cpu_state.d);
-        printf("addr: 0x%04X - adw - ", cpu_state.pc);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
+        cpu_state.flags.carry = 0;
         do
         {
             fprintf(fp_memaccess, "adw - ");
-            uint16_t tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
-                                   cpu_state.scratchpad.raw.mem[cpu_state.q],
-                                   cpu_state.flags.carry);
+            printf("adw - ");
+            tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+                          cpu_state.scratchpad.raw.mem[cpu_state.q],
+                          cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
             cpu_state.flags.carry = (tmp > 0xFF);
             cpu_state.p -= 1;
@@ -284,6 +295,7 @@ void sim_bcd(void)
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
+        cpu_state.q -= 1;
         cpu_state.flags.zero = ((tmp & 0xFF) == 0);
         break;
     default:

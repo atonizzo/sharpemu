@@ -690,6 +690,9 @@ static void pc_1245_keypress(uint16_t key)
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFFF:                    // Delete, which maps to CL.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B1] |= KEYBOARD_PORTA_BIT_A2;
+        break;
     default:
         g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
         break;
@@ -730,6 +733,9 @@ static void pc_1245_keyrelease(uint16_t key)
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A5;
+        break;
+    case 0xFFFF:                    // Delete, which maps to CL.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B1] &= ~KEYBOARD_PORTA_BIT_A2;
         break;
     default:
         g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);

@@ -414,11 +414,11 @@ static int32_t pc_1251_setup(void)
     gtk_box_pack_start(GTK_BOX(this_box), lcd_char_box, TRUE, TRUE, 4);
     gtk_widget_show(GTK_WIDGET(lcd_char_box));
 
-    GObject *lcd_main_window = gtk_builder_get_object(builder,
-                                                      "lcd_window");
-    gtk_widget_show(GTK_WIDGET(lcd_main_window));
+    GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
+    gtk_window_set_resizable(GTK_WINDOW(lcd_window), FALSE);
     lcd_setup();
     lcd_off();
+    gtk_widget_show(GTK_WIDGET(lcd_window));
 }
 
 static uint8_t pc_1251_read_memory(uint16_t address)
@@ -708,6 +708,9 @@ static void pc_1251_keypress(uint16_t key)
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A5;
         break;
+    case 0xFFFF:                    // Delete, which maps to CL.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B1] |= KEYBOARD_PORTA_BIT_A2;
+        break;
     default:
         g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
         // Discard.
@@ -749,6 +752,9 @@ static void pc_1251_keyrelease(uint16_t key)
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
         porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A5;
+        break;
+    case 0xFFFF:                    // Delete, which maps to CL.
+        porta_kbd[KEYBOARD_PORTB_INDEX_B1] &= ~KEYBOARD_PORTA_BIT_A2;
         break;
     default:
         g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);
