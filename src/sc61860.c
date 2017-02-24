@@ -64,19 +64,16 @@ static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carry)
         return b;
     if ((b == 0) && (carry == 0))
         return a;
-    printf("a:%02x b:%02x carry:=%d ", a, b, carry);
+    printf("add_bcd - a:%02x b:%02x carry:=%d ", a, b, carry);
     uint8_t tmp0 = (a & 0x0F) + (b & 0x0F) + carry;
     carry = 0;
     if (tmp0 > 9)
-    {
         tmp0 += 6;
-        carry = 0x10;
-    }
-    uint16_t tmp1 = (a & 0xF0) + (b & 0xF0) + carry;
-    if (tmp1 > 0x90)
-        tmp1 += 0x60;   // Automatically generates final carry.
-    printf("result: %04x\r\n", tmp1 | tmp0);
-    return tmp1 | tmp0;
+    uint16_t result = (a & 0xF0) + (b & 0xF0) + tmp0;
+    if (result > 0x99)
+        result += 0x60;   // Automatically generates final carry.
+    printf("result: %04x\r\n", result);
+    return result;
 }
 
 static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carry)
@@ -228,15 +225,14 @@ void sim_bcd(void)
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
-        cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "adn - %d\r\n", cpu_state.d);
+        cpu_state.d = cpu_state.scratchpad.regs.i;
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         b = cpu_state.scratchpad.regs.a;
         cpu_state.flags.carry = 0;
         do
         {
             fprintf(fp_memaccess, "adn - ");
-            printf("adn - ");
             tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                           b,
                           cpu_state.flags.carry);
@@ -255,15 +251,13 @@ void sim_bcd(void)
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
-        cpu_state.d = cpu_state.scratchpad.regs.i;
         fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d);
+        cpu_state.d = cpu_state.scratchpad.regs.i;
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         b = cpu_state.scratchpad.regs.a;
         cpu_state.flags.carry = 0;
         do
         {
-            fprintf(fp_memaccess, "sbn - ");
-            printf("sbn - ");
             tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                           b,
                           cpu_state.flags.carry);
@@ -283,8 +277,6 @@ void sim_bcd(void)
         cpu_state.flags.carry = 0;
         do
         {
-            fprintf(fp_memaccess, "adw - ");
-            printf("adw - ");
             tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                           cpu_state.scratchpad.raw.mem[cpu_state.q],
                           cpu_state.flags.carry);

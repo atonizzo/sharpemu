@@ -530,7 +530,7 @@ static void pc_1251_outf(void)
 
 static const keyboard_encoding_t key_map[] =
 {
-    {KEYBOARD_PORTA_INDEX_A5, KEYBOARD_PORTA_INDEX_A8}, // 0x20 - ' '
+    {KEYBOARD_PORTA_INDEX_A5, KEYBOARD_PORTA_BIT_A8}, // 0x20 - ' '
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
@@ -543,7 +543,7 @@ static const keyboard_encoding_t key_map[] =
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
-    {0x00, 0x00},
+    {KEYBOARD_PORTB_INDEX_B1, KEYBOARD_PORTA_BIT_A1}, // 0x20 - '-'
     {0x00, 0x00},
     {0x00, 0x00},
     {KEYBOARD_PORTA_INDEX_A7, KEYBOARD_PORTA_BIT_A8}, // 0x30 - '0'

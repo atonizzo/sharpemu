@@ -2123,9 +2123,12 @@ MDL0D01:          CAL   MDL0AE1
                   JRZP  LBL0D0E
                   ANID  0xFE
                   JRP   LBL0D28
-LBL0D0E:          LP    0x27
+; The last two digits of a BCD register (i.e. the last byte) are always rouded
+;  off. This is done by adding 50 (equivalent to adding 0.5 to the unrounded
+;  number) the the BCD register.
+LBL0D0E:          LP    0x27            ; Pointer to Xreg.
                   LII   0x06
-                  LIA   0x50
+                  LIA   0x50            ; Round off Xreg.
                   ADN
                   LP    0x21
                   TSIM  0x0F
