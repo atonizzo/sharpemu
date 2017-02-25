@@ -429,6 +429,8 @@ static uint8_t pc_1251_read_memory(uint16_t address)
 static void pc_1251_write_memory(uint16_t address, uint8_t value)
 {
     // RAM memory.
+    // More RAM can be arbitrarily added by decreasing the firstr of these two
+    //  numbers. The MEM command will reflect the increase.
     if ((address >= 0xB800) && (address < 0xC800))
         memory_image[address] = value;
 
@@ -489,7 +491,7 @@ static void pc_1251_ina(void)
 
 static void pc_1251_inb(void)
 {
-    cpu_state.scratchpad.regs.a = 0;
+    cpu_state.scratchpad.regs.a = calculator_mode;
 }
 
 static void pc_1251_outa(void)

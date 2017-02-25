@@ -29,6 +29,7 @@
 #include <sc61860_emu.h>
 
 GtkBuilder *builder;
+uint8_t calculator_mode;
 
 void write_status_bar(gchar *info)
 {
@@ -214,6 +215,12 @@ static gboolean debug_run_callback(GtkWidget *widget, gpointer user_data )
 {
     pre_run();
     g_idle_add(thread_run, (gpointer)0xDEADBEEF);
+    return TRUE;
+}
+
+static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
+{
+    calculator_mode = (int8_t)(long int)user_data;
     return TRUE;
 }
 
@@ -424,6 +431,34 @@ int main(int argc, char *argv[])
                      G_CALLBACK(debug_reset_callback),
                      NULL);
 
+    // Mode->Off.
+    this_object = gtk_builder_get_object(builder, "menu_mode_off");
+    g_signal_connect(G_OBJECT(this_object),
+                     "activate",
+                     G_CALLBACK(mode_callback),
+                     (gpointer)CALC_MODE_OFF);
+
+    // Mode->Off.
+    this_object = gtk_builder_get_object(builder, "menu_mode_pro");
+    g_signal_connect(G_OBJECT(this_object),
+                     "activate",
+                     G_CALLBACK(mode_callback),
+                     (gpointer)CALC_MODE_PRO);
+
+    // Mode->Off.
+    this_object = gtk_builder_get_object(builder, "menu_mode_run");
+    g_signal_connect(G_OBJECT(this_object),
+                     "activate",
+                     G_CALLBACK(mode_callback),
+                     (gpointer)CALC_MODE_RUN);
+
+    // Mode->Off.
+    this_object = gtk_builder_get_object(builder, "menu_mode_rsv");
+    g_signal_connect(G_OBJECT(this_object),
+                     "activate",
+                     G_CALLBACK(mode_callback),
+                     (gpointer)CALC_MODE_RSV);
+
     // -------------------------------------------------------------------------
     // Buttonbar callbacks.
     // -------------------------------------------------------------------------
@@ -526,7 +561,8 @@ int main(int argc, char *argv[])
                      "key-release-event",
                      G_CALLBACK(lcd_key_pressed_event),
                      NULL);
-
+                     
+    calculator_mode = CALC_MODE_OFF;
     display_core_info();
     gtk_main();
     return 0;

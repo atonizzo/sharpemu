@@ -411,7 +411,9 @@ static uint8_t pc_1245_read_memory(uint16_t address)
 static void pc_1245_write_memory(uint16_t address, uint8_t value)
 {
     // RAM memory.
-    if ((address >= 0xB800) && (address < 0xC800))
+    // More RAM can be arbitrarily added by decreasing the firstr of these two
+    //  numbers. The MEM command will reflect the increase.
+    if ((address >= 0xC000) && (address < 0xC800))
         memory_image[address] = value;
 
     // LCD memory.
@@ -471,7 +473,7 @@ static void pc_1245_ina(void)
 
 static void pc_1245_inb(void)
 {
-    cpu_state.scratchpad.regs.a = 0;
+    cpu_state.scratchpad.regs.a = calculator_mode;
 }
 
 static void pc_1245_outa(void)

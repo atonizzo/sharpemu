@@ -129,6 +129,13 @@ extern char *reg_to_str[16];
 #define MEM_VIEW_ROWS                   16
 extern uint8_t mem_view_past[MEM_VIEW_ROWS * 16];
 
+#define CALC_MODE_RUN               0
+#define CALC_MODE_RSV               1
+#define CALC_MODE_PRO               2
+#define CALC_MODE_OFF               3
+
+extern uint8_t calculator_mode;
+
 typedef struct __sc61860_instr
 {
     // 31:24 - Addressing mode
