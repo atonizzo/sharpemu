@@ -680,7 +680,6 @@ static const keyboard_encoding_t key_map[] =
 
 static void pc_1251_keypress(uint16_t key)
 {
-    g_print("Key %04X, (%d)\r\n", key, (int16_t)key);
     if (key < 0x20)
         return;
 

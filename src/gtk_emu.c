@@ -229,49 +229,60 @@ static gboolean debug_run_callback(GtkWidget *widget, gpointer user_data )
 static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
 {
     calculator_mode = (int8_t)(long int)user_data;
-    if (calculator_mode == CALC_MODE_OFF)
+    GObject *mode_label = gtk_builder_get_object(builder, "label_mode");
+    GObject *this_widget;
+    switch (calculator_mode)
     {
+    case CALC_MODE_OFF:
         // The buttons that execute assembly instructions must be disabled until
         //  the calculator mode is changed to one of the operative ones.
         // Disable the button and menu that perform the "Step" function.
-        GObject *widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-        widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-    }
-    else
-    {
-        // The calculator mode is changed to one of the operative ones.
-        GObject *widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-        widget = gtk_builder_get_object(builder, "menu_debug_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: OFF");
+        return TRUE;
+    case CALC_MODE_RUN:
+        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: RUN");
+        break;
+    case CALC_MODE_PRO:
+        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: PRO");
+        break;
+    case CALC_MODE_RSV:
+        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: RSV");
+        break;
     }
 
+    // The calculator mode is changed to one of the operative ones.
+    this_widget = gtk_builder_get_object(builder, "buttonbar_step");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "buttonbar_next");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "buttonbar_run");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "menu_debug_step");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "menu_debug_next");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "menu_debug_run");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+    this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
+    gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
     return TRUE;
 }
 
