@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sc61860_emu.h>
 
-#include <pc1251.h>
+#include <pc1245.h>
 
 GtkWidget *lcd_label_box;
 GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
@@ -58,23 +58,6 @@ GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
 
 address_descriptor_t address_descriptors[] =
 {
-    {0x009F, "Xreg <- 0"},              {0x00A9, "Yreg <- 0"},
-    {0x00AF, "Zreg <- 0"},
-    {0x1118, "[$C6B6, $C6B5] <- X"},    {0x1125, "X <- [$C6B6, $C6B5]"},
-    {0x115E, "DP <- $F83E"},            {0x1162, "DP <- $F8BE"},
-    {0x1166, "DP <- $C6B7"},            {0x116A, "DP <- $C6DA"},
-    {0x1172, "X <- Y"},                 {0x118F, "X <- [$C6E2, $C6E1]"},
-    {0x1177, "Y <- X"},                 {0x1195, "[$0C, $0D] <-> X"},
-    {0x119A, "X <- $C7B0 (rambuf)"},
-    {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
-    {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
-    {0x11F1, "X <- [B, A - 1]"},        {0x11F5, "Y <- [B, A - 1]"},
-    {0x11F9, "Y <- 0xC7B0 (kbdbuf)"},   {0x1200, "[$1C, $1D] <- X"},
-    {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> [$1C, $1D]"},
-    {0x172B, "[B,A] <<= 1"},            {0x1731, "[B,A] >>= 1"},
-    {0x18C5, "print_prompt"},           {0x1FB1, "wr_portc"},
-    {0x1FB6, "memcpy"},
-    {0x400C, "write_lcd"},
     {0, 0}
 };
 
@@ -104,24 +87,6 @@ label_layout_t lcd_labels[15] =
     {0, 0},     {0, "SHIFT"}, {0, 0},     {0, 0},
     {0, 0},     {0, 0},       {0, "E"}
 };
-
-static void lcd_setup(void)
-{
-    memset(lcd_status, '\0', sizeof(lcd_status));
-}
-
-static void lcd_off(void)
-{
-    int i, j, k;
-
-    // Turn pixels off.
-    char image_name[128];
-    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
-        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
-            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
-                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
-                                        "./pixmaps/lcd_pixel_off.jpg");
-}
 
 static GtkWidget *lcd_create_column(unsigned int character, unsigned int column)
 {
@@ -161,7 +126,7 @@ static GtkWidget *lcd_create_spacer(void)
     GtkWidget *lcd_spacer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     // Each column is made up of 7 pixels.
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < LCD_PIXEL_PER_COLUMN; i++)
     {
         GtkWidget *this_image =
                   gtk_image_new_from_file("./pixmaps/digit_separator.jpg");
@@ -184,12 +149,11 @@ static GtkWidget *lcd_build_display(void)
     // Create a new hbox to hold the 24 LCD characters.
     GtkWidget *lcd_char_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
-    // There are 24 characters in the LCD of a PC-1251. Each character is made
-    //  up of 5 columns of pixels, each 7 pixel in height, followed by a
-    //  separator column. 24 characters x (5 pixels + 1 separator) = 144.
-    for (i = 0; i < 24; i++)
+    // Each character in the LCD is made up of 5 columns of pixels, each
+    //  7 pixel in height, followed by a separator column.
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)
     {
-        for (j = 0; j < 5; j++)
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)
         {
             GtkWidget *this_column = lcd_create_column(i, j);
             gtk_box_pack_start(GTK_BOX(lcd_char_box),
@@ -209,6 +173,11 @@ static GtkWidget *lcd_build_display(void)
     }
     gtk_widget_show(GTK_WIDGET(lcd_char_box));
     return lcd_char_box;
+}
+
+static void lcd_setup(void)
+{
+    memset(lcd_status, '\0', sizeof(lcd_status));
 }
 
 static void lcd_service(uint16_t address, uint8_t data)
@@ -368,171 +337,28 @@ static void lcd_service(uint16_t address, uint8_t data)
             gtk_image_set_from_file(GTK_IMAGE(
                        lcd_display[0][column_number / 5][column_number % 5][i]),
                                     file_name);
+
         }
         lcd_status[address - 0xF800] = data;
     }
 }
 
-static int32_t pc_1251_setup(void)
+static void lcd_off(void)
 {
-    int i, j;
-    memset(porta_kbd, '\0', sizeof(porta_kbd));
-    memset(porta_kbd_past, '\0', sizeof(porta_kbd_past));
-    memset(&keyboard_count, '\0', sizeof(keyboard_count));
+    int i, j, k;
 
-    // Create a new hbox to hold the LCD labels.
-    GtkWidget *lcd_label_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-
-    char widget_name[64];
-    for (i = 0; i < sizeof(lcd_labels) / sizeof(label_layout_t); i++)
-    {
-        lcd_labels[i].id = (GtkWidget *)gtk_label_new(lcd_labels[i].text);
-        if (lcd_labels[i].text != 0)
-        {
-            strcpy(widget_name, "lcd_label_");
-            for (j = 0; j < strlen(lcd_labels[i].text); j++)
-                sprintf(widget_name + strlen(widget_name),
-                        "%c",
-                        tolower(lcd_labels[i].text[j]));
-            gtk_widget_set_name(lcd_labels[i].id, widget_name);
-        }
-        gtk_box_pack_start(GTK_BOX(lcd_label_box),
-                           lcd_labels[i].id,
-                           TRUE,
-                           TRUE,
-                           6);
-        gtk_widget_show(GTK_WIDGET(lcd_labels[i].id));
-    }
-
-
-    GObject *this_box = gtk_builder_get_object(builder, "lcd_window_box");
-    gtk_box_pack_start(GTK_BOX(this_box), lcd_label_box, TRUE, TRUE, 1);
-    gtk_widget_show(GTK_WIDGET(lcd_label_box));
-
-    GtkWidget *lcd_char_box = lcd_build_display();
-    gtk_box_pack_start(GTK_BOX(this_box), lcd_char_box, TRUE, TRUE, 4);
-    gtk_widget_show(GTK_WIDGET(lcd_char_box));
-
-    GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
-    gtk_window_set_resizable(GTK_WINDOW(lcd_window), FALSE);
-    gtk_widget_show(GTK_WIDGET(lcd_window));
-    lcd_setup();
-    calculator_mode = CALC_MODE_OFF;
-    lcd_off();
-}
-
-static uint8_t pc_1251_read_memory(uint16_t address)
-{
-    return memory_image[address];
-}
-
-static void pc_1251_write_memory(uint16_t address, uint8_t value)
-{
-    // RAM memory.
-    // More RAM can be arbitrarily added by decreasing the firstr of these two
-    //  numbers. The MEM command will reflect the increase.
-    if ((address >= 0xB800) && (address < 0xC800))
-        memory_image[address] = value;
-
-    // LCD memory.
-    if ((address >= 0xF800) && (address <= 0xF87B))
-    {
-        memory_image[address] = value;
-        lcd_service(address, value);
-    }
-}
-
-// Port A is used exclusively for the keyboard. We scan which of the 11 bits
-//  in PortB[3:1] and PortA[8:1] are being driven by the keyboard scan routine.
-// The bits being driven are those set in cpu_state.porta or cpu_state.portb
-//  and only one of these bits is set at any given point in time.
-// If any of them is set, we seek the porta_kbd[] array to see if any key
-//  has been pressed.
-static void pc_1251_ina(void)
-{
-    uint16_t id = ((cpu_state.portb & 0x07) << 8) | cpu_state.porta;
-    int i;
-
-    uint8_t mask = 0xFE;
-    for (i = 0; i < sizeof(porta_kbd); i++)
-    {
-        if ((id & (1 << i)) != 0)
-        {
-            if (porta_kbd[i] != 0)
-            {
-                if ((keyboard_count.id != id) ||
-                                           (keyboard_count.kbd != porta_kbd[i]))
-                {
-                    keyboard_count.id = id;
-                    keyboard_count.kbd = porta_kbd[i];
-                    keyboard_count.count = 0;
-                }
-                keyboard_count.count += 1;
-            }
-
-            if (keyboard_count.count < 3)
-                cpu_state.scratchpad.regs.a = porta_kbd[i];
-            else
-                cpu_state.scratchpad.regs.a = 0;
-            if (i < 8)
-            {
-                // If we are driving any bits of cpu_state.porta also return
-                //  the bits being driven.
-                cpu_state.scratchpad.regs.a |= cpu_state.porta;
-            }
-
-            return;
-        }
-    }
-
-    // Should never be here...
-    cpu_state.scratchpad.regs.a = 0;
-}
-
-static void pc_1251_inb(void)
-{
-    cpu_state.scratchpad.regs.a = calculator_mode;
-}
-
-static void pc_1251_outa(void)
-{
-    cpu_state.porta = cpu_state.scratchpad.raw.mem[PORTA_OFFSET];
-}
-
-static void pc_1251_outb(void)
-{
-    cpu_state.portb = cpu_state.scratchpad.raw.mem[PORTB_OFFSET];
-}
-
-static void pc_1251_outc(void)
-{
-    fprintf(fp_memaccess,
-            "S: %04x W: PORTC - %02X\r\n",
-            cpu_state.pc,
-            cpu_state.scratchpad.raw.mem[PORTC_OFFSET]);
-
-    if ((cpu_state.scratchpad.raw.mem[PORTC_OFFSET] & PORTC_BITS_CNTRST) != 0)
-    {
-        fprintf(fp_memaccess, "S: %04x Counter is reset\r\n", cpu_state.pc);
-        printf("Timer cleared\r\n");
-        gettimeofday(&timeval_start, NULL);
-        cpu_state.scratchpad.raw.mem[PORTC_OFFSET] &= ~PORTC_BITS_CNTRST;
-    }
-    if ((cpu_state.scratchpad.raw.mem[PORTC_OFFSET] & PORTC_BITS_HLT) != 0)
-    {
-        fprintf(fp_memaccess, "S: %04x CPU is halted.\r\n", cpu_state.pc);
-    }
-    cpu_state.portc = cpu_state.scratchpad.raw.mem[PORTC_OFFSET];
-}
-
-static void pc_1251_outf(void)
-{
-    cpu_state.portf = cpu_state.scratchpad.raw.mem[PORTF_OFFSET];
+    // Turn pixels off.
+    char image_name[128];
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
+            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
+                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
+                                        "./pixmaps/lcd_pixel_off.jpg");
 }
 
 static const keyboard_encoding_t key_map[] =
 {
-    {KEYBOARD_PORT_INDEX_A5, KEYBOARD_PORT_BIT_A8}, // 0x20 - ' '
+    {KEYBOARD_PORT_INDEX_A5, KEYBOARD_PORT_INDEX_A8}, // 0x20 - ' '
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
@@ -545,8 +371,8 @@ static const keyboard_encoding_t key_map[] =
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
-    {KEYBOARD_PORT_INDEX_B1, KEYBOARD_PORT_BIT_A1}, // 0x2D - '-'
-    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A1}, // 0x2D - '-'
+    {0x00, 0x00},
+    {0x00, 0x00},
     {0x00, 0x00},
     {KEYBOARD_PORT_INDEX_A7, KEYBOARD_PORT_BIT_A8}, // 0x30 - '0'
     {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A3}, // 0x31 - '1'
@@ -678,9 +504,8 @@ static const keyboard_encoding_t key_map[] =
     {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A5}, // Arrow LEFT.
 };
 
-static void pc_1251_keypress(uint16_t key)
+static void pc_1245_keypress(uint16_t key)
 {
-    g_print("Key %04X, (%d)\r\n", key, (int16_t)key);
     if (key < 0x20)
         return;
 
@@ -728,12 +553,11 @@ static void pc_1251_keypress(uint16_t key)
         break;
     default:
         g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
-        // Discard.
         break;
     }
 }
 
-static void pc_1251_keyrelease(uint16_t key)
+static void pc_1245_keyrelease(uint16_t key)
 {
     keyboard_count.id = 0;
     keyboard_count.kbd = 0;
@@ -743,7 +567,7 @@ static void pc_1251_keyrelease(uint16_t key)
 
     if ((key >= 0x20) && (key < 0xB0))
     {
-        porta_kbd[key_map[key - 0x20].row] &= ~key_map[key - 0x20].mask;
+        porta_kbd[key_map[key - 0x20].row] &= ~(key_map[key - 0x20].mask);
         return;
     }
 
@@ -764,9 +588,6 @@ static void pc_1251_keyrelease(uint16_t key)
     case 0xFF53:                    // ARROW-RIGHT
         porta_kbd[KEYBOARD_PORT_INDEX_A3] &= ~KEYBOARD_PORT_BIT_A5;
         break;
-    case 0xFFAA:                    // '/' on the numeric pad.
-        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A3;
-        break;
     case 0xFFAB:                    // '+' on the numeric pad.
         porta_kbd[KEYBOARD_PORT_INDEX_B2] &= ~KEYBOARD_PORT_BIT_A1;
         break;
@@ -785,29 +606,6 @@ static void pc_1251_keyrelease(uint16_t key)
         break;
     default:
         g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);
-        // Discard.
         break;
     }
 }
-
-// This structure reflects the status of the memory of the LCD. We'll use it
-//  to avoid needless repaints.
-uint8_t lcd_status[0x7C];
-
-model_file_descriptor_t pt =
-{
-    .model_name = "pc-1251",
-    .irom = { "./rom/cpu-1251.rom", 0},
-    .erom = { "./rom/bas-1251.rom", 0x4000 },
-    .setup = pc_1251_setup,
-    .read_memory = pc_1251_read_memory,
-    .write_memory = pc_1251_write_memory,
-    .ina = pc_1251_ina,
-    .inb = pc_1251_inb,
-    .outa = pc_1251_outa,
-    .outb = pc_1251_outb,
-    .outc = pc_1251_outc,
-    .outf = pc_1251_outf,
-    .keypress = pc_1251_keypress,
-    .keyrelease = pc_1251_keyrelease,
-};

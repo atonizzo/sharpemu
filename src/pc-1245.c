@@ -36,25 +36,25 @@ GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
 
 // We are going to name these indexes from A1 through A8 and from B1 to B3
 //  to be consistent to the naming convention in the manual
-#define KEYBOARD_PORTA_INDEX_A1         0
-#define KEYBOARD_PORTA_INDEX_A2         1
-#define KEYBOARD_PORTA_INDEX_A3         2
-#define KEYBOARD_PORTA_INDEX_A4         3
-#define KEYBOARD_PORTA_INDEX_A5         4
-#define KEYBOARD_PORTA_INDEX_A6         5
-#define KEYBOARD_PORTA_INDEX_A7         6
-#define KEYBOARD_PORTA_INDEX_A8         7
-#define KEYBOARD_PORTB_INDEX_B1         8
-#define KEYBOARD_PORTB_INDEX_B2         9
-#define KEYBOARD_PORTB_INDEX_B3         10
-#define KEYBOARD_PORTA_BIT_A1           (1 << 0)
-#define KEYBOARD_PORTA_BIT_A2           (1 << 1)
-#define KEYBOARD_PORTA_BIT_A3           (1 << 2)
-#define KEYBOARD_PORTA_BIT_A4           (1 << 3)
-#define KEYBOARD_PORTA_BIT_A5           (1 << 4)
-#define KEYBOARD_PORTA_BIT_A6           (1 << 5)
-#define KEYBOARD_PORTA_BIT_A7           (1 << 6)
-#define KEYBOARD_PORTA_BIT_A8           (1 << 7)
+#define KEYBOARD_PORT_INDEX_A1         0
+#define KEYBOARD_PORT_INDEX_A2         1
+#define KEYBOARD_PORT_INDEX_A3         2
+#define KEYBOARD_PORT_INDEX_A4         3
+#define KEYBOARD_PORT_INDEX_A5         4
+#define KEYBOARD_PORT_INDEX_A6         5
+#define KEYBOARD_PORT_INDEX_A7         6
+#define KEYBOARD_PORT_INDEX_A8         7
+#define KEYBOARD_PORT_INDEX_B1         8
+#define KEYBOARD_PORT_INDEX_B2         9
+#define KEYBOARD_PORT_INDEX_B3         10
+#define KEYBOARD_PORT_BIT_A1           (1 << 0)
+#define KEYBOARD_PORT_BIT_A2           (1 << 1)
+#define KEYBOARD_PORT_BIT_A3           (1 << 2)
+#define KEYBOARD_PORT_BIT_A4           (1 << 3)
+#define KEYBOARD_PORT_BIT_A5           (1 << 4)
+#define KEYBOARD_PORT_BIT_A6           (1 << 5)
+#define KEYBOARD_PORT_BIT_A7           (1 << 6)
+#define KEYBOARD_PORT_BIT_A8           (1 << 7)
 
 address_descriptor_t address_descriptors[] =
 {
@@ -178,19 +178,6 @@ static GtkWidget *lcd_build_display(void)
 static void lcd_setup(void)
 {
     memset(lcd_status, '\0', sizeof(lcd_status));
-}
-
-static void lcd_off(void)
-{
-    int i, j, k;
-
-    // Turn pixels off.
-    char image_name[128];
-    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
-        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
-            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
-                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
-                                        "./pixmaps/lcd_pixel_off.jpg");
 }
 
 static void lcd_service(uint16_t address, uint8_t data)
@@ -356,6 +343,19 @@ static void lcd_service(uint16_t address, uint8_t data)
     }
 }
 
+static void lcd_off(void)
+{
+    int i, j, k;
+
+    // Turn pixels off.
+    char image_name[128];
+    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
+        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
+            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
+                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
+                                        "./pixmaps/lcd_pixel_off.jpg");
+}
+
 static int32_t pc_1245_setup(void)
 {
     int i, j;
@@ -396,11 +396,20 @@ static int32_t pc_1245_setup(void)
     gtk_box_pack_start(GTK_BOX(this_box), lcd_char_box, TRUE, TRUE, 4);
     gtk_widget_show(GTK_WIDGET(lcd_char_box));
 
-    GObject *lcd_main_window = gtk_builder_get_object(builder,
-                                                      "lcd_window");
+    GObject *lcd_main_window = gtk_builder_get_object(builder, "lcd_window");
     gtk_widget_show(GTK_WIDGET(lcd_main_window));
     lcd_setup();
+    calculator_mode = CALC_MODE_OFF;
     lcd_off();
+
+    // Turn off all labels.
+    lcd_service(0xF83C, 0);
+    lcd_service(0xF83D, 0);
+    lcd_service(0xF83E, 0);
+
+    // The PC-1245 does not the RSV mode so we disable the menu entry.
+    GObject *widget = gtk_builder_get_object(builder, "menu_mode_rsv");
+    gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
 }
 
 static uint8_t pc_1245_read_memory(uint16_t address)
@@ -514,7 +523,7 @@ static void pc_1245_outf(void)
 
 static const keyboard_encoding_t key_map[] =
 {
-    {KEYBOARD_PORTA_INDEX_A5, KEYBOARD_PORTA_INDEX_A8}, // 0x20 - ' '
+    {KEYBOARD_PORT_INDEX_A5, KEYBOARD_PORT_INDEX_A8}, // 0x20 - ' '
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
@@ -530,16 +539,16 @@ static const keyboard_encoding_t key_map[] =
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
-    {KEYBOARD_PORTA_INDEX_A7, KEYBOARD_PORTA_BIT_A8}, // 0x30 - '0'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A2}, // 0x31 - '1'
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A3}, // 0x32 - '2'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A3}, // 0x33 - '3'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A4}, // 0x34 - '4'
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A4}, // 0x35 - '5'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A4}, // 0x36 - '6'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A2}, // 0x37 - '7'
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A2}, // 0x38 - '8'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A2}, // 0x39 - '9'
+    {KEYBOARD_PORT_INDEX_A7, KEYBOARD_PORT_BIT_A8}, // 0x30 - '0'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A3}, // 0x31 - '1'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A3}, // 0x32 - '2'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A3}, // 0x33 - '3'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A4}, // 0x34 - '4'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A4}, // 0x35 - '5'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A4}, // 0x36 - '6'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A2}, // 0x37 - '7'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A2}, // 0x38 - '8'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A2}, // 0x39 - '9'
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
@@ -579,32 +588,32 @@ static const keyboard_encoding_t key_map[] =
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00}, // 0x60
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A7}, // 'A'
-    {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A8}, // 'B'
-    {KEYBOARD_PORTB_INDEX_B1, KEYBOARD_PORTA_BIT_A8}, // 'C'
-    {KEYBOARD_PORTB_INDEX_B1, KEYBOARD_PORTA_BIT_A7}, // 'D'
-    {KEYBOARD_PORTB_INDEX_B1, KEYBOARD_PORTA_BIT_A6}, // 'E'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A7}, // 'F'
-    {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A7}, // 'G'
-    {KEYBOARD_PORTA_INDEX_A3, KEYBOARD_PORTA_BIT_A7}, // 'H'
-    {KEYBOARD_PORTA_INDEX_A5, KEYBOARD_PORTA_BIT_A6}, // 'I'
-    {KEYBOARD_PORTA_INDEX_A4, KEYBOARD_PORTA_BIT_A7}, // 'J'
-    {KEYBOARD_PORTA_INDEX_A5, KEYBOARD_PORTA_BIT_A7}, // 'K'
-    {KEYBOARD_PORTA_INDEX_A6, KEYBOARD_PORTA_BIT_A7}, // 'L'
-    {KEYBOARD_PORTA_INDEX_A4, KEYBOARD_PORTA_BIT_A8}, // 'M'
-    {KEYBOARD_PORTA_INDEX_A3, KEYBOARD_PORTA_BIT_A8}, // 'N'
-    {KEYBOARD_PORTA_INDEX_A3, KEYBOARD_PORTA_BIT_A4}, // 'O'
-    {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A4}, // 'P'
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A6}, // 'Q'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A6}, // 'R'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A7}, // 'S'
-    {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A6}, // 'T'
-    {KEYBOARD_PORTA_INDEX_A4, KEYBOARD_PORTA_BIT_A6}, // 'U'
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A8}, // 'V'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A6}, // 'W'
-    {KEYBOARD_PORTB_INDEX_B2, KEYBOARD_PORTA_BIT_A8}, // 'X'
-    {KEYBOARD_PORTA_INDEX_A3, KEYBOARD_PORTA_BIT_A6}, // 'Y'
-    {KEYBOARD_PORTB_INDEX_B3, KEYBOARD_PORTA_BIT_A8}, // 'Z'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A7}, // 'A'
+    {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A8}, // 'B'
+    {KEYBOARD_PORT_INDEX_B1, KEYBOARD_PORT_BIT_A8}, // 'C'
+    {KEYBOARD_PORT_INDEX_B1, KEYBOARD_PORT_BIT_A7}, // 'D'
+    {KEYBOARD_PORT_INDEX_B1, KEYBOARD_PORT_BIT_A6}, // 'E'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A7}, // 'F'
+    {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A7}, // 'G'
+    {KEYBOARD_PORT_INDEX_A3, KEYBOARD_PORT_BIT_A7}, // 'H'
+    {KEYBOARD_PORT_INDEX_A5, KEYBOARD_PORT_BIT_A6}, // 'I'
+    {KEYBOARD_PORT_INDEX_A4, KEYBOARD_PORT_BIT_A7}, // 'J'
+    {KEYBOARD_PORT_INDEX_A5, KEYBOARD_PORT_BIT_A7}, // 'K'
+    {KEYBOARD_PORT_INDEX_A6, KEYBOARD_PORT_BIT_A7}, // 'L'
+    {KEYBOARD_PORT_INDEX_A4, KEYBOARD_PORT_BIT_A8}, // 'M'
+    {KEYBOARD_PORT_INDEX_A3, KEYBOARD_PORT_BIT_A8}, // 'N'
+    {KEYBOARD_PORT_INDEX_A3, KEYBOARD_PORT_BIT_A4}, // 'O'
+    {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A4}, // 'P'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A6}, // 'Q'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A6}, // 'R'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A7}, // 'S'
+    {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A6}, // 'T'
+    {KEYBOARD_PORT_INDEX_A4, KEYBOARD_PORT_BIT_A6}, // 'U'
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A8}, // 'V'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A6}, // 'W'
+    {KEYBOARD_PORT_INDEX_B2, KEYBOARD_PORT_BIT_A8}, // 'X'
+    {KEYBOARD_PORT_INDEX_A3, KEYBOARD_PORT_BIT_A6}, // 'Y'
+    {KEYBOARD_PORT_INDEX_B3, KEYBOARD_PORT_BIT_A8}, // 'Z'
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
@@ -654,10 +663,10 @@ static const keyboard_encoding_t key_map[] =
     {0x00, 0x00},
     {0x00, 0x00},
     {0x00, 0x00},
-    {KEYBOARD_PORTB_INDEX_B1, KEYBOARD_PORTA_BIT_A5}, // Arrow DOWN.
-    {KEYBOARD_PORTA_INDEX_A3, KEYBOARD_PORTA_BIT_A5}, // Arrow RIGHT.
-    {KEYBOARD_PORTA_INDEX_A1, KEYBOARD_PORTA_BIT_A5}, // Arrow UP.
-    {KEYBOARD_PORTA_INDEX_A2, KEYBOARD_PORTA_BIT_A5}, // Arrow LEFT.
+    {KEYBOARD_PORT_INDEX_B1, KEYBOARD_PORT_BIT_A5}, // Arrow DOWN.
+    {KEYBOARD_PORT_INDEX_A3, KEYBOARD_PORT_BIT_A5}, // Arrow RIGHT.
+    {KEYBOARD_PORT_INDEX_A1, KEYBOARD_PORT_BIT_A5}, // Arrow UP.
+    {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A5}, // Arrow LEFT.
 };
 
 static void pc_1245_keypress(uint16_t key)
@@ -666,34 +675,46 @@ static void pc_1245_keypress(uint16_t key)
         return;
 
     if ((key >= 0x20) && (key < 0xB0))
+    {
         porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+        return;
+    }
 
     switch (key)
     {
     case 0xFF0D:                    // Enter
-        porta_kbd[KEYBOARD_PORTA_INDEX_A6] |= KEYBOARD_PORTA_BIT_A8;
+        porta_kbd[KEYBOARD_PORT_INDEX_A6] |= KEYBOARD_PORT_BIT_A8;
         break;
     case 0xFF52:                    // ARROW-UP
-        porta_kbd[KEYBOARD_PORTA_INDEX_A1] |= KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A1] |= KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF54:                    // ARROW-DOWN
-        porta_kbd[KEYBOARD_PORTB_INDEX_B1] |= KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] |= KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF51:                    // ARROW-LEFT
-        porta_kbd[KEYBOARD_PORTA_INDEX_A2] |= KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A2] |= KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF53:                    // ARROW-RIGHT
-        porta_kbd[KEYBOARD_PORTA_INDEX_A3] |= KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A3] |= KEYBOARD_PORT_BIT_A5;
+        break;
+    case 0xFFAA:                    // '/' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] |= KEYBOARD_PORT_BIT_A3;
         break;
     case 0xFFAB:                    // '+' on the numeric pad.
-        porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A1;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] |= KEYBOARD_PORT_BIT_A1;
+        break;
+    case 0xFFAD:                    // '-' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] |= KEYBOARD_PORT_BIT_A1;
+        break;
+    case 0xFFAF:                    // '*' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] |= KEYBOARD_PORT_BIT_A4;
         break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
-        porta_kbd[KEYBOARD_PORTB_INDEX_B2] |= KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] |= KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFFFF:                    // Delete, which maps to CL.
-        porta_kbd[KEYBOARD_PORTB_INDEX_B1] |= KEYBOARD_PORTA_BIT_A2;
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] |= KEYBOARD_PORT_BIT_A2;
         break;
     default:
         g_print("Unhandled Key Pressed - %04X, (%d)\r\n", key, (int16_t)key);
@@ -710,34 +731,46 @@ static void pc_1245_keyrelease(uint16_t key)
         return;
 
     if ((key >= 0x20) && (key < 0xB0))
+    {
         porta_kbd[key_map[key - 0x20].row] &= ~(key_map[key - 0x20].mask);
+        return;
+    }
 
     switch (key)
     {
     case 0xFF0D:                    // Enter
-        porta_kbd[KEYBOARD_PORTA_INDEX_A6] &= ~KEYBOARD_PORTA_BIT_A8;
+        porta_kbd[KEYBOARD_PORT_INDEX_A6] &= ~KEYBOARD_PORT_BIT_A8;
         break;
     case 0xFF52:                    // ARROW-UP
-        porta_kbd[KEYBOARD_PORTA_INDEX_A1] &= ~KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A1] &= ~KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF54:                    // ARROW-DOWN
-        porta_kbd[KEYBOARD_PORTB_INDEX_B1] &= ~KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF51:                    // ARROW-LEFT
-        porta_kbd[KEYBOARD_PORTA_INDEX_A2] &= ~KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A2] &= ~KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFF53:                    // ARROW-RIGHT
-        porta_kbd[KEYBOARD_PORTA_INDEX_A3] &= ~KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_A3] &= ~KEYBOARD_PORT_BIT_A5;
+        break;
+    case 0xFFAA:                    // '/' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A3;
         break;
     case 0xFFAB:                    // '+' on the numeric pad.
-        porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A1;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] &= ~KEYBOARD_PORT_BIT_A1;
+        break;
+    case 0xFFAD:                    // '-' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A1;
+        break;
+    case 0xFFAF:                    // '*' on the numeric pad.
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A4;
         break;
     case 0xFFE1:                    // L-Shift
     case 0xFFE2:                    // R-Shift
-        porta_kbd[KEYBOARD_PORTB_INDEX_B2] &= ~KEYBOARD_PORTA_BIT_A5;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] &= ~KEYBOARD_PORT_BIT_A5;
         break;
     case 0xFFFF:                    // Delete, which maps to CL.
-        porta_kbd[KEYBOARD_PORTB_INDEX_B1] &= ~KEYBOARD_PORTA_BIT_A2;
+        porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A2;
         break;
     default:
         g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);

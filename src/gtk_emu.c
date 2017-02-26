@@ -31,6 +31,14 @@
 GtkBuilder *builder;
 uint8_t calculator_mode;
 
+void abort_on_g_log(const gchar *log_domain,
+                    GLogLevelFlags log_level,
+                    const gchar *message,
+                    gpointer user_data)
+{
+    __break__
+}
+
 void write_status_bar(gchar *info)
 {
     GObject *status_bar = gtk_builder_get_object(builder, "status_bar");
@@ -94,7 +102,6 @@ void load_hex_file(char *f)
         GtkWidget *label = gtk_label_new(message);
 
         // Ensure that the dialog box is destroyed when the user responds
-
         g_signal_connect_swapped(dialog,
                                  "response",
                                  G_CALLBACK (gtk_widget_destroy),
@@ -102,10 +109,11 @@ void load_hex_file(char *f)
 
         // Add the label, and show everything we’ve added
         gtk_container_add(GTK_CONTAINER(content_area), label);
-        gtk_widget_show_all (dialog);
+        gtk_widget_show_all(dialog);
         return;
     }
     fclose(fp_hex);
+    display_core_info();
 }
 
 static gboolean view_memory_callback(GtkWidget *widget, gpointer user_data )
@@ -221,6 +229,49 @@ static gboolean debug_run_callback(GtkWidget *widget, gpointer user_data )
 static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
 {
     calculator_mode = (int8_t)(long int)user_data;
+    if (calculator_mode == CALC_MODE_OFF)
+    {
+        // The buttons that execute assembly instructions must be disabled until
+        //  the calculator mode is changed to one of the operative ones.
+        // Disable the button and menu that perform the "Step" function.
+        GObject *widget = gtk_builder_get_object(builder, "buttonbar_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "buttonbar_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "buttonbar_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "buttonbar_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "menu_debug_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "menu_debug_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "menu_debug_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+        widget = gtk_builder_get_object(builder, "buttonbar_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+    }
+    else
+    {
+        // The calculator mode is changed to one of the operative ones.
+        GObject *widget = gtk_builder_get_object(builder, "buttonbar_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "buttonbar_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "buttonbar_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "buttonbar_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "menu_debug_step");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "menu_debug_next");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "menu_debug_run");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+        widget = gtk_builder_get_object(builder, "menu_debug_stop");
+        gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+    }
+
     return TRUE;
 }
 
@@ -274,7 +325,9 @@ static gboolean label_callback_toggle_breakpoint(GtkWidget      *widget,
     char image_id[64];
     sprintf(image_id, "image_disassembly_line_%d", line);
     GObject *this_object = gtk_builder_get_object(builder, image_id);
+    printf("C");
     gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);
+    printf("D\r\n");
     return TRUE;
 }
 
@@ -546,8 +599,12 @@ int main(int argc, char *argv[])
                      G_CALLBACK(change_cancel_ok_callback),
                      NULL);
 
-    // Setup the target device.
+    // Setup the target device. The device is assumed to be off when run.
     pt.setup();
+
+    // The buttons that execute assembly instructions must be disabled until
+    //  the calculator mode is changed to one of the operative ones.
+    mode_callback(NULL, (gpointer)CALC_MODE_OFF);
 
     GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
 
@@ -561,9 +618,26 @@ int main(int argc, char *argv[])
                      "key-release-event",
                      G_CALLBACK(lcd_key_pressed_event),
                      NULL);
-                     
-    calculator_mode = CALC_MODE_OFF;
+
     display_core_info();
+
+    g_log_set_handler(NULL,
+                      G_LOG_LEVEL_WARNING | G_LOG_FLAG_FATAL
+                                              | G_LOG_FLAG_RECURSION,
+                      abort_on_g_log,
+                      NULL);
+
+    g_log_set_handler("Gtk",
+                      G_LOG_LEVEL_CRITICAL | G_LOG_FLAG_FATAL
+                                             | G_LOG_FLAG_RECURSION,
+                      abort_on_g_log,
+                      NULL);
+
+    g_log_set_handler("GLib",
+                      G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL
+                                             | G_LOG_FLAG_RECURSION,
+                      abort_on_g_log,
+                      NULL);
     gtk_main();
     return 0;
 }

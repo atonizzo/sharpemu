@@ -1,5 +1,3 @@
-# SC61860 Emulator
-There is a bug in the emulator code. The easiest way to show it is to just type the BASIC command PI and press ENTER. The result should be the familiar 3.14... number but at the moment it is anything but. This points to a bug in the way one or more instructions are emulated. I have spent a considerable amount of time trying to find it out wihtout any success. While doing this I have isolated and commented the relevant OS portions for that command (label LBL154E in the cpu-1251.asm file is the spot when the actual BCD value is copied in memory.)
 # Display Handling
 The display RAM is used as a temporary storage during arithmetic operations. To prevent the display from diplaying garbage during operations the display should be turned off and while it is OFF no update should be done. Unfortunately I have not been able to find any datasheet for the LCD driver and so, with my limited understanding of how it works, the current code still displays garbage during calculations although it then settles on good data at the end.
 # Construction of the display During Startup
@@ -23,4 +21,9 @@ Sets a breakpoint that is hit when a give opcode, passed as argument, is exectut
 `I 0x00`
 ## i
 Same syntax as the 'i' command but the breakpoint is removed once it is hit the first time.
-
+# TODO
+A short list of the things that need some work:
+* Better handling of the LCD. Currently there is garbage that is printed out when computations are performed.
+* Remove flakiness of the keyboard
+* IO routines, to be able to store the content of memory. This is timing dependent and thus will have to use the cycle counter.
+* Implement the dialog box that changes the value of registers

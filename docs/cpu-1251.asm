@@ -3468,6 +3468,9 @@ LBL1558:            RTN
 
 ; This is the constant PI (3.14159265359) encoded in the internal BCD
 ; representation that is used by the code that interprets expressions.
+; Notice that this constant contains more digits than are printed. In the BCD
+;  representation of SHARP calculators the last 2 digits are used for
+;  computations but are rounded off before printing out the number.
 CONST_PI:           .db     0x00, 0x00, 0x31, 0x41, 0x59, 0x26, 0x53, 0x59
 
 LBL1561:            LIA     0x87
