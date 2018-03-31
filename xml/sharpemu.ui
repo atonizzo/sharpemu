@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.16.1 -->
+<!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.10"/>
   <object class="GtkWindow" id="lcd_window">
@@ -1902,11 +1902,12 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="label_reg_pc">
+                                  <object class="GtkLabel" id="label_reg_PC">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="halign">start</property>
                                     <property name="label" translatable="yes">1F6E</property>
+                                    <property name="selectable">True</property>
                                     <attributes>
                                       <attribute name="font-desc" value="Courier New Bold 12"/>
                                     </attributes>
@@ -1934,7 +1935,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="label_reg_dp">
+                                  <object class="GtkLabel" id="label_reg_DP">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="halign">start</property>
@@ -2225,7 +2226,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel" id="label_reg_cdp">
+                                  <object class="GtkLabel" id="label_reg_cDP">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="halign">start</property>
@@ -5095,7 +5096,7 @@
             <property name="can_focus">False</property>
             <property name="spacing">5</property>
             <child>
-              <object class="GtkLabel" id="label36">
+              <object class="GtkLabel" id="label_reg_change_name">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_left">5</property>

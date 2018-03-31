@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
+#include <sys/time.h>
 #include <sc61860_emu.h>
 
 #include <pc1251.h>
@@ -68,7 +70,7 @@ address_descriptor_t address_descriptors[] =
     {0x119A, "X <- $C7B0 (rambuf)"},
     {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
     {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
-    {0x11F1, "X <- [B, A - 1]"},        {0x11F5, "Y <- [B, A - 1]"},
+    {0x11F1, "X <- [B, A] - 1"},        {0x11F5, "Y <- [B, A] - 1"},
     {0x11F9, "Y <- 0xC7B0 (kbdbuf)"},   {0x1200, "[$1C, $1D] <- X"},
     {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> [$1C, $1D]"},
     {0x172B, "[B,A] <<= 1"},            {0x1731, "[B,A] >>= 1"},

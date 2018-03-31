@@ -6086,9 +6086,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A4B: D502                		ORID  $02
 6A4D: 784886              		CALL  MDL4886
 6A50: 37                  		RTN
-6A51: 0200      MDL6A51:  		LIA   $00
+6A51: 0200      MDL6A51:  		LIA   $00         
 6A53: 0320                		LIB   $20
-6A55: F1F1                		CAL   $11F1
+6A55: F1F1                		CAL   $11F1       ; X <- [B, A] - 1
 6A57: 78687D              		CALL  MDL687D
 6A5A: 3A0F                		JRCP  LBL6A6A
 6A5C: 102004              		LIDP  $2004

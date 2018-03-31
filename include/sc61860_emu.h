@@ -277,6 +277,9 @@ struct __breakpoint_event
     uint16_t attribute;
 };
 extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
+int set_breakpoint(uint16_t, uint16_t);
+int clear_breakpoint(uint16_t);
+int check_breakpoint(uint16_t);
 
 const sc61860_instr_t sc61860_instr[136];
 
@@ -379,6 +382,7 @@ void sim_not_implemented(void);
 void print_layout(void);
 void display_core_info(void);
 int32_t parse_hex(FILE *);
+void memory_view_startup(void);
 
 // Personality stuff.
 extern int personality;
@@ -410,9 +414,10 @@ extern GtkBuilder *builder;
 void write_status_bar(gchar *);
 int setup_emulator(void);
 extern GtkBuilder *builder;
-gboolean change_cancel_button_callback(GtkWidget *, gpointer);
-gboolean change_cancel_ok_callback(GtkWidget *, gpointer);
+gboolean change_cancel_callback(GtkWidget *, gpointer);
+gboolean change_ok_callback(GtkWidget *, gpointer);
 gboolean reg_i_key_press_callback(GtkWidget *, GdkEventButton *, gpointer);
+gboolean reg_pc_key_press_callback(GtkWidget *, GdkEventButton *, gpointer);
 
 static inline uint8_t read_mem(uint16_t address)
 {

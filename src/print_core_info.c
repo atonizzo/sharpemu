@@ -307,9 +307,10 @@ void display_core_info(void)
         print_scratchpad_reg(i);
 
     // PC
-    format = "<span foreground=\"black\">\%04X</span>";
-    markup = g_markup_printf_escaped(format, cpu_state.pc);
-    this_label = gtk_builder_get_object(builder, "label_reg_pc");
+    format = "<span foreground=\"black\">\%s</span>";
+    sprintf(label_text, "%04X", cpu_state.pc);
+    markup = g_markup_printf_escaped(format, label_text);
+    this_label = gtk_builder_get_object(builder, "label_reg_PC");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 
@@ -322,7 +323,7 @@ void display_core_info(void)
     else
         format = "<span foreground=\"black\">\%04X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.dp);
-    this_label = gtk_builder_get_object(builder, "label_reg_dp");
+    this_label = gtk_builder_get_object(builder, "label_reg_DP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 
@@ -335,7 +336,7 @@ void display_core_info(void)
     else
         format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, read_mem(cpu_state.dp));
-    this_label = gtk_builder_get_object(builder, "label_reg_cdp");
+    this_label = gtk_builder_get_object(builder, "label_reg_cDP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 

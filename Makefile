@@ -18,7 +18,7 @@ pc-1251: pc1251
 pc-1245: pc1245
 
 INCLUDE_DIRS     = -I./include
-CFLAGS           = $(DEPFLAGS) -g -c
+CFLAGS           = $(DEPFLAGS) -g -c -O0
 LDFLAGS          =
 
 GTKFLAGS = `pkg-config --cflags gtk+-3.0`

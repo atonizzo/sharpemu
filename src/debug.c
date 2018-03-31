@@ -27,6 +27,11 @@
 #include <string.h>
 #include <sc61860_emu.h>
 
+int debug_break(int a)
+{
+    return 0;
+}
+
 void dump_memory(uint16_t from, uint16_t length)
 {
     char buffer[128];

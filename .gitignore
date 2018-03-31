@@ -9,6 +9,7 @@ memaccess.txt
 instructions.txt
 out.txt
 instructions.txt
+events.dbg
 *.dbg
 *.*~
 .d/

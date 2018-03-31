@@ -567,22 +567,33 @@ int main(int argc, char *argv[])
     // Label callbacks.
     // -------------------------------------------------------------------------
     int i, j, k;
-    char image_id[64];
+    char label_name[64];
     for (i = 0; i < 12; i++)
     {
-        sprintf(image_id, "label_reg_%s", reg_to_str[i]);
-        this_object = gtk_builder_get_object(builder, image_id);
+        sprintf(label_name, "label_reg_%s", reg_to_str[i]);
+        this_object = gtk_builder_get_object(builder, label_name);
         g_signal_connect(G_OBJECT(this_object),
                          "button_press_event",
                          G_CALLBACK(reg_i_key_press_callback),
                          (gpointer)(uint64_t)i);
     }
+    __break__
+    this_object = gtk_builder_get_object(builder, "label_reg_PC");
+    g_signal_connect(G_OBJECT(this_object),
+                     "button_press_event",
+                     G_CALLBACK(reg_i_key_press_callback),
+                     (gpointer)(uint64_t)16);
+
+    this_object = gtk_builder_get_object(builder, "label_reg_DP");
+    g_signal_connect(G_OBJECT(this_object),
+                     "button_press_event",
+                     G_CALLBACK(reg_i_key_press_callback),
+                     (gpointer)(uint64_t)17);
 
     for (i = 0; i < DISASSEMBLY_LENGTH; i++)
     {
         // These are the labels in the disassembly window. When clicked a
         //  breakpoint at that address is toggled.
-        char label_name[64];
         sprintf(label_name, "label_disassembly_line%d", i);
         this_object = gtk_builder_get_object(builder, label_name);
         g_signal_connect(G_OBJECT(this_object),
@@ -602,12 +613,12 @@ int main(int argc, char *argv[])
     this_object = gtk_builder_get_object(builder, "change_cancel_button");
     g_signal_connect(G_OBJECT(this_object),
                      "clicked",
-                     G_CALLBACK(change_cancel_button_callback),
+                     G_CALLBACK(change_cancel_callback),
                      NULL);
     this_object = gtk_builder_get_object(builder, "change_OK_button");
     g_signal_connect(G_OBJECT(this_object),
                      "clicked",
-                     G_CALLBACK(change_cancel_ok_callback),
+                     G_CALLBACK(change_ok_callback),
                      NULL);
 
     // Setup the target device. The device is assumed to be off when run.
