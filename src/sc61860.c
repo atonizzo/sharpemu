@@ -60,39 +60,31 @@ void sim_not_implemented(void)
 
 static int16_t add_bcd(uint8_t a, uint8_t b, uint8_t carry)
 {
-    if ((a == 0) && (carry == 0))
-        return b;
-    if ((b == 0) && (carry == 0))
-        return a;
-    uint8_t tmp0 = (a & 0x0F) + (b & 0x0F) + carry;
-    carry = 0;
-    if (tmp0 > 9)
-        tmp0 += 6;
-    uint16_t result = (a & 0xF0) + (b & 0xF0) + tmp0;
+    uint16_t result = (a & 0x0F) + (b & 0x0F) + carry;
+    if (result > 9)
+        result += 6;
+    result += (a & 0xF0) + (b & 0xF0);
     if (result > 0x99)
-        result += 0x60;   // Automatically generates final carry.
+        result += 0x60;
     return result;
 }
 
 static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carry)
 {
-    if ((a == 0) && (carry == 0))
-        return b;
-    if ((b == 0) && (carry == 0))
-        return a;
-    printf("a:%02x b:%02x carry:=%d ", a, b, carry);
-    int16_t tmp = (a & 0x0f) - (b & 0x0f) - carry;
-    if (tmp < 0 )
+    if (b == 0)
     {
-        tmp += 10;
-        tmp += (a & 0xf0) - (b & 0xf0) - 0x10;
+        if (carry == 0)
+            return a;
+        else
+        {
+            b = 1;
+            carry = 0;
+        }    
     }
-    else
-        tmp += (a & 0xf0) - (b & 0xf0);
-    if (tmp < 0)
-        tmp = 0xa0 + 0x100;
-    printf("result: %02x\r\n", tmp);
-    return tmp;
+    b = 0x99 - b;       // 10s complement of b.
+    if (carry == 0)
+        b = add_bcd(b, 1, 0);
+    return add_bcd(a, b, 0) ^ 0x100;
 }
 
 void sim_arith(void)
@@ -241,7 +233,7 @@ void sim_bcd(void)
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0d:        // "sbn"  I -> d
                       //        repeat
@@ -249,24 +241,33 @@ void sim_bcd(void)
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
-        fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d);
         cpu_state.d = cpu_state.scratchpad.regs.i;
+        fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.scratchpad.regs.i);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         b = cpu_state.scratchpad.regs.a;
         cpu_state.flags.carry = 0;
         do
         {
+            fprintf(fp_memaccess,
+                    "    (p): %02x a: %02x carry: %d ",
+                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    b,
+                    cpu_state.flags.carry);
             tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                           b,
                           cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
             b = 0;
             cpu_state.flags.carry = (tmp > 0xFF);
+            fprintf(fp_memaccess, 
+                    "result: %02x carry: %d\r\n",
+                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    cpu_state.flags.carry);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0e:        // "adw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
@@ -286,7 +287,7 @@ void sim_bcd(void)
         }
         while (cpu_state.d != 0xff);
         cpu_state.q -= 1;
-        cpu_state.flags.zero = ((tmp & 0xFF) == 0);
+        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0f:        // "sbw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
@@ -295,18 +296,27 @@ void sim_bcd(void)
         cpu_state.flags.carry = 0;
         do
         {
+            fprintf(fp_memaccess,
+                    "    (p): %02x (q): %02x carry: %d ",
+                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    cpu_state.scratchpad.raw.mem[cpu_state.q],
+                    cpu_state.flags.carry);
             tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
                           cpu_state.scratchpad.raw.mem[cpu_state.q],
                           cpu_state.flags.carry);
             cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
             cpu_state.flags.carry = (tmp > 0xFF);
+            fprintf(fp_memaccess, 
+                    "result: %02x carry: %d\r\n",
+                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    cpu_state.flags.carry);
             cpu_state.p -= 1;
             cpu_state.q -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
         cpu_state.q -= 1;
-        cpu_state.flags.zero = ((tmp & 0xFF) == 0);
+        cpu_state.flags.zero = (tmp == 0);
         break;
     default:
         sim_not_implemented();

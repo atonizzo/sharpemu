@@ -389,6 +389,7 @@ int main(int argc, char *argv[])
     int c;
     diag_level = 0;
     user_file_name[0] = '\0';
+    
     while ((c = getopt (argc, argv, "f:ir")) != -1)
     {
         switch (c)
@@ -577,7 +578,6 @@ int main(int argc, char *argv[])
                          G_CALLBACK(reg_i_key_press_callback),
                          (gpointer)(uint64_t)i);
     }
-    __break__
     this_object = gtk_builder_get_object(builder, "label_reg_PC");
     g_signal_connect(G_OBJECT(this_object),
                      "button_press_event",

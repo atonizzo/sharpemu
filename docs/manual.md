@@ -21,6 +21,12 @@ Sets a breakpoint that is hit when a give opcode, passed as argument, is exectut
 `I 0x00`
 ## i
 Same syntax as the 'i' command but the breakpoint is removed once it is hit the first time.
+## S
+Sets the content of any memory location in the scratchpad memory.
+
+`S:0x20:10`
+
+The contents of scratchpad memory 0x20 are set to 10.
 # TODO
 A short list of the things that need some work:
 * Better handling of the LCD. Currently there is garbage that is printed out when computations are performed.

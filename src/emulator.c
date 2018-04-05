@@ -140,6 +140,23 @@ int setup_emulator(void)
         fclose(fp_user_file);
     }
 
+    // Provide a default value to the CPU registers before reading the
+    //  events file, so that these values can be redefined by the user.
+    cpu_state.scratchpad.regs.i  = DEFAULT_I_VALUE;
+    cpu_state.scratchpad.regs.j  = DEFAULT_J_VALUE;
+    cpu_state.scratchpad.regs.a  = DEFAULT_A_VALUE;
+    cpu_state.scratchpad.regs.b  = DEFAULT_B_VALUE;
+    cpu_state.scratchpad.regs.xreg.x = DEFAULT_X_VALUE;
+    cpu_state.scratchpad.regs.yreg.y = DEFAULT_Y_VALUE;
+    cpu_state.scratchpad.regs.k  = DEFAULT_K_VALUE;
+    cpu_state.scratchpad.regs.l  = DEFAULT_L_VALUE;
+    cpu_state.scratchpad.regs.m  = DEFAULT_M_VALUE;
+    cpu_state.scratchpad.regs.n  = DEFAULT_N_VALUE;
+    cpu_state.r                  = DEFAULT_R_VALUE;
+    cpu_state.p                  = DEFAULT_P_VALUE;
+    cpu_state.q                  = DEFAULT_Q_VALUE;
+    cpu_state.pc                 = DEFAULT_PC_VALUE;
+
     FILE *fp_events = fopen("events.dbg", "r");
     if (fp_events != NULL)
     {
@@ -208,6 +225,28 @@ int setup_emulator(void)
                         set_breakpoint(address, BREAKPOINT_ATTRIB_INSTRUCTION);
                 }
                 break;
+            // S is a a value for one of the scratchpad memory locations.
+            // The format is S:AA:BB where AA is the register number (<96)
+            //  and BB is the new content.
+            case 'S':
+            case 's':
+                if (event_descriptor[1] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                char *next_ptr;
+
+                uint32_t address =
+                          (uint32_t)strtol(&event_descriptor[2], &next_ptr, 0);
+                if (next_ptr[0] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                uint32_t value = (uint32_t)strtol(&next_ptr[1], NULL, 0);
+                cpu_state.scratchpad.raw.mem[address] = value;
+                break;
             default:
                 break;
             }
@@ -216,20 +255,6 @@ int setup_emulator(void)
         fclose(fp_events);
     }
 
-    cpu_state.scratchpad.regs.i  = DEFAULT_I_VALUE;
-    cpu_state.scratchpad.regs.j  = DEFAULT_J_VALUE;
-    cpu_state.scratchpad.regs.a  = DEFAULT_A_VALUE;
-    cpu_state.scratchpad.regs.b  = DEFAULT_B_VALUE;
-    cpu_state.scratchpad.regs.xreg.x = DEFAULT_X_VALUE;
-    cpu_state.scratchpad.regs.yreg.y = DEFAULT_Y_VALUE;
-    cpu_state.scratchpad.regs.k  = DEFAULT_K_VALUE;
-    cpu_state.scratchpad.regs.l  = DEFAULT_L_VALUE;
-    cpu_state.scratchpad.regs.m  = DEFAULT_M_VALUE;
-    cpu_state.scratchpad.regs.n  = DEFAULT_N_VALUE;
-    cpu_state.r                  = DEFAULT_R_VALUE;
-    cpu_state.p                  = DEFAULT_P_VALUE;
-    cpu_state.q                  = DEFAULT_Q_VALUE;
-    cpu_state.pc                 = DEFAULT_PC_VALUE;
     gettimeofday(&timeval_start, NULL);
     write_mem(0xF8BA, 0xFF);
     write_mem(0xC6E9, 0xFF);

@@ -35,8 +35,8 @@ typedef struct
     char *text;
 } label_layout_t;
 
-int break_here(int);
-#define __break__                       break_here(3);
+int debug_break(int);
+#define __break__                       debug_break(3);
 
 // Diagnostic infrastructucture.
 extern uint32_t diag_level;
