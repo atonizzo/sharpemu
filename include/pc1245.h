@@ -27,12 +27,7 @@
 #define __PC1245_H__
 
 #define LCD_CHARACTER_ROWS              1
-#define LCD_CHARACTER_PER_ROW           16
-#define LCD_COLUMNS_PER_CHARACTER       5
-#define LCD_PIXEL_PER_COLUMN            7
-
-extern GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
-                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXEL_PER_COLUMN];
+#define LCD_CHARACTERS_PER_ROW          16
 
 #define LCD_LABEL_DEF                   0
 #define LCD_LABEL_PRO                   1
@@ -45,6 +40,11 @@ extern GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
 #define LCD_LABEL_SHIFT                 9
 #define LCD_LABEL_E                     14
 
+#define NUMBER_OF_SC43536               1
+#define SC43536_BASE_ADDRESS            0xF800
+
 extern label_layout_t lcd_labels[15];
+
+#include <lcd.h>
 
 #endif

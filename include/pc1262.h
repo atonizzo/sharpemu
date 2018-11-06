@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -23,31 +23,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PC1251_H__
-#define __PC1251_H__
+#ifndef __PC1262_H__
+#define __PC1262_H__
 
-#define LCD_CHARACTER_ROWS              1
-#define LCD_CHARACTERS_PER_ROW          24
-#define LCD_COLUMNS_PER_CHARACTER       5
-#define LCD_PIXELS_PER_COLUMN           7
+#define LCD_CHARACTER_ROWS              2
+#define LCD_CHARACTER_PER_ROW           24
 
-#define LCD_LABEL_DEF                   0
-#define LCD_LABEL_PRO                   1
-#define LCD_LABEL_RUN                   2
-#define LCD_LABEL_RESERVE               3
-#define LCD_LABEL_DE                    4
-#define LCD_LABEL_GRAD                  5
-#define LCD_LABEL_P                     6
-#define LCD_LABEL_BUSY                  7
-#define LCD_LABEL_SHIFT                 9
-#define LCD_LABEL_E                     14
+// More RAM can be arbitrarily added by decreasing the first of these two
+//  numbers. The MEM command will reflect the increase.
+#define RAM_LENGTH                      0x2800
+#define RAM_BASE_ADDRESS                (0x6800-RAM_LENGTH)
 
-#define NUMBER_OF_SC43536               1
-#define SC43536_BASE_ADDRESS            0xF800
+#define NUMBER_OF_SC43536               2
+#define SC43536_BASE_ADDRESS_0          0x2000
+#define SC43536_BASE_ADDRESS_1          0x2800
+
+//#include <pc12xx.h>
+//#include <sc43536.h>
 
 extern label_layout_t lcd_labels[15];
-
-#include <lcd.h>
-
+extern label_descriptor_t label_descriptor[];
 #endif
-

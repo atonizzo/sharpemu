@@ -2,6 +2,12 @@
 <!-- Generated with glade 3.20.0 -->
 <interface>
   <requires lib="gtk+" version="3.10"/>
+  <object class="GtkWindow">
+    <property name="can_focus">False</property>
+    <child>
+      <placeholder/>
+    </child>
+  </object>
   <object class="GtkWindow" id="lcd_window">
     <property name="can_focus">False</property>
     <child>
@@ -175,7 +181,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">OFF</property>
-                        <accelerator key="F10" signal="activate"/>
+                        <accelerator key="F9" signal="activate"/>
                       </object>
                     </child>
                     <child>
@@ -183,7 +189,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">RUN</property>
-                        <accelerator key="F11" signal="activate"/>
+                        <accelerator key="F10" signal="activate"/>
                       </object>
                     </child>
                     <child>
@@ -199,7 +205,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">RSV</property>
-                        <accelerator key="F11" signal="activate"/>
+                        <accelerator key="F12" signal="activate"/>
                       </object>
                     </child>
                   </object>
@@ -1654,8 +1660,8 @@
                                   <object class="GtkLabel" id="label4">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="halign">end</property>
-                                    <property name="label" translatable="yes">I: $</property>
+                                    <property name="halign">start</property>
+                                    <property name="label" translatable="yes">   I:$</property>
                                     <attributes>
                                       <attribute name="font-desc" value="Courier New Bold 12"/>
                                     </attributes>
@@ -1732,8 +1738,8 @@
                                   <object class="GtkLabel" id="label5">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="halign">end</property>
-                                    <property name="label" translatable="yes">Xl: $</property>
+                                    <property name="halign">start</property>
+                                    <property name="label" translatable="yes">  Xl:$</property>
                                     <property name="selectable">True</property>
                                     <attributes>
                                       <attribute name="font-desc" value="Courier New Bold 12"/>
@@ -1811,8 +1817,8 @@
                                   <object class="GtkLabel" id="label6">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="halign">end</property>
-                                    <property name="label" translatable="yes">K: $</property>
+                                    <property name="halign">start</property>
+                                    <property name="label" translatable="yes">   K:$</property>
                                     <attributes>
                                       <attribute name="font-desc" value="Courier New Bold 12"/>
                                     </attributes>
@@ -1889,8 +1895,8 @@
                                   <object class="GtkLabel" id="label7">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="halign">end</property>
-                                    <property name="label" translatable="yes">PC: $</property>
+                                    <property name="halign">start</property>
+                                    <property name="label" translatable="yes">  PC:$</property>
                                     <attributes>
                                       <attribute name="font-desc" value="Courier New Bold 12"/>
                                     </attributes>
@@ -2330,6 +2336,208 @@
           </packing>
         </child>
         <child>
+          <object class="GtkBox" id="box69">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkLabel" id="label43">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">BCD Registers</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox" id="box70">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="homogeneous">True</property>
+                <child>
+                  <object class="GtkBox" id="box71">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkLabel" id="label44">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">XReg : </property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label_reg_XReg">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="valign">start</property>
+                        <property name="label" translatable="yes">0</property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label46">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">YReg : </property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label_reg_YReg">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="valign">start</property>
+                        <property name="label" translatable="yes">0</property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox" id="box72">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkLabel" id="label45">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">ZReg : </property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label_reg_ZReg">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="label" translatable="yes">0</property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label47">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">WReg : </property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label_reg_WReg">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">start</property>
+                        <property name="label" translatable="yes">0</property>
+                        <attributes>
+                          <attribute name="font-desc" value="Courier New Bold 12"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">6</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator" id="reg_2_io_separator1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">7</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkBox" id="IOPortsFlagsBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -2670,7 +2878,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">6</property>
+            <property name="position">8</property>
           </packing>
         </child>
         <child>
@@ -2681,7 +2889,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">7</property>
+            <property name="position">9</property>
           </packing>
         </child>
         <child>
@@ -4309,7 +4517,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">8</property>
+            <property name="position">10</property>
           </packing>
         </child>
         <child>
@@ -4320,7 +4528,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">9</property>
+            <property name="position">11</property>
           </packing>
         </child>
         <child>
@@ -4364,7 +4572,7 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">10</property>
+            <property name="position">12</property>
           </packing>
         </child>
       </object>
@@ -4405,6 +4613,7 @@
                 <property name="can_focus">True</property>
                 <property name="input_purpose">alpha</property>
                 <property name="climb_rate">16</property>
+                <property name="wrap">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>

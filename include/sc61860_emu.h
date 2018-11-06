@@ -35,6 +35,13 @@ typedef struct
     char *text;
 } label_layout_t;
 
+typedef struct
+{
+    uint16_t address;
+    label_layout_t labels[8];
+} label_descriptor_t;
+extern label_descriptor_t label_descriptor[];
+
 int debug_break(int);
 #define __break__                       debug_break(3);
 
@@ -273,7 +280,9 @@ extern struct __disassembly_buffer disassembly_buffer;
 
 struct __breakpoint_event
 {
-    uint16_t pc;
+    // Can be an address or an opcode.
+    uint16_t address;
+    uint16_t data;
     uint16_t attribute;
 };
 extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
@@ -287,7 +296,7 @@ const sc61860_instr_t sc61860_instr[136];
 //  useful to assign them a specific value in case we want to test our own
 //  routines.
 #define DEFAULT_I_VALUE                 0
-#define DEFAULT_J_VALUE                 1
+#define DEFAULT_J_VALUE                 0
 #define DEFAULT_A_VALUE                 0
 #define DEFAULT_B_VALUE                 0
 #define DEFAULT_X_VALUE                 0
@@ -404,9 +413,12 @@ extern address_descriptor_t address_descriptors[];
 void print_mem_view(void);
 extern uint16_t mem_view_start_address;
 
-// LCD.
-extern uint8_t lcd_status[0x7C];
-void lcd_paint(void);
+struct
+{
+    uint16_t  id;
+    uint8_t   kbd;
+    uint8_t   count;
+} keyboard_count;
 
 // GTK+
 extern char user_file_name[128];

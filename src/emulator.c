@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,6 @@ char user_file_name[128];
 static int load_roms(void)
 {
     FILE *fp_rom;
-    int i;
     // We need to load the internal ROM (internal to the sc61860) and
     //  the external one, which usually sits on an external ROM chip.
     fp_rom = fopen(pt.irom.file_name, "rb");
@@ -67,7 +66,7 @@ static int load_roms(void)
     while (mem_address < pt.irom.base_address + file_size);
     fclose(fp_rom);
 
-    // This is the external ROM, contoaning the BASIC interpreter.
+    // This is the external ROM, containing the BASIC interpreter.
     fp_rom = fopen(pt.erom.file_name, "rb");
     if (fp_rom == NULL)
     {
@@ -88,12 +87,11 @@ static int load_roms(void)
     }
     while (mem_address < pt.erom.base_address + file_size);
     fclose(fp_rom);
-    return i;
+    return 0;
 }
 
 int setup_emulator(void)
 {
-    char model_name[128];
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
     memset((void *)&cpu_state_past, '\0', sizeof(cpu_state));
     memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
@@ -186,8 +184,8 @@ int setup_emulator(void)
                 if ((event_descriptor[2] == '0') &&
                                               (event_descriptor[3] == 'x'))
                 {
-                    uint32_t address =
-                          (uint32_t)strtol(&event_descriptor[2], NULL, 0);
+                    uint16_t address =
+                          (uint16_t)strtol(&event_descriptor[2], NULL, 0);
                     if (address >= 0x10000)
                         break;
                     if (event_descriptor[0] == 'i')
@@ -213,16 +211,15 @@ int setup_emulator(void)
                 if ((event_descriptor[2] == '0') &&
                                               (event_descriptor[3] == 'x'))
                 {
-                    uint32_t address =
-                          (uint32_t)strtol(&event_descriptor[2], NULL, 0);
-                    if (address >= 0x10000)
-                        break;
+                    uint8_t instruction =
+                          (uint8_t)strtol(&event_descriptor[2], NULL, 0);
                     if (event_descriptor[0] == 'i')
-                        set_breakpoint(address,
+                        set_breakpoint(instruction,
                                        BREAKPOINT_ATTRIB_INSTRUCTION |
                                        BREAKPOINT_ATTRIB_TEMPORARY);
                     else
-                        set_breakpoint(address, BREAKPOINT_ATTRIB_INSTRUCTION);
+                        set_breakpoint(instruction,
+                                       BREAKPOINT_ATTRIB_INSTRUCTION);
                 }
                 break;
             // S is a a value for one of the scratchpad memory locations.

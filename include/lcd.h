@@ -23,31 +23,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __PC1251_H__
-#define __PC1251_H__
+#ifndef __LCD_H__
+#define __LCD_H__
 
-#define LCD_CHARACTER_ROWS              1
-#define LCD_CHARACTERS_PER_ROW          24
 #define LCD_COLUMNS_PER_CHARACTER       5
 #define LCD_PIXELS_PER_COLUMN           7
 
-#define LCD_LABEL_DEF                   0
-#define LCD_LABEL_PRO                   1
-#define LCD_LABEL_RUN                   2
-#define LCD_LABEL_RESERVE               3
-#define LCD_LABEL_DE                    4
-#define LCD_LABEL_GRAD                  5
-#define LCD_LABEL_P                     6
-#define LCD_LABEL_BUSY                  7
-#define LCD_LABEL_SHIFT                 9
-#define LCD_LABEL_E                     14
+extern GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
+                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
 
-#define NUMBER_OF_SC43536               1
-#define SC43536_BASE_ADDRESS            0xF800
+void write_lcd(uint16_t, uint16_t, uint8_t);
+void lcd_off(void);
+void sc43536_service(uint16_t, uint16_t, uint16_t, uint8_t);
+GtkWidget *lcd_build_display(void);
 
-extern label_layout_t lcd_labels[15];
+extern GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
+                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
+extern uint8_t lcd_status[LCD_CHARACTER_ROWS][0x7C];
 
-#include <lcd.h>
+extern uint16_t sc43536_base_address[];
 
 #endif
-

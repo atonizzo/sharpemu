@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,12 +46,12 @@ char sharp_char_map[] =
     'X', 'Y', 'Z', '.', '.', '.', '.', '.',
 };
 
-static gboolean memory_view_scrollbar_adjust(GtkRange *range,
+/*static gboolean memory_view_scrollbar_adjust(GtkRange *range,
                                              gdouble   value,
                                              gpointer  user_data )
 {
     g_print("adjust\r\n");
-}
+}*/
 
 static gboolean memory_view_spinbutton_change(GtkRange      *range,
                                              GtkScrollType  scroll,
@@ -59,16 +59,16 @@ static gboolean memory_view_spinbutton_change(GtkRange      *range,
                                              gpointer       user_data )
 {
     g_print("change\r\n");
+    return 0;
 }
 
-static gboolean memory_view_spinbutton_value(GtkRange        *range,
+/*static gboolean memory_view_spinbutton_value(GtkRange        *range,
                                              GtkScrollType  step,
                                              gpointer       user_data )
 {
     g_print("move\r\n");
-}
-
-
+    return 0;
+}*/
 
 static gboolean memory_view_spinbutton_clicked(GtkSpinButton *range,
                                                gpointer       user_data )
@@ -76,12 +76,12 @@ static gboolean memory_view_spinbutton_clicked(GtkSpinButton *range,
     GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
     mem_view_start_address = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));
     print_mem_view();
+    return 0;
 }
 
 void print_mem_view(void)
 {
     char label_content[2048];
-    char *format, *markup;
     int i, j;
     for (i = 0; i < MEM_VIEW_ROWS; i++)
     {
@@ -160,23 +160,16 @@ void print_mem_view(void)
 
 void memory_view_startup(void)
 {
-/*    GtkWidget *window;
-    GtkWidget *label;
-    GtkWidget *grid;
-    GtkWidget *spin_button;
-    adjustment;*/
-
     GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
 
     // Create an adjustment representing an adjustable bounded value
-    GtkAdjustment *adjustment = gtk_adjustment_new (0, 0, 65535, 256, 0, 0);
+    GtkAdjustment *adjustment = gtk_adjustment_new(0, 0, 65535, 256, 0, 0);
     gtk_spin_button_set_adjustment(GTK_SPIN_BUTTON(object), adjustment);
 
     // Create a spin button that is to be as wide as possible
     //spin_button = gtk_spin_button_new (adjustment, 1, 0);
     //  gtk_widget_set_hexpand (spin_button, TRUE);
 
-//    gtk_spin_button_set_range(GTK_SPINBUTTON(object), 0, 65535);
     g_signal_connect(G_OBJECT(object),
                      "change-value",
                      G_CALLBACK(memory_view_spinbutton_change),

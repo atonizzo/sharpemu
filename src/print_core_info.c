@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -90,11 +90,69 @@ static void print_scratchpad_reg(uint16_t reg)
     g_free(markup);
 }
 
+static void print_bcd_reg(uint16_t reg, char *s)
+{
+    // XReg
+    int i;
+    int k = 0x10 + reg * 8;
+    char label_text[128];
+    char *markup;
+    for (i = k; i < k + 8; i++)
+        if (((cpu_state.scratchpad.raw.mem[i] & 0xF0) > 0x90) ||
+            ((cpu_state.scratchpad.raw.mem[i] & 0x0F) > 0x09))
+        {    
+            markup = g_markup_printf_escaped("NaN");
+            GObject *this_label = gtk_builder_get_object(builder, s);
+            gtk_label_set_markup(GTK_LABEL(this_label), markup);
+            g_free(markup);
+            return;
+        }    
+
+    for (i = k; i < k + 8; i++)
+        if (cpu_state.scratchpad.raw.mem[i] !=
+                                        cpu_state_past.scratchpad.raw.mem[i])
+            break;
+    if (i < 8)
+    {
+        strcpy(label_text, "<span foreground=\"red\">");
+        for (i = k; i < k + 8; i++)
+            cpu_state_past.scratchpad.raw.mem[i] =
+                                                cpu_state.scratchpad.raw.mem[i];
+    }
+    else
+        strcpy(label_text, "<span foreground=\"black\">");
+
+    if ((cpu_state_past.scratchpad.raw.mem[k + 1] & 0x0F) != 0)
+        strcat(label_text, "-");
+
+    int16_t exp = ((cpu_state.scratchpad.raw.mem[k] & 0xF0) >> 4) * 100 +
+                   (cpu_state.scratchpad.raw.mem[k] & 0x0F) * 10 +
+                   ((cpu_state.scratchpad.raw.mem[k+1] & 0xF0) >> 4);
+    if (exp > 500)
+        exp = -(1000 - exp);
+
+    strcat(label_text, "%c.%c%c%c%c%c%c%c%c%cE%d</span>");
+    markup = g_markup_printf_escaped(label_text,
+                    ((cpu_state.scratchpad.raw.mem[k + 2] & 0xF0) >> 4) + '0',
+                    (cpu_state.scratchpad.raw.mem[k + 2] & 0x0F) + '0',
+                    ((cpu_state.scratchpad.raw.mem[k + 3] & 0xF0) >> 4) + '0',
+                    (cpu_state.scratchpad.raw.mem[k + 3] & 0x0F) + '0',
+                    ((cpu_state.scratchpad.raw.mem[k + 4] & 0xF0) >> 4) + '0',
+                    (cpu_state.scratchpad.raw.mem[k + 4] & 0x0F) + '0',
+                    ((cpu_state.scratchpad.raw.mem[k + 5] & 0xF0) >> 4) + '0',
+                    (cpu_state.scratchpad.raw.mem[k + 5] & 0x0F) + '0',
+                    ((cpu_state.scratchpad.raw.mem[k + 6] & 0xF0) >> 4) + '0',
+                    (cpu_state.scratchpad.raw.mem[k + 6] & 0x0F) + '0',
+                    exp);
+    GObject *this_label = gtk_builder_get_object(builder, s);
+    gtk_label_set_markup(GTK_LABEL(this_label), markup);
+    g_free(markup);
+}
+
 void display_core_info(void)
 {
     int i;
     uint16_t this_pc;
-    char printout_line[128];
     char label_text[128];
     char *format;
     char *markup;
@@ -264,6 +322,10 @@ void display_core_info(void)
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
                 reg_to_str[cpu_state.p]);
+    else            
+        sprintf(label_text + strlen(label_text),
+                " (0x%02X)",
+                cpu_state.scratchpad.raw.mem[cpu_state.p]);
     if ((cpu_state.p >= PORTA_OFFSET) && (cpu_state.p <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
@@ -286,6 +348,10 @@ void display_core_info(void)
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
                 reg_to_str[cpu_state.q]);
+    else            
+        sprintf(label_text + strlen(label_text),
+                " (0x%02X)",
+                cpu_state.scratchpad.raw.mem[cpu_state.p]);
     if ((cpu_state.q >= PORTA_OFFSET) && (cpu_state.q <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
@@ -431,6 +497,11 @@ void display_core_info(void)
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 
+    print_bcd_reg(0, "label_reg_XReg");
+    print_bcd_reg(1, "label_reg_YReg");
+    print_bcd_reg(2, "label_reg_ZReg");
+    print_bcd_reg(3, "label_reg_WReg");
+
     for (i = 0; i < sizeof(cpu_state.scratchpad); i++)
     {
         sprintf(label_name, "label_scratchpad_%d", i);
@@ -461,8 +532,4 @@ void display_core_info(void)
     }
 
     print_mem_view();
-
-/*    memcpy(&cpu_state_past,
-           &cpu_state,
-           sizeof(cpu_state_past));*/
 }

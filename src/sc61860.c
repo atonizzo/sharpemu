@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -444,7 +444,6 @@ void sim_cal(void)
 void sim_carry(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint8_t tmp;
     switch (instruction)
     {
     case 0xd0:        // "sc"
@@ -583,7 +582,6 @@ void sim_fil(void)
 void sim_incdec(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint16_t tmp;
     switch (instruction)
     {
     case 0x40:          // "inci"
@@ -942,16 +940,18 @@ void sim_lr(void)
         cpu_state.scratchpad.regs.a = cpu_state.r;
         cpu_state.cycles += 4;
         break;
-    case 0x23:      // "ra"
+    case 0x23:      // "clra"
         cpu_state.scratchpad.regs.a = 0;
         cpu_state.cycles += 4;
         break;
-    case 0x54:      // "readm"
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.pc + 1);
+    case 0x54:      // "mvmp"
+        cpu_state.pc += 1;
+        cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.pc);
         cpu_state.cycles += 3;
         break;
     case 0x56:      // "read"
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.pc + 1);
+        cpu_state.pc += 1;
+        cpu_state.scratchpad.regs.a = read_mem(cpu_state.pc);
         cpu_state.cycles += 3;
         break;
     case 0x57:      // "ldd"
@@ -1009,7 +1009,6 @@ void sim_lp(void)
 void sim_mv(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    int i;
     switch (instruction)
     {
     case 0x08:      // "mvw"
@@ -1158,7 +1157,6 @@ void sim_mv(void)
 void sim_nop(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint16_t tmp;
     switch (instruction)
     {
     case 0x4d:          // "nopw"
@@ -1186,20 +1184,16 @@ void sim_shift(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
     uint16_t tmp;
-    uint8_t shift_in_nibble = 0, a, b;
-    uint16_t t;
     switch (instruction)
     {
     case 0x1c:          // "srw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
-        t = cpu_state.p;
         cpu_state.cycles += 5 + cpu_state.d;
+        tmp = 0;
         do
         {
-            a = cpu_state.scratchpad.raw.mem[cpu_state.p] >> 4;
-            b = cpu_state.scratchpad.raw.mem[cpu_state.p] & 0x0F;
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = a | shift_in_nibble;
-            shift_in_nibble = b;
+            tmp = (tmp << 8) | cpu_state.scratchpad.raw.mem[cpu_state.p];
+            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp >> 4;
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.d -= 1;
@@ -1208,14 +1202,12 @@ void sim_shift(void)
         break;
     case 0x1d:          // "slw"
         cpu_state.d = cpu_state.scratchpad.regs.i;
-        t = cpu_state.p;
         cpu_state.cycles += 5 + cpu_state.d;
+        tmp = 0;
         do
         {
-            a = cpu_state.scratchpad.raw.mem[cpu_state.p] >> 4;
-            b = cpu_state.scratchpad.raw.mem[cpu_state.p] & 0x0F;
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = (b << 4) | shift_in_nibble;
-            shift_in_nibble = a;
+            tmp = (tmp >> 8) | (cpu_state.scratchpad.raw.mem[cpu_state.p] << 8);
+            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp >> 4;
             cpu_state.p -= 1;
             cpu_state.p &= 0x7F;
             cpu_state.d -= 1;
@@ -1270,7 +1262,6 @@ void sim_stack(void)
 void sim_store(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint16_t tmp;
     switch (instruction)
     {
     case 0x30:          // "stp"
@@ -1388,7 +1379,6 @@ void sim_wait(void)
 void sim_xy(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint16_t x, y;
     switch (instruction)
     {
     case 0x04:      // "ix"
@@ -1608,7 +1598,7 @@ static size_t print_instruction(uint16_t address,
                                 uint32_t index,
                                 char *p)
 {
-    uint8_t operand0, operand1, operand2;
+    uint8_t operand0, operand1;
     uint16_t target_address;
 
     int32_t imm;
@@ -1695,7 +1685,7 @@ static size_t print_instruction(uint16_t address,
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
-                operand1,
+                operand0,
                 sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p), "$%04X", address + operand0 + 1);
@@ -1705,7 +1695,7 @@ static size_t print_instruction(uint16_t address,
         sprintf(p,
                 "%02X %02X        %s",
                 instruction,
-                operand1,
+                operand0,
                 sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p), "$%04X", address - operand0 + 1);

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2018, atonizzo@hotmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,47 +26,21 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
+#include <sys/time.h>
 #include <sc61860_emu.h>
 
+#include <pc12xx.h>
 #include <pc1245.h>
 
 GtkWidget *lcd_label_box;
-GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]
-                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXEL_PER_COLUMN];
-
-// We are going to name these indexes from A1 through A8 and from B1 to B3
-//  to be consistent to the naming convention in the manual
-#define KEYBOARD_PORT_INDEX_A1         0
-#define KEYBOARD_PORT_INDEX_A2         1
-#define KEYBOARD_PORT_INDEX_A3         2
-#define KEYBOARD_PORT_INDEX_A4         3
-#define KEYBOARD_PORT_INDEX_A5         4
-#define KEYBOARD_PORT_INDEX_A6         5
-#define KEYBOARD_PORT_INDEX_A7         6
-#define KEYBOARD_PORT_INDEX_A8         7
-#define KEYBOARD_PORT_INDEX_B1         8
-#define KEYBOARD_PORT_INDEX_B2         9
-#define KEYBOARD_PORT_INDEX_B3         10
-#define KEYBOARD_PORT_BIT_A1           (1 << 0)
-#define KEYBOARD_PORT_BIT_A2           (1 << 1)
-#define KEYBOARD_PORT_BIT_A3           (1 << 2)
-#define KEYBOARD_PORT_BIT_A4           (1 << 3)
-#define KEYBOARD_PORT_BIT_A5           (1 << 4)
-#define KEYBOARD_PORT_BIT_A6           (1 << 5)
-#define KEYBOARD_PORT_BIT_A7           (1 << 6)
-#define KEYBOARD_PORT_BIT_A8           (1 << 7)
+GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
+                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
 
 address_descriptor_t address_descriptors[] =
 {
     {0, 0}
 };
-
-struct
-{
-    uint16_t  id;
-    uint8_t   kbd;
-    uint8_t   count;
-} keyboard_count;
 
 uint8_t porta_kbd[] =
 {
@@ -87,98 +61,6 @@ label_layout_t lcd_labels[15] =
     {0, 0},     {0, "SHIFT"}, {0, 0},     {0, 0},
     {0, 0},     {0, 0},       {0, "E"}
 };
-
-static GtkWidget *lcd_create_column(unsigned int character, unsigned int column)
-{
-    int i;
-    char widget_name[64];
-    char path_name[512];
-
-    // Create a new vbox to hold a single column of pixels.
-    GtkWidget *lcd_column_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-    // Each column is made up of 7 pixels. Every 5 pixels there is a spacer
-    //  column.
-    for (i = 0; i < LCD_PIXEL_PER_COLUMN; i++)
-    {
-        GtkWidget *this_image =
-                         gtk_image_new_from_file("./pixmaps/lcd_pixel_off.jpg");
-        g_assert(this_image != NULL);
-        gtk_widget_show(this_image);
-        gtk_box_pack_start(GTK_BOX(lcd_column_box),
-                           this_image,
-                           TRUE,
-                           TRUE,
-                           1);
-        lcd_display[0][character][column][i] = this_image;
-    }
-    gtk_widget_show(lcd_column_box);
-    return lcd_column_box;
-}
-
-static GtkWidget *lcd_create_spacer(void)
-{
-    int i;
-    char widget_name[64];
-    char path_name[512];
-
-    // Create a new vbox to hold a single column of pixels.
-    GtkWidget *lcd_spacer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-
-    // Each column is made up of 7 pixels.
-    for (i = 0; i < LCD_PIXEL_PER_COLUMN; i++)
-    {
-        GtkWidget *this_image =
-                  gtk_image_new_from_file("./pixmaps/digit_separator.jpg");
-        g_assert(this_image != NULL);
-        gtk_widget_show(this_image);
-        gtk_box_pack_start(GTK_BOX(lcd_spacer_box),
-                           this_image,
-                           TRUE,
-                           TRUE,
-                           1);
-    }
-    gtk_widget_show(lcd_spacer_box);
-    return lcd_spacer_box;
-}
-
-static GtkWidget *lcd_build_display(void)
-{
-    int i, j;
-
-    // Create a new hbox to hold the 24 LCD characters.
-    GtkWidget *lcd_char_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-
-    // Each character in the LCD is made up of 5 columns of pixels, each
-    //  7 pixel in height, followed by a separator column.
-    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)
-    {
-        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)
-        {
-            GtkWidget *this_column = lcd_create_column(i, j);
-            gtk_box_pack_start(GTK_BOX(lcd_char_box),
-                               this_column,
-                               TRUE,
-                               TRUE,
-                               1);
-        }
-
-        // There is a spacer between each character.
-        GtkWidget *this_column = lcd_create_spacer();
-        gtk_box_pack_start(GTK_BOX(lcd_char_box),
-                           this_column,
-                           TRUE,
-                           TRUE,
-                           1);
-    }
-    gtk_widget_show(GTK_WIDGET(lcd_char_box));
-    return lcd_char_box;
-}
-
-static void lcd_setup(void)
-{
-    memset(lcd_status, '\0', sizeof(lcd_status));
-}
 
 static void lcd_service(uint16_t address, uint8_t data)
 {
@@ -229,7 +111,7 @@ static void lcd_service(uint16_t address, uint8_t data)
         ASSERT_NE(this_label, NULL);
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
-        lcd_status[0x3C] = data;
+        lcd_status[0][0x3C] = data;
         return;
     }
 
@@ -277,7 +159,7 @@ static void lcd_service(uint16_t address, uint8_t data)
         ASSERT_NE(this_label, NULL);
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
-        lcd_status[0x3D] = data;
+        lcd_status[0][0x3D] = data;
         return;
     }
 
@@ -312,7 +194,7 @@ static void lcd_service(uint16_t address, uint8_t data)
         ASSERT_NE(this_label, NULL);
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
-        lcd_status[0x3E] = data;
+        lcd_status[0][0x3E] = data;
         return;
     }
 
@@ -325,7 +207,6 @@ static void lcd_service(uint16_t address, uint8_t data)
         else
             column_number = 0xF87B - address + 60;
         int i;
-        char image_name[32];
         char *file_name;
         for (i = 0; i < 7; i++)
         {
@@ -339,21 +220,8 @@ static void lcd_service(uint16_t address, uint8_t data)
                                     file_name);
 
         }
-        lcd_status[address - 0xF800] = data;
+        lcd_status[0][address - 0xF800] = data;
     }
-}
-
-static void lcd_off(void)
-{
-    int i, j, k;
-
-    // Turn pixels off.
-    char image_name[128];
-    for (i = 0; i < LCD_CHARACTER_PER_ROW; i++)          // 16 digits.
-        for (j = 0; j < LCD_COLUMNS_PER_CHARACTER; j++)  // 5 columns per digit.
-            for (k = 0; k < LCD_PIXEL_PER_COLUMN; k++)   // 7 bits per column.
-                gtk_image_set_from_file(GTK_IMAGE(lcd_display[0][i][j][k]),
-                                        "./pixmaps/lcd_pixel_off.jpg");
 }
 
 static int32_t pc_1245_setup(void)
@@ -392,14 +260,17 @@ static int32_t pc_1245_setup(void)
     gtk_box_pack_start(GTK_BOX(this_box), lcd_label_box, TRUE, TRUE, 1);
     gtk_widget_show(GTK_WIDGET(lcd_label_box));
 
+    __break__
+
     GtkWidget *lcd_char_box = lcd_build_display();
     gtk_box_pack_start(GTK_BOX(this_box), lcd_char_box, TRUE, TRUE, 4);
     gtk_widget_show(GTK_WIDGET(lcd_char_box));
 
-    GObject *lcd_main_window = gtk_builder_get_object(builder, "lcd_window");
-    gtk_widget_show(GTK_WIDGET(lcd_main_window));
-    lcd_setup();
+    GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
+    gtk_window_set_resizable(GTK_WINDOW(lcd_window), FALSE);
+    gtk_widget_show(GTK_WIDGET(lcd_window));
     calculator_mode = CALC_MODE_OFF;
+    memset(lcd_status, '\0', sizeof(lcd_status));
     lcd_off();
 
     // Turn off all labels.
@@ -410,6 +281,7 @@ static int32_t pc_1245_setup(void)
     // The PC-1245 does not the RSV mode so we disable the menu entry.
     GObject *widget = gtk_builder_get_object(builder, "menu_mode_rsv");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+    return 0;
 }
 
 static uint8_t pc_1245_read_memory(uint16_t address)
@@ -443,8 +315,6 @@ static void pc_1245_ina(void)
 {
     uint16_t id = ((cpu_state.portb & 0x07) << 8) | cpu_state.porta;
     int i;
-
-    uint8_t mask = 0xFE;
     for (i = 0; i < sizeof(porta_kbd); i++)
     {
         if ((id & (1 << i)) != 0)
@@ -777,10 +647,6 @@ static void pc_1245_keyrelease(uint16_t key)
         break;
     }
 }
-
-// This structure reflects the status of the memory of the LCD. We'll use it
-//  to avoid needless repaints.
-uint8_t lcd_status[0x7C];
 
 model_file_descriptor_t pt =
 {
