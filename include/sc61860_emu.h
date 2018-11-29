@@ -278,20 +278,6 @@ extern struct __disassembly_buffer disassembly_buffer;
 #define BREAKPOINT_ATTRIB_MEMWRITE      (0x02 << 2)
 #define BREAKPOINT_ATTRIB_INSTRUCTION   (0x03 << 2)
 
-struct __breakpoint_event
-{
-    // Can be an address or an opcode.
-    uint16_t address;
-    uint16_t data;
-    uint16_t attribute;
-};
-extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
-int set_breakpoint(uint16_t, uint16_t);
-int clear_breakpoint(uint16_t);
-int check_breakpoint(uint16_t);
-
-const sc61860_instr_t sc61860_instr[136];
-
 // Technically the value of the registers u[on reset is undefined. It is though
 //  useful to assign them a specific value in case we want to test our own
 //  routines.
@@ -353,6 +339,34 @@ typedef struct __model_file_descriptor
 
 extern model_file_descriptor_t pt;
 
+typedef struct __address_descriptor
+{
+    uint16_t  address;
+    char     *label;
+} address_descriptor_t;
+
+typedef struct __keyboard_encoding
+{
+    uint8_t row;
+    uint8_t mask;
+} keyboard_encoding_t;
+
+struct __breakpoint_event
+{
+    // Can be an address or an opcode.
+    uint16_t address;
+    uint16_t data;
+    uint16_t attribute;
+};
+
+extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
+
+int set_breakpoint(uint16_t, uint16_t);
+int clear_breakpoint(uint16_t);
+int check_breakpoint(uint16_t);
+
+const sc61860_instr_t sc61860_instr[136];
+
 // Instruction simulation.
 void sim_arith(void);
 void sim_bcd(void);
@@ -397,21 +411,10 @@ void memory_view_startup(void);
 extern int personality;
 void print_lcd_bitmap(uint16_t address, uint8_t data);
 
-typedef struct __address_descriptor
-{
-    uint16_t  address;
-    char     *label;
-} address_descriptor_t;
-
-typedef struct __keyboard_encoding
-{
-    uint8_t row;
-    uint8_t mask;
-} keyboard_encoding_t;
-
 extern address_descriptor_t address_descriptors[];
-void print_mem_view(void);
 extern uint16_t mem_view_start_address;
+void print_mem_view(void);
+int read_debug_events(void);
 
 struct
 {

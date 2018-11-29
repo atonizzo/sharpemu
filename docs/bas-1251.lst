@@ -1,425 +1,523 @@
 SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 
-0xC6B5          ; Used to save a copy of the X register (LOW)
-0xC6B6          ; Used to save a copy of the X register (HIGH)
-0xC6E1          ; First byte of memory used by BASIC (LOW).
-0xC6E2          ; First byte of memory used by BASIC (HIGH).
-0xC6E3          ; Last byte of memory used by BASIC (LOW).
-0xC6E4          ; Last byte of memory used by BASIC (HIGH).
-0xC6FC          ; End of BASIC RAM (LOW).
-0xC6FF          ; End of BASIC RAM (HIGH).
+[0xC6B6, 0xC6B5] ; Used to save a copy of the X register
+[0xC6E2, 0xC6E1] ; First byte of memory used by BASIC
+[0xC6E4, 0xC6E3] ; Last byte of memory used by BASIC.
+[0xC6F2, 0xC6F1] ; Pointer to the start of the BASIC token being decoded.
+0xC7B0          ; Start of input RAM buffer.
 
 4000: 797F21                    JP    LBL7F21
 
 ; $4003 is where the (synchronous) keyboard scan routine jumps to when there
 ;  is no key pressed.
-4003: 796DEA                    JP    LBL6DEA
-4006: 796D0F                    JP    LBL6D0F
-4009: 795A01                    JP    LBL5A01
-400C: 7969F9                    JP    MDL69F9       ; Print line on LCD.
-400F: 796AD3                    JP    MDL6AD3
-4012: 796AF9                    JP    MDL6AF9
-4015: 796B21                    JP    LBL6B21
-4018: 797F45                    JP    MDL7F45
-401B: 797F93                    JP    LBL7F93
-401E: 79472E                    JP    LBL472E
+4003: 796DEA                    JP      LBL6DEA
+4006: 796D0F                    JP      LBL6D0F
+4009: 795A01                    JP      LBL5A01
+400C: 7969F9                    JP      MDL69F9     ; Print line on LCD.
+400F: 796AD3                    JP      MDL6AD3
+4012: 796AF9                    JP      MDL6AF9
+4015: 796B21                    JP      LBL6B21
+4018: 797F45                    JP      MDL7F45
+401B: 797F93                    JP      LBL7F93
+401E: 79472E                    JP      LBL472E
 4021: 11526255515B              .string " BREAK"
-4027: 11595E11                  .string " IN "
-402A: 5562625F62                .string "ERROR"
-4030: 41                        .db  $41
-4031: 2B41                      JRNCM $3FF1
-4033: 5E                        DB      $5E
-4034: 41                        DECI
-4035: 6641                      TSIA  $41
-4037: BA                        LP    $3A
-4038: 41                        DECI
-4039: EA42                      CAL   $0A42
-403B: 0142                      LIJ   $42
-403D: 08                        MVW
-403E: 0000                      LII   $00
-4040: 42        LBL4040:        INCA
-4041: 21                        LDQ
-4042: 0000                      LII   $00
-4044: 42                        INCA
-4045: 4B                        DECM
-4046: 42                        INCA
-4047: 52                        STD
-4048: 42                        INCA
-4049: 91                        LP    $11
-404A: 42                        INCA
-404B: A9                        LP    $29
-404C: 42                        INCA
-404D: BF                        LP    $3F
-404E: 42                        INCA
-404F: E500                      CAL   $0500
-4051: 0043                      LII   $43
-4053: 15        LBL4053:        SBB
-4054: 43                        DECA
-4055: 6C                  DB      $6C
-4056: 43                        DECA
-4057: A3                        LP    $23
-4058: 43                        DECA
-4059: C9                        DECL
-405A: 43                        DECA
-405B: D2                        SR
-405C: 43                        DECA
-405D: D9                  DB      $D9
-405E: 0000                      LII   $00
-4060: 0000                      LII   $00
-4062: 0000                      LII   $00
-4064: 41                        DECI
-4065: 57                        LDD
-4066: 43                        DECA
-4067: D2                        SR
-4068: 42                        INCA
-4069: 81                        LP    $01
-406A: 0000                      LII   $00
-406C: 41                        DECI
-406D: 34                        PUSH
-406E: 0000                      LII   $00
-4070: 0000                      LII   $00
-4072: 0000                      LII   $00
-4074: 42                        INCA
-4075: D8                        LEAVE
-4076: 42                        INCA
-4077: B1                        LP    $31
-4078: 43                        DECA
-4079: 7441                      ADIA  $41
-407B: A2                        LP    $22
-407C: 41                        DECI
-407D: AA        LBL407D:        LP    $2A
-407E: 42                        INCA
-407F: 41        LBL407F:        DECI
-4080: 43                        DECA
-4081: 89                        LP    $09
-4082: 42                        INCA
-4083: 88                        LP    $08
-4084: 43                        DECA
-4085: 4A                        INCM
-4086: 42        LBL4086:        INCA
-4087: A1                        LP    $21
-4088: 0000                      LII   $00
-408A: 43                        DECA
-408B: C3                        DECB
-408C: 43                        DECA
-408D: 91                        LP    $11
-408E: 43                        DECA
-408F: A3                        LP    $23
-4090: 43                        DECA
-4091: 40                        INCI
-4092: 0000                      LII   $00
-4094: 43                        DECA
-4095: D9                  DB      $D9
-4096: 41                        DECI
-4097: F800                      CAL   $1800
-4099: 0000                      LII   $00
-409B: 0042                      LII   $42
-409D: 4B                        DECM
-409E: 0000                      LII   $00
-40A0: 43                        DECA
-40A1: 99                        LP    $19
-40A2: 0000                      LII   $00
-40A4: 0000                      LII   $00
-40A6: 43                        DECA
-40A7: 6542                      ORIA  $42
-40A9: 6343                      CPIM  $43
-40AB: 7B                  DB      $7B
-40AC: 41                        DECI
-40AD: 9B                        LP    $1B
-40AE: 43                        DECA
-40AF: AB                        LP    $2B
-40B0: 41                        DECI
-40B1: 49                        DECK
-40B2: 41                        DECI
-40B3: 50                        INCP
-40B4: 41                        DECI
-40B5: 42                        INCA
-40B6: 41                        DECI
-40B7: F142                      CAL   $1142
-40B9: 7442                      ADIA  $42
-40BB: 6D                  DB      $6D
-40BC: 42                        INCA
-40BD: 3A41                      JRCP  LBL40FF
-40BF: 3B43                      JRCM  LBL407D
-40C1: 82                        LP    $02
-40C2: 41                        DECI
-40C3: CB                        DECN
-40C4: 41                        DECI
-40C5: D2                        SR
-40C6: 43                        DECA
-40C7: 3942                      JRZM  LBL4086
-40C9: FC43                      CAL   $1C43
-40CB: 15                        SBB
-40CC: 42                        INCA
-40CD: B8                        LP    $38
-40CE: 42                        INCA
-40CF: 91                        LP    $11
-40D0: 42                        INCA
-40D1: 52                        STD
-40D2: 41                        DECI
-40D3: 6641                      TSIA  $41
-40D5: E141                      CAL   $0141
-40D7: 80                        LP    $00
-40D8: 41                        DECI
-40D9: 77                  DB      $77
-40DA: 42                        INCA
-40DB: 98                        LP    $18
-40DC: 43                        DECA
-40DD: B2                        LP    $32
-40DE: 43                        DECA
-40DF: BA                        LP    $3A
-40E0: 42                        INCA
-40E1: EE42      LBL40E1:        CAL   $0E42
-40E3: 5A                        SL
-40E4: 42                        INCA
-40E5: F642                      CAL   $1642
-40E7: CD                  DB      $CD
-40E8: 42                        INCA
-40E9: 30                        STP
-40EA: 42                        INCA
-40EB: 19                        EXWD
-40EC: 42                        INCA
-40ED: E542                      CAL   $0542
-40EF: 21                        LDQ
-40F0: 43                        DECA
-40F1: 54                        READM
-40F2: 41                        DECI
-40F3: C1                        DECJ
-40F4: 41                        DECI
-40F5: 6E                  DB      $6E
-40F6: 0000                      LII   $00
-40F8: 0000                      LII   $00
-40FA: 0000                      LII   $00
-40FC: 41                        DECI
-40FD: B2                        LP    $32
-40FE: 41                        DECI
-40FF: BA        LBL40FF:        LP    $3A
-4100: 41                        DECI
-4101: D9                  DB      $D9
-4102: 42                        INCA
-4103: BF                        LP    $3F
-4104: 42                        INCA
-4105: DE                  DB      $DE
-4106: 43                        DECA
-4107: 04                        IX
-4108: 43                        DECA
-4109: 26                        IYS
-410A: 42                        INCA
-410B: 2A42                      JRNCP LBL414E
-410D: 0142                      LIJ   $42
-410F: 7A435E41                  CASE1 $43,LBL5E41
-4113: EA42                      CAL   $0A42
-4115: A9                        LP    $29
-4116: 43                        DECA
-4117: 6C                  DB      $6C
-4118: 42                        INCA
-4119: 08                        MVW
-411A: 42                        INCA
-411B: 104189                    LIDP  $4189
-411E: 43                        DECA
-411F: 0C                        ADN
-4120: 41                        DECI
-4121: 5E                  DB      $5E
-4122: 41        LBL4122:        DECI
-4123: 2B43                      JRNCM LBL40E1
-4125: C9                        DECL
-4126: 43                        DECA
-4127: 1C                        SRW
-4128: 43                        DECA
-4129: 2E                  DB      $2E
-412A: B5                        LP    $35
+4027: 11595E                    .string " IN"
+402A: 115562625F62              .string " ERROR"
+; The following words point inside the BASIC token table (starting at 0x412B)
+; to the first BASIC command that starts with a given letter. BASIC commands
+; starting with the letter 'A' begin at 0x4162, BASIC commands starting with
+; the letter 'B' start at 0x415E etc. The BASIC interpreter will search this
+; table against the command input by the user that is sitting in the input
+; buffer.
+4030: 412B                      .dw     $412B       ; .string "AREAD"
+4032: 415E                      .dw     $415E       ; .string "BEEP"
+4034: 4166                      .dw     $4166       ; .string "CONT"
+4036: 41BA                      .dw     $41BA       ; .string "DIM"
+4038: 41EA                      .dw     $42EA       ; .string "END".
+403A: 4201                      .dw     $4201       ; .string "FOR"
+403C: 4208                      .dw     $4208       ; .string "GOTO".
+403E: 0000                      .dw     $0000       ; No commands starting in H.
+4040: 4221                      .dw     $4221       ; .string "INPUT".
+4042: 0000                      .dw     $0000       ; No commands starting in J.
+4044: 424B                      .dw     $424B       ; .string "KEY"
+4046: 4252                      .dw     $4252       ; .string "LIST"
+4048: 4291                      .dw     $4291       ; .string "MEM"
+404A: 42A9                      .dw     $42A9       ; .string "NEXT"
+404C: 42BF                      .dw     $42BF       ; .string "ON"
+404E: 42E5                      .dw     $42E5       ; .string "PRINT".
+4050: 0000                      .dw     $0000       ; No commands starting in Q
+4052: 4315                      .dw     $4315       ; .string "RUN"
+4054: 436C                      .dw     $436C       ; .string "STOP"
+4056: 43A3                      .dw     $43A3       ; .string "THEN"
+4058: 43C9                      .dw     $43C9       ; .string "USING"
+405A: 43D2                      .dw     $43D2       ; .string "VAL"
+405C: 43D9                      .dw     $43D9       ; .string "WAIT".
+405E: 0000                      .dw     $0000       ; No commands starting in X.
+4060: 0000                      .dw     $0000       ; No commands starting in Y.
+4062: 0000                      .dw     $0000       ; No commands starting in Z.
+;
+; Reverse lookup table for BASIC tokens.
+4064: 4157                      .dw     $4157       ; .string "ASC"
+4066: 43D2                      .dw     $43D2       ; .string "VAL"
+4068: 4281                      .dw     $4281       ; .string "LEN"
+406A: 0000                      .dw     $0000       ;
+406C: 4134                      .dw     $4134       ; .string AND"
+406E: 0000                      .dw     $0000       ;
+4070: 0000                      .dw     $0000       ;
+4072: 0000                      .dw     $0000       ;
+4074: 42D8                      .dw     $42D8       ; .string "OR"
+4076: 42B1                      .dw     $42B1       ; .string "NOT"
+4078: 4374                      .dw     $4374       ; .string "SQRT"
+407A: 41A2                      .dw     $41A2       ; .string "CHR$"
+407C: 41AA                      .dw     $41AA       ; .string "COM$"
+407E: 4241                      .dw     $4241       ; .string "INKEY$"
+4080: 4389                      .dw     $4389       ; .string "STR$"
+4082: 4288                      .dw     $4288       ; .string "LEFT$"
+4084: 434A                      .dw     $43A4       ; .string "RIGHT$"
+4086: 42A1                      .dw     $42A1       ; .string "MID$"
+4088: 0000                      .dw     $0000       ;
+408A: 43C3                      .dw     $43C3       ; .string "TO"
+408C: 4391                      .dw     $4391       ; .string "STEP"
+408E: 43A3                      .dw     $43A3       ; .string "THEN"
+4090: 4340                      .dw     $4340       ; .string "RANDOM"
+4092: 0000                      .dw     $0000       ;
+4094: 43D9                      .dw     $43D9       ; .string "WAIT"
+4096: 41F8                      .dw     $41F8       ; .string "ERROR"
+4098: 0000                      .dw     $0000       ;
+409A: 0000                      .dw     $0000       ;
+409C: 424B                      .dw     $424B       ; .string "KEY"
+409E: 0000                      .dw     $0000       ;
+40A0: 4399                      .dw     $4399       ; .string "SETCOM"
+40A2: 0000                      .dw     $0000       ;
+40A4: 0000                      .dw     $0000       ;
+40A6: 4365                      .dw     $4365       ; .string "ROM"
+40A8: 4263                      .dw     $4263       ; .string "LPRINT"
+40AA: 437B                      .dw     $437B       ; .string "SIN"   
+40AC: 419B                      .dw     $419B       ; .string "COS"
+40AE: 43AB                      .dw     $43AB       ; .string "TAN"
+40B0: 4149                      .dw     $4149       ; .string "ASN"
+40B2: 4150                      .dw     $4150       ; .string "ACS"
+40B4: 4142                      .dw     $4142       ; .string "ATN"
+40B6: 41F1                      .dw     $41F1       ; .string "EXP"
+40B8: 4274                      .dw     $4274       ; .string "LN"
+40BA: 426D                      .dw     $426D       ; .string "LOG"
+40BC: 423A                      .dw     $423A       ; .string "INT"
+40BE: 413B                      .dw     $413B       ; .string "ABS"
+40C0: 4382                      .dw     $4382       ; .string "SGN"
+40C2: 41CB                      .dw     $41CB       ; .string "DEG"
+40C4: 41D2                      .dw     $41D2       ; .string "DMS"
+40C6: 4339                      .dw     $4339       ; .string "RND"
+40C8: 42FC                      .dw     $42FC       ; .string "PEEK"
+40CA: 4315                      .dw     $4315       ; .string "RUN"
+40CC: 42B8                      .dw     $42B8       ; .string "NEW"
+40CE: 4291                      .dw     $4291       ; .string "MEM"
+40D0: 4252                      .dw     $4252       ; .string "LIST"
+40D2: 4166                      .dw     $4166       ; .string "CONT"  
+40D4: 41E1                      .dw     $41E1       ; .string "DEBUG"
+40D6: 4180                      .dw     $4180       ; .string "CSAVE"
+40D8: 4177                      .dw     $4177       ; .string "CLOAD"
+40DA: 4298                      .dw     $4298       ; .string "MERGE"
+40DC: 43B2                      .dw     $43B2       ; .string "TRON"
+40DE: 43BA                      .dw     $43BA       ; .string "TROFF"
+40E0: 42EE                      .dw     $42EE       ; .string "PASS"
+40E2: 425A                      .dw     $425A       ; .string "LLIST" 
+40E4: 42F6                      .dw     $42F6       ; .string "PI"
+40E6: 42CD                      .dw     $42CD       ; .string "OUTSTAT"
+40E8: 4230                      .dw     $4230       ; .string "INSTAT"
+40EA: 4219                      .dw     $4219       ; .string "GRAD"
+40EC: 42E5                      .dw     $42E5       ; .string "PRINT"
+40EE: 4221                      .dw     $4221       ; .string "INPUT"
+40F0: 4354                      .dw     $4354       ; .string "RADIAN"
+40F2: 41C1                      .dw     $41C1       ; .string "DEGREE"
+40F4: 416E                      .dw     $416E       ; .string "CLEAR"
+40F6: 0000                      .dw     $0000
+40F8: 0000                      .dw     $0000
+40FA: 0000                      .dw     $0000
+40FC: 41B2                      .dw     $41B2       ; .string "CALL"
+40FE: 41BA                      .dw     $41BA       ; .string "DIM"
+4100: 41D9                      .dw     $41D9       ; .string "DATA"
+4102: 42BF                      .dw     $42BF       ; .string "ON"
+4104: 42DE                      .dw     $42DE       ; .string "OFF"
+4106: 4304                      .dw     $4304       ; .string "POKE"
+4108: 4326                      .dw     $4326       ; .string "READ"
+410A: 422A                      .dw     $422A       ; .string "IF"
+410C: 4201                      .dw     $4201       ; .string "FOR"
+410E: 427A                      .dw     $427A       ; .string "LET"
+4110: 435E                      .dw     $435E       ; .string "REM"
+4112: 41EA                      .dw     $41EA       ; .string "END"
+4114: 42A0                      .dw     $42A9       ; .string "NEXT"
+4116: 436C                      .dw     $436C       ; .string "STOP"
+4118: 4208                      .dw     $4208       ; .string "GOTO"
+411A: 4210                      .dw     $4210       ; .string "GOSUB"
+411C: 4189                      .dw     $4189       ; .string "CHAIN"
+411E: 430C                      .dw     $430C       ; .string "PAUSE"
+4120: 415E                      .dw     $415E       ; .string "BEEP"
+4122: 412B                      .dw     $412B       ; .string "AREAD"
+4124: 43C9                      .dw     $43C9       ; .string "USING"
+4126: 431C                      .dw     $431C       ; .string "RETURN"
+4128: 432E                      .dw     $432E       ; .string "RESTORE"
+; Each entry in the table is made up of:
+; - One byte where the low nibble provides the command length in bytes.
+; - A Series of bytes with the letters of each command.
+; - A BASIC token for the given command.
+; - A pointer to the BASIC ROM where the command is executed.
+412A: B5                        .db     $B5
 412B: 5162555154                .string "AREAD"
-4130: DC5126A3                  .db     $DC, $51, $26, $A3
-4134: 515E54                    .string "AND"
-4137: 811312A3                  .db     $81, $13, $12, $A3
+4130: DC                        .dw     $DC
+4131: 5126                      .dw     $5126
+4133: A3                        .dw     $A3
+4134: 515E54                    .string AND"
+4137: 81                        .dw     $81
+4138: 1312                      .dw     $1312
+413A: A3                        .dw     $A3
 413B: 515263                    .string "ABS"
-413E: AA1312A3                  .db     $AA, $13, $12, $A3
+413E: AA                        .db     $AA
+413F: 1312                      .dw     $1312
+4141: A3                        .db     $A3
 4142: 51645E                    .string "ATN"
-4145: A51312A3                  .db     $A5, $13, $12, $A3
+4145: A5                        .db     $A5
+4146: 1312                      .dw     $1312
+4148: A3                        .db     $A3
 4149: 51635E                    .string "ASN"
-414C: A31312A3                  .db     $A3, $13, $12, $A3
+414C: A3                        .db     $A3
+414D: 1312                      .dw     $1312
+414F: A3                        .db     $A3
 4150: 515363                    .string "ACS"
-4153: A41312A3                  .db     $A4, $13, $12, $A3
+4153: A4                        .db     $A4
+4154: 1312                      .dw     $1312
+4156: A3                        .db     $A3
 4157: 516353                    .string "ASC"
-415A: 7D131294                  .db     $7D, $13, $12, $94
+415A: 7D                        .db     $7D
+415B: 1312                      .dw     $1312
+415D: 94                        .db     $94
 415E: 52555560                  .string "BEEP"
-4162: DB5140F4                  .db     $DB, $51, $40, $F4
+4162: DB                        .db     $DB
+4163: 5140                      .dw     $5140
+4164: F4                        .db     $F4
 4166: 535F5E64                  .string "CONT"
-416A: B45175C5                  .db     $B4, $51, $75, $C5
+416A: C5                        .db     $C5
+416B: 5175                      .dw     $5175
+416D: C5                        .db     $C5
 416E: 535C555162                .string "CLEAR"
-4173: C55198E5                  .db     $C5, $51, $98, $E5
+4173: C5                        .db     $C5
+4174: 5198                      .dw     $5198
+4176: E5                        .db     $E5
 4177: 535C5F5154                .string "CLOAD"
-417C: B77187C5                  .db     $B7, $71, $87, $C5
+417B: B7                        .db     $B7
+417C: 7187                      .dw     $7187
+417D: C5                        .db     $C5
 4180: 5363516655                .string "CSAVE"
-4185: B66EFDE5                  .db     $B6, $6E, $FD, $E5
+4185: E5                        .db     $E5
+4186: 6EFD                      .dw     $6EFD
+4188: E5                        .db     $E5
 4189: 535851595E                .string "CHAIN"
-418E: D97489A5                  .db     $D9, $74, $89, $A5
+418E: D9                        .db     $D9
+418F: 7489                      .dw     $7489
+4191: D9                        .db     $D9
 4192: 5311111111                .string "C    "
-4197: 9D1705E3                  .db     $9D, $17, $05, $E3
+4197: 9D                        .db     $9D
+4198: 1705                      .dw     $1705
+419A: E3                        .db     $E3
 419B: 535F63                    .string "COS"
-419E: A11312A4                  .db     $A1, $13, $12, $A4
+419E: A4                        .db     $A4
+419F: 1312                      .dw     $1312
+41A1: A4                        .db     $A4
 41A2: 53586218                  .string "CHR$"
-41A6: 881312A4                  .db     $88, $13, $12, $A4
+41A6: 88                        .db     $88
+41A7: 1312                      .dw     $1312
+41A9: A4                        .db     $A4
 41AA: 535F5D18                  .string "COM$"
-41AE: 891312C4                  .db     $89, $13, $12, $AF
+41AE: 89                        .db     $89
+41AF: 1312                      .dw     $1312
+41B1: C4                        .db     $AF
 41B2: 53515C5C                  .string "CALL"
-41B6: C951AFF3                  .db     $C9, $51, $AF, $F3
+41B6: F3                        .db     $F3
+41B7: 51AF                      .dw     $51AF
+41B9: F3                        .db     $F3
 41BA: 54595D                    .string "DIM"
-41BD: CA51D1E6                  .db     $C4, $51, $D1, $E6
+41BD: E6                        .db     $E6
+41BE: 51D1                      .db     $51D1
+41C0: CA51D1E6                  .db     $E6
 41C1: 545557625555              .string "DEGREE"
-41C7: C4527DE3                  .db     $C4, $52, $7D, $E3
-41Ca: 545557                    .string "DEG"
-41CE: AC7FC1A3                  .db     $AC, $7F, $C1, $A3
+41C7: C4                        .db     $C4
+41C8: 527D                      .dw     $527D
+41CA: E3                        .db     $E3
+41CB: 545557                    .string "DEG"
+41CE: AC                        .db     $AC
+41CF: 7FC1                      .db     $7FC1
+41D1: A3                        .db     $A3
 41D2: 545D63                    .string "DMS"
-41D5: AD0A3AA4                  .db     $AD, $0A, $3A, $A4
+41D5: AD                        .db     $AD
+41D6: 0A3A                      .dw     $0A3A
+41D8: A4                        .db     $A4
 41D9: 54516451                  .string "DATA"
-41DD: CB5126A5                  .db     $CB, $51, $26, $A5
+41DD: CB                        .db     $CB
+41DE: 5126                      .dw     $5126
+41E0: A5                        .db     $A5
 41E1: 5455526557                .string "DEBUG"
-41E6: B51705F3                  .db     $B5, $17, $05, $F3
+41E6: B5                        .db     $B5
+41E7: 1705                      .dw     $1705
+41E9: F3                        .db     $F3
 41EA: 555E54                    .string "END"
-41ED: D45287A3                  .db     $D4, $52, $87, $A3
+41ED: D4                        .db     $D4
+41EE: 5287                      .dw     $5287
+41F0: D45287A3                  .db     $A3
 41F1: 556860                    .string "EXP"
-41F4: A61312A5                  .db     $A6, $13, $12, $A5
+41F4: A6                        .db     $A6
+41F5: 1312                      .dw     $1312
+41F7: A5                        .db     $A5
 41F8: 5562625F62                .string "ERROR"
-41FD: 961705F3                  .db     $96, $17, $05, $F3
+41FD: 96                        .db     $96
+41FE: 1705                      .dw     $1705
+4200: F3                        .db     $F3
 4201: 565F62                    .string "FOR"
-4204: D15291B4                  .db     $D1, $52, $91, $B4
+4204: D1                        .db     $D1
+4205: 5291                      .dw     $5291
+4207: B4                        .db     $B4
 4208: 575F645F                  .string "GOTO"
-420C: D75326E5                  .db     $D7, $53, $26, $E5
+420C: D7                        .db     $D7
+420D: 5326                      .dw     $5326
+420F: E5                        .db     $E5
 4210: 575F636552                .string "GOSUB"
-4215: D8534CA4                  .db     $D8, $53, $4C, $A4
+4215: D8                        .db     $D8
+4216: 534C                      .dw     $534C
+4218: A4                        .db     $A4
 4219: 57625154                  .string "GRAD"
-421D: C05372F5                  .db     $C0, $53, $72, $F5
+421D: C0                        .db     $C0
+421E: 5372                      .dw     $5372
+4220: F5                        .db     $F5
 4221: 595E606564                .string "INPUT"
-4226: C2537EE2                  .db     $C2, $53, $7E, $E2
+4226: C2                        .db     $C2
+4227: 537E                      .dw     $537E
+4229: E2                        .db     $E2
 422A: 5956                      .string "IF"
-422C: D0541DA6                  .db     $D0, $54, $1D, $A6
+422C: D0                        .db     $D0
+422D: 541D                      .dw     $541D
+422F: A6                        .db     $A6
 4230: 595E63645164              .string "INSTAT"
-4236: BF6D0FE3                  .db     $BF, $6D, $0F, $E3
+4236: BF                        .db     $BF
+4237: 6D0F                      .db     $6D0F
+4239: BF                        .db     $BF
 423A: 595E64                    .string "INT"
-423D: A91312A6                  .db     $A9, $13, $12, $A6
+423D: A9                        .db     $A9
+423E: 1312                      .dw     $1312
+4240: A6                        .db     $A6
 4241: 595E5B556918              .string "INKEY$"
-4246: 8A1312D3                  .db     $8A, $13, $12, $D3
+4246: 8A                        .db     $8A
+4247: 1312                      .db     $1312
+4249: D3                        .db     $D3
 424B: 5B6669                    .string "KEY"
-424E: 996D95F4                  .db     $99, $6D, $95, $F4
+424E: 99                        .db     $99
+424F: 6D95                      .dw     $6D95
+4251: F4                        .db     $F4
 4252: 5C596364                  .string "LIST"
-424E: B3                        .db     $B3
-424F: 546E                      .dw     $546E
-4251: C5                        .db     $C5
-4252: 5C596364                  .string "LIST"
-4256: B3546EC5                  .db     $B3, $54, $6E, $C5
+4256: B3                        .db     $B3
+4257: 546E                      .dw     $546E
+4259: C5                        .db     $C5
 425A: 5C5C596364                .string "LLIST"
-425F: BC7AFDC6                  .db     $BC, $7A, $FD, $C6
+425F: BC                        .db     $BC
+4260: 7AFD                      .db     $7AFD
+4261: C6                        .db     $C6
 4263: 5C6062595E64              .string "LPRINT"
-4269: 9F7C27A3                  .db     $9F, $7C, $27, $A3
+4269: 9F                        .db     $9F
+426A: 7C27                      .dw     $7C27
+426B: A3                        .db     $A3
 426D: 5C5F57                    .string "LOG"
-4270: A81312A2                  .db     $A8, $13, $12, $A2
+4270: A8                        .db     $A8
+4271: 1312                      .db     $1312
+4273: A2                        .db     $A2
 4274: 5C5E                      .string "LN"
-4276: A71312A3                  .db     $A7, $13, $12, $A3
+4276: A7                        .db     $A7
+4277: 1312                      .db     $1312
+4279: A3                        .db     $A3
 427A: 5C5564                    .string "LET"
-427D: D254E3A3                  .db     $D2, $54, $E3, $A3
+427D: D2                        .db     $D2
+427E: 54E3                      .dw     $54E3
+4280: A3                        .db     $A3
 4281: 5C555E                    .string "LEN"
-4284: 7F131285                  .db     $7F, $13, $12, $85
+4284: 7F                        .db     $7F
+4285: 1312                      .db     $1312
+4287: 85                        .db     $85
 4288: 5C55566418                .string "LEFT$"
-428D: 8C1312D3                  .db     $8C, $13, $12, $D3
+428D: 8C                        .db     $8C
+428E: 1312                      .db     $1312,
+4290: D3                        .db     $D3
 4291: 5D555D                    .string "MEM"
-4294: B2                        .db     $B2                 
-4294: 1312                      .dw     $1312
-4294: C5                        .db     $C5
+4294: B2                        .db     $B2
+4295: 1312                      .dw     $1312
+4297: C5                        .db     $C5
 4298: 5D55625755                .string "MERGE"
-429D: B8719DC4                  .db     $B8, $71, $9D, $C4
+429D: B8                        .db     $B8
+429E: 719D                      .dw     $719D
+42A0: C4                        .db     $C4
 42A1: 5D595418                  .string "MID$"
-42A5: 8E1312D4                  .db     $8E, $13, $12, $D4
+42A5: 8E                        .db     $8E
+42A6: 1312                      .dw     $1312
+42A8: D4                        .db     $D4
 42A9: 5E556864                  .string "NEXT"
-42AD: D55559A3                  .db     $D5, $55, $59, $A3
+42AD: D5                        .db     $D5
+42AE: 5559                      .dw     $5559
+42B0: A3                        .db     $A3
 42B1: 5E5F64                    .string "NOT"
-42B4: 861312A3                  .db     $86, $13, $12, $A3
+42B4: 86                        .db     $86
+42B5: 1312                      .dw     $1312
+42B7: A3                        .db     $A3
 42B8: 5E5567                    .string "NEW"
-42BB: B155E4F2                  .db     $B1, $55, $E4, $F2
+42BB: B1                        .db     $B1
+42BC: 55E4                      .dw     $55E4
+42BE: F2                        .db     $F2
 42BF: 5F5E                      .string "ON"
-42C1: CC563CA4                  .db     $CC, $56, $3C, $A4
+42C1: CC                        .db     $CC
+42C2: 563C                      .dw     $563C
+42C1: A4                        .db     $A4
 42C5: 5F111111                  .string "O   "
-42C9: 9C1705E7                  .db     $9C, $17, $05, $E7
+42C9: 9C                        .db     $9C
+42CA: 1705                      .dw     $1705
+42CC: E7                        .db     $E7
 42CD: 5F656463645164            .string "OUTSTAT"
-42D4: BE6D2FE2                  .db     $BE, $6D, $2F, $E2
+42D4: BE                        .db     $BE
+42D5: 6D2F                      .dw     $6D2F
+42D7: E2                        .db     $E2
 42D8: 5F62                      .string "OR"
-42DA: 851312A3                  .db     $85, $13, $12, $A3
+42DA: 85                        .db     $85
+42DB: 1312                      .dw     $1312
+42DD: A3                        .db     $A3
 42DE: 5F5656                    .string "OFF"
-42E1: CD1705F5                  .db     $CD, $17, $05, $F5
+42E1: CD                        .db     $CD
+42E2: 1705                      .db     $1705
+42E4: F5                        .db     $F5
 42E5: 6062595E64                .string "PRINT"
-42EA: C156A9E4                  .db     $C1, $56, $A9, $E4
+42EA: C1                        .db     $C1
+42EB: 56A9                      .dw     $56A9
+42ED: E4                        .db     $E4
 42EE: 60516363                  .string "PASS"
-42F2: BB5760C2                  .db     $BB, $57, $60, $C2
+42F2: BB                        .db     $BB
+42F3: 5760                      .dw     $5760
+42F5: C2                        .db     $C2
 42F6: 6059                      .string "PI"
-42F8: BD1312C4                  .db     $BD, $13, $12, $C4
+42F8: BD                        .db     $BD
+42F9: 1312                      .db     $1312
+42F8: C4                        .db     $C4
 42FC: 6055555B                  .string "PEEK"
 4300: AF                        .db     $AF
 4301: 1312                      .dw     $1312
 4303: A4                        .db     $A4
 4304: 605F5B55                  .string "POKE"
-4308: CE57DCE5                  .db     $CE, $57, $DC, $E5
+4308: CE                        .db     $CE
+4309: 57DC                      .db     $57DC
+4308: CE                        .db     $CE
 430C: 6051656355                .string "PAUSE"
-4311: DA5745B3                  .db     $DA, $57, $45, $B3
+4311: DA5                       .db     $DA
+4312: 5745                      .dw     $5745
+4311: DA                        .db     $DA
 4315: 62655E                    .string "RUN"
 4318: B0                        .db     $B0
 4319: 597A                      .dw     $B059
 431B: C6                        .db     $C6
 431C: 62556465625E              .string "RETURN"
-4322: DE581EA4                  .db     $DE, $58, $1E, $A4
+4322: DE                        .db     $DE
+4323: 581E                      .dw     $581E
+4325: A4                        .db     $A4
 4326: 62555154                  .string "READ"
-432A: CF58ECA7                  .db     $CF, $58, $EC, $A7
+432A: CF                        .db     $CF
+432B: 58EC                      .dw     $58EC
+432D: A7                        .db     $A7
 432E: 625563645F6255            .string "RESTORE"
-4335: DF583BA3                  .db     $DF, $58, $3B, $A3
+4335: DF                        .db     $DF
+4336: 583B                      .dw     $583B
+4335: A3                        .db     $A3
 4339: 625E54                    .string "RND"
-433C: AE1312A6                  .db     $AE, $13, $12, $A6
+433C: AE                        .db     $AE
+433D: 1312                      .dw     $1312
+433F: A6                        .db     $A6
 4340: 62515E545F5D              .string "RANDOM"
-4346: 935865E6                  .db     $93, $58, $65, $E6
+4346: 93                        .db     $93
+4347: 5865                      .dw     $5865
+4346: E6                        .db     $E6
 434A: 625957586418              .string "RIGHT$"
-4350: 8D1312C6                  .db     $8D, $13, $12, $C6
+4350: 8D                        .db     $8D
+4351: 1312                      .dw     $1312
+4353: C6                        .db     $C6
 4354: 62515459515E              .string "RADIAN"
-435A: C3588CE3                  .db     $C3, $58, $8C, $5E
+435A: C3                        .db     $C3
+435B: 588C                      .dw     $588C
+435D: E3                        .db     $5E
 435E: 62555D                    .string "REM"
-4361: D35A71A3                  .db     $D3, $5A, $71, $A3
+4361: D3                        .db     $D3
+4362: 5A71                      .db     $5A71
+4364: A3                        .db     $A3
 4365: 625F5D                    .string "ROM"
 4368: 9E                        .db     $9E
 4369: $6DA2                     .dw     $6DA2
 436B: $D4                       .db     $D4
 436C: 63645F60                  .string "STOP"
-4370: D65896A3                  .db     $D6, $58, $96, $A3
+4370: D6                        .db     $D6
+4371: 5896                      .dw     $5896
+4373: A3                        .db     $A3
 4374: 636162                    .string "SQRT"
-4377: 871312A3                  .db     $87, $13, $12, $A3
+4377: 87                        .db     $87
+4378: 1312                      .db     $1312
+4377: 87                        .db     $87
 437B: 63595E                    .string "SIN"
-437E: A01312A3                  .db     $A0, $53, $12, $A3
+437E: A0                        .db     $A0
+437F: 1312                      .dw     $5312
+4381: A3                        .db     $A3
 4382: 63575E                    .string "SGN"
-4385: AB1312A4                  .db     $AB, $13, $12, $A4
+4385: AB                        .db     $AB
+4386: 1312                      .dw     $1312
+4388: A4                        .db     $A4
 4389: 63646218                  .string "STR$"
-438D: 8B1312A4                  .db     $8B, $13, $12, $A4
+438D: 8B                        .db     $8B
+438E: 1312                      .dw     $1312
+4390: A4                        .db     $A4
 4391: 63645560                  .string "STEP"
-4395: 911705E6                  .db     $91, $70, $05, $E6
+4395: 91                        .db     $91
+4396: 1705                      .dw     $7005
+4398: E6                        .db     $E6
 4399: 635564535F5D              .string "SETCOM"
-439F: 9B6B75F4                  .db     $9B, $6B, $75, $F4
+439F: 9B                        .db     $9B
+43A0: 6B75                      .dw     $6B75
+43A2: F4                        .db     $F4
 43A3: 6458555E                  .string "THEN"
-43A7: 921705E3                  .db     $92, $17, $05, $E3
+43A7: 92                        .db     $92
+43A8: 1705                      .dw     $1705
+43AA: E3                        .db     $E3
 43AB: 64515E                    .string "TAN"
-43AE: A21312A4                  .db     $A2, $13, $12, $A4
+43AE: A2                        .db     $A2
+43AF: 1312                      .dw     $1312
+43A1: A4                        .db     $A4
 43B2: 64625F5E                  .string "TRON"
-43B6: B9589AE5                  .db     $B9, $58, $9A, $E5
+43B6: B9                        .db     $B9
+43B7: 589A                      .dw     $589A
+43B9: B9589AE5                  .db     $E5
 43BA: 64625F5656                .string "TROFF"
-43BF: BA589EE2                  .db     $BA, $58, $9E, $E2
+43BF: BA                        .db     $BA
+43C0: 589E                      .dw     $589E
+43C2: E2                        .db     $E2
 43C3: 645F                      .string "TO"
-43C5: 901705F5                  .db     $90, $17, $05, $F5
+43C5: 90                        .db     $90
+43C6: 1705                      .dw     $1705
+43C8: F5                        .db     $F5
 43C9: 6563595E57                .string "USING"
-43CE: DD58A2F3                  .db     $DD, $58, $A2, $F3
+43CE: DD                        .db     $DD
+43CF: 58A2                      .dw     $58A2
+43D1: F3                        .db     $F3
 43D2: 66515C                    .string "VAL"
-43D5: 7E131294                  .db     $7E, $13, $12, $94
+43D5: 7E                        .db     $7E
+43D6: 1312                      .dw     $1312
+43D8: 94                        .db     $94
 43D9: 67515964                  .string "WAIT"
-43DD: 9558C3F0                  .db     $95, $58, $C3, $F0
+43DD: 95                        .db     $95
+43DE: 558C3                     .dw     $58C3
+43E0: F0                        .db     $F0
 
-313005                          DX
+43E1: 31                        .db     $31
+43E2: 30                        .db     $30
+43E3: 05                        .db     $05
 43E4: 06                        IY
 43E5: 4B                        DECM
 43E6: 32                        STR
-43E7: 33                  DB      $33
+43E7: 33                        DB      $33
 43E8: 3900                      JRZM  LBL43E9
 43EA: 0000                      LII   $00
 43EC: 0000                      LII   $00
@@ -472,7 +570,6 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 442C: D8                        LEAVE
 442D: 69                        CASE2
 442E: DA
-
 ; This is the start of the table that is used by the keyboard scan routine to
 ;  find the character associated with a given number returned by the scan of
 ;  the keyboard array. Because of this, the sequence of characters in this
@@ -487,22 +584,22 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4436: 52                        .db     0x52   ; 7   "B"
 4437: 57                        .db     0x57   ; 8   "G"
 4438: 64                        .db     0x64   ; 9   "T"
-4439: 0F                        .db     0x0F   ; 10  "?"
+4439: 0F                        .db     0x0F   ; 10  LEFT ARROW
 443A: 60                        .db     0x60   ; 11  "P"
 443B: 34                        .db     0x34   ; 12  "="
 443C: 5E                        .db     0x5E   ; 13  "N"
 443D: 58                        .db     0x58   ; 14  "H"
 443E: 69                        .db     0x69   ; 15  "Y"
-443F: 0E                        .db     0x0E   ; 16  ???
+443F: 0E                        .db     0x0E   ; 16  RIGHT ARROW
 4440: 5F                        .db     0x5F   ; 17  "O"
 4441: 5D                        .db     0x5D   ; 18  "M"
 4442: 5A                        .db     0x5A   ; 19  "J"
 4443: 65                        .db     0x65   ; 20  "U"
-4444: 04                        .db     0x04   ; 21  ???
+4444: 04                        .db     0x04   ; 21  UNASSIGNED
 4445: 11                        .db     0x11   ; 22  " "
 4446: 5B                        .db     0x5B   ; 23  "K"
 4447: 59                        .db     0x59   ; 24  "I"
-4448: 00                        .db     0x00   ; 25  Str. End
+4448: 00                        .db     0x00   ; 25  Str. End (ENTER)
 4449: 5C                        .db     0x5C   ; 26  "L"
 444A: 40                        .db     0x40   ; 27  "0"
 444B: 53                        .db     0x53   ; 28  "C"
@@ -651,10 +748,10 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ;  copied.
 ; ------------------------------------------------------------------------------
 4604: B0                        LP       $30     ;
-4605: 02 50                     LIA      $50     ; $50 (A) through $57 (B - 1)
-4607: 03 08                     LIB      $08     ; are written in the
-4609: DB                        EXAM             ; scratchpad starting at
-460A: 59                        LDM              ; address $30 (P)
+4605: 02 50                     LIA      $50     ; $50 through $57 are written
+4607: 03 08                     LIB      $08     ; into the scratchpad starting
+4609: DB                        EXAM             ; at address $30 (P).
+460A: 59                        LDM              ; 
 460B: 42                        INCA             ;
 460C: 50                        INCP             ;
 460D: C3                        DECB             ;
@@ -673,19 +770,19 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4620: 04                        IX               ; at $30 (P) to the address
 4621: B0                        LP       $30     ; pointed by X.
 4622: 19                        EXWB
-4623: 04                        IX               ; Restore DP, which was
-4624: 05                        DX               ; modified by EXWB.
+4623: 04                        IX               ;
+4624: 05                        DX               ; DP <- X
 4625: B0                        LP       $30     ; Read the 3 values back to
 4626: 19                        EXWB             ; scratchpad memory.
 4627: 78 47 1C                  CALL     $471C   ; Compare to original values.
 462A: 28 FF                     JRNZP    $46B7   ; Z = 1 if data found.
-462C: F1 77                     CAL      $1177   ; COPY_X2Y
+462C: F1 77                     CAL      $1177   ; Y <- X
 462E: 05                        DX               ; Load DP with value in X.
 462F: 04                        IX               ;
-4630: B0                        LP       $30     
-4631: 19                        EXWB
-4632: 8A                        LP       $0A     ; Memory address to test (HIGH)
-4633: 59                        LDM              ;
+4630: B0                        LP       $30     ;
+4631: 19                        EXWB             ;
+4632: 8A                        LP       $0A     ; Load offset to subtract next
+4633: 59                        LDM              ;  from the M register.
 4634: 5A                        SL               ; Double address.
 4635: DB                        EXAM             ;
 4636: 59                        LDM              ;
@@ -693,22 +790,22 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4638: 45                        SBM              ; Yh -= A
 4639: 07                        DY               ;
 463A: 06                        IY               ; DP <- Y
-463B: B4                        LP       $34
-463C: 19                        EXWB
-463D: 05                        DX
+463B: B4                        LP       $34     ; Write 4 bytes to the new
+463C: 19                        EXWB             ;  address.
+463D: 05                        DX               ;
 463E: 04                        IX               ; DP <- X
 463F: B0                        LP       $30
 4640: 19                        EXWB
 4641: 78 47 1C                  CALL     $471C
-4644: 07                        DY
-4645: 06                        IY
-4646: 28 CF                     JRNZP    $464F
-4648: B4                        LP       $34
+4644: 07                        DY               ;
+4645: 06                        IY               ; DP <- Y
+4646: 28 CF                     JRNZP    $464F   ;
+4648: B4                        LP       $34     ;
 4649: 19                        EXWB
-464A: F1 72                     CAL      $1172        ; COPY_Y2X
+464A: F1 72                     CAL      $1172   ; X <- Y
 464C: 49                        DECK
 464D: 29 CF                     JRNZM    $462E
-464F: F1 77                     CAL      $1177        ; COPY_X2Y
+464F: F1 77                     CAL      $1177   ; Y <- X 
 4651: 78 6A 51                  CALL     $6A51
 4654: 3A CF                     JRCP     $46A8
 4656: 10 20 0A                  LIDP     $200A
@@ -727,27 +824,27 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 466C: 0B                        EXB
 466D: 86                        LP       $06
 466E: 15                        SBB
-466F: 38 7F                     JRZP     $46A1
-4671: 11 E1                     LIDL     $E1        ; Store the start of BASIC
-4673: 82                        LP       $02        ;  area at 0xC6E1
+466F: 38 7F                     JRZP    $46A1
+4671: 11 E1                     LIDL    $E1     ; Store the start of BASIC
+4673: 82                        LP      $02     ;  area at 0xC6E1
 4674: 1B                        EXBD
-4675: 78 56 0D                  CALL     $560D
-4678: 78 55 F8                  CALL     $55F8
-467B: 10 F8 3C                  LIDP     $F83C
-467E: D4 00                     ANID     $00
-4680: D5 0C                     ORID     $0C
+4675: 78 56 0D                  CALL    $560D   ; Print cursor.    
+4678: 78 55 F8                  CALL    $55F8
+467B: 10 F8 3C                  LIDP    $F83C
+467E: D4 00                     ANID    $00     ; Clear labels.
+4680: D5 0C                     ORID    $0C     ; Turn on DEG.
 4682: 113D                      LIDL    $3D
 4684: D400                      ANID    $00
 4686: 113E                      LIDL    $3E
 4688: D400                      ANID    $00
-468A: D502                      ORID    $02
+468A: D502                      ORID    $02     ; Turn on the RUN label.
 468C: 787FA7    LBL468C:        CALL    MDL7FA7
 468F: 7846E4                    CALL    MDL46E4
-4692: 0259                      LIA     $59
-4694: 0315                      LIB     $15
-4696: 0007                      LII     $07
-4698: A0                        LP      $20
-4699: 35                        RST
+4692: 0259                      LIA     $59     ; [B, A] pointer to PI (3.14)
+4694: 0315                      LIB     $15     ;
+4696: 0007                      LII     $07     ;
+4698: A0                        LP      $20     ;
+4699: 35                        RST             ; XReg <- PI
 469A: 10F8B0                    LIDP    $F8B0
 469D: A0                        LP      $20
 469E: 19                        EXWD
@@ -836,17 +933,19 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 472A: 2C03                      JRP   LBL472E
 472C: 4D                        NOPW
 472D: 4D                        NOPW
-472E: 10F83C    LBL472E:        LIDP  $F83C
-4731: D4FE                      ANID  $FE
-4733: 113D                      LIDL  $3D
-4735: D4FD                      ANID  $FD
-4737: 6710                      CPIA  $10
-4739: 7F49F3                    JPC   LBL49F3
-473C: DA                        EXAB
-473D: 021D                      LIA   $1D
-473F: 34                        PUSH
-4740: 0200                      LIA   $00
-4742: 34                        PUSH
+; This is where input characters from the keyboard are handled. Execution
+;  arrives here with the character in the A register.
+472E: 10F83C    LBL472E:        LIDP  $F83C         ; Turn off PRO
+4731: D4FE                      ANID  $FE           ;
+4733: 113D                      LIDL  $3D           ; Turn off SHIFT
+4735: D4FD                      ANID  $FD           ;
+4737: 6710                      CPIA  $10           ; Compare input character with the first printable.
+4739: 7F49F3                    JPC   LBL49F3       ; Non printable (Likely ENTER)
+473C: DA                        EXAB                ; Handles input characters
+473D: 021D                      LIA   $1D           ; Push $1D00 address onto
+473F: 34                        PUSH                ;  the stack.
+4740: 0200                      LIA   $00           ;
+4742: 34                        PUSH                ;
 4743: F16A                      CAL   $116A
 4745: D602                      TSID  $02
 4747: 28EC                      JRNZP LBL4834
@@ -1234,7 +1333,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 49ED: F16A                      CAL   $116A
 49EF: D4FE                      ANID  $FE
 49F1: 2D61                      JRM   LBL4991
-49F3: 6700      LBL49F3:        CPIA  $00
+; This is where we get for input characters below 0x10. The only such character
+;  that is publicly shown in the manual is the ENTER key (0x00).
+49F3: 6700      LBL49F3:        CPIA  $00           ; Compare to "End of Line"
 49F5: 383A                      JRZP  LBL4A30
 49F7: 6704                      CPIA  $04
 49F9: 3A13                      JRCP  LBL4A0D
@@ -1242,10 +1343,10 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 49FD: 6708                      CPIA  $08
 49FF: 3A30                      JRCP  LBL4A30
 4A01: 380B                      JRZP  LBL4A0D
-4A03: 670C                      CPIA  $0C
+4A03: 670C                      CPIA  $0C           ; UP arrow
 4A05: 3A2A                      JRCP  LBL4A30
 4A07: 3805                      JRZP  LBL4A0D
-4A09: 670E                      CPIA  $0E
+4A09: 670E                      CPIA  $0E           ; RIGHT arrow
 4A0B: 3A24                      JRCP  LBL4A30
 4A0D: 6709      LBL4A0D:        CPIA  $09
 4A0F: 2A04                      JRNCP LBL4A14
@@ -1260,7 +1361,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4A28: 0E4CBF                      $0E,JR LBL4CBF
 4A2B: 4DB1                        JR LBL4DB1
 4A2D: 791D00    LBL4A2D:        JP    $1D00
-4A30: F16A      LBL4A30:        CAL   $116A
+4A30: F16A      LBL4A30:        CAL   $116A         ; DP <- $C6DA
 4A32: D602                      TSID  $02
 4A34: 2908                      JRNZM LBL4A2D
 4A36: 7A054A4C                  CASE1 $05,LBL4A4C
@@ -2995,20 +3096,20 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 55DF: 2D06                      JRM   LBL55DA
 55E1: F727      LBL55E1:        CAL   $1727
 55E3: 37                        RTN
-55E4: F15E      LBL55E4:        CAL   $115E
+55E4: F15E      LBL55E4:        CAL   $115E         ; DP <- $F83E
 55E6: D602                      TSID  $02
 55E8: 2850                      JRNZP LBL5639
 55EA: 24                        IXL
 55EB: 6700                      CPIA  $00
 55ED: 2865                      JRNZP LBL5653
 55EF: 05                        DX
-55F0: F200                      CAL   $1200
-55F2: F15E                      CAL   $115E
+55F0: F200                      CAL   $1200         ; [$1C, $1D] <- X
+55F2: F15E                      CAL   $115E         ; DP <- $F83E
 55F4: D601                      TSID  $01
 55F6: 2816                      JRNZP LBL560D
-55F8: 10C6C4                    LIDP  $C6C4
+55F8: 10C6C4                    LIDP  $C6C4         
 55FB: 86                        LP    $06
-55FC: 1A                        MVBD
+55FC: 1A                        MVBD                ; Y <- ($C6C5, $C6C4)
 55FD: 06                        IY
 55FE: 87                        LP    $07
 55FF: 6340                      CPIM  $40
@@ -3016,8 +3117,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5603: 002F                      LII   $2F
 5605: 0200                      LIA   $00
 5607: 1F                        FILD
-5608: F8C5      LBL5608:        CAL   $18C5
-560A: F899                      CAL   $1899
+5608: F8C5      LBL5608:        CAL   $18C5         ; Prints cursor.
+560A: F899                      CAL   $1899         ; X <- ($1D, $1C)
 560C: 37                        RTN
 560D: 10C6E1    LBL560D:        LIDP  $C6E1         ; Load start of BASIC pointer
 5610: 86                        LP    $06           ; address in Y
@@ -3384,10 +3485,11 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5886: F2BD                      CAL   $12BD
 5888: 787F45                    CALL  MDL7F45
 588B: 37                        RTN
-588C: 10F83C                    LIDP  $F83C
-588F: D4F3                      ANID  $F3
-5891: 113D                      LIDL  $3D
-5893: D504                      ORID  $04
+; Entry point for the RADIAN command.
+588C: 10F83C                    LIDP  $F83C     ; Turn off the G in the GRAD
+588F: D4F3                      ANID  $F3       ;  sign.
+5891: 113D                      LIDL  $3D       
+5893: D504                      ORID  $04       ; Turn on the RAD sign.
 5895: 37                        RTN
 5896: 95                        LP    $15
 5897: 6120                      ORIM  $20
@@ -4664,55 +4766,59 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60B4: 0200                      LIA   $00
 60B6: C4                        ADCM
 60B7: 37                        RTN
+; Enters with the address of the RAM buffer in X and finds the length of the
+;  next BASIC commmand in the buffer.
 60B8: 786AD3    MDL60B8:        CALL  MDL6AD3
 60BB: 93                        LP    $13
 60BC: 60FC                      ANIM  $FC
-60BE: 04                        IX
-60BF: 10C6F1                    LIDP  $C6F1
-60C2: 84                        LP    $04
-60C3: 53                        MVDM
-60C4: 05                        DX
-60C5: 24        LBL60C5:        IXL
-60C6: 93                        LP    $13
-60C7: 6700                      CPIA  $00
-60C9: 38F7                      JRZP  LBL61C1
-60CB: 6712                      CPIA  $12
-60CD: 38E1                      JRZP  LBL61AF
-60CF: 6201                      TSIM  $01
-60D1: 28D7                      JRNZP LBL61A9
-60D3: 6202                      TSIM  $02
-60D5: 28D3                      JRNZP LBL61A9
-60D7: 6751                      CPIA  $51
-60D9: 3AB8                      JRCP  LBL6192
-60DB: 676B                      CPIA  $6B
-60DD: 2AB4                      JRNCP LBL6192
-60DF: 8E                        LP    $0E
-60E0: 1304                      LIQ   $04
-60E2: 0A                        MVB
-60E3: 8A                        LP    $0A
-60E4: DB                        EXAM
-60E5: 59                        LDM
-60E6: F195                      CAL   $1195
-60E8: 7551                      SBIA  $51
-60EA: 5A                        SL
-60EB: 34                        PUSH
+60BE: 04                        IX                  ;
+60BF: 10C6F1                    LIDP  $C6F1         ; Store the address of the start
+60C2: 84                        LP    $04           ;  of the next token in $C6F1.
+60C3: 53                        MVDM                ;
+60C4: 05                        DX                  ;
+60C5: 24        LBL60C5:        IXL                 ; Fetch the next token character.
+60C6: 93                        LP    $13           ; 
+60C7: 6700                      CPIA  $00           ; Is it ENTER?
+60C9: 38F7                      JRZP  LBL61C1       ;
+60CB: 6712                      CPIA  $12           ; Undefined char??
+60CD: 38E1                      JRZP  LBL61AF       ;
+60CF: 6201                      TSIM  $01           ;
+60D1: 28D7                      JRNZP LBL61A9       ;
+60D3: 6202                      TSIM  $02           ;
+60D5: 28D3                      JRNZP LBL61A9       ;
+60D7: 6751                      CPIA  $51           ; Compare with 'A'.
+60D9: 3AB8                      JRCP  LBL6192       ; Jump if below.
+60DB: 676B                      CPIA  $6B           ; Compare with 'Z' + 1
+60DD: 2AB4                      JRNCP LBL6192       ; Jump if ch > 'Z'
+60DF: 8E                        LP    $0E           ; Save a copy of the X register.
+60E0: 1304                      LIQ   $04           ;
+60E2: 0A                        MVB                 ; ($0F, $0E) <- (Xh, Xl)
+60E3: 8A                        LP    $0A           ; Copy the character in the
+60E4: DB                        EXAM                ; M register.
+60E5: 59                        LDM                 ;
+60E6: F195                      CAL   $1195         ; [$0C, $0D] <-> X
+60E8: 7551                      SBIA  $51           ; Subtract 'A' offset.
+60EA: 5A                        SL                  ; Double to use it as offset
+                                                    ; into a table if 16 bits pointers.
+60EB: 34                        PUSH                ;
 60EC: 95                        LP    $15
 60ED: 6280                      TSIM  $80
 60EF: 38DF                      JRZP  LBL61CF
 60F1: 10C6D6                    LIDP  $C6D6
 60F4: 57                        LDD
-60F5: 85        LBL60F5:        LP    $05
-60F6: DB                        EXAM
-60F7: 022F                      LIA   $2F
-60F9: 84                        LP    $04
-60FA: DB                        EXAM
-60FB: 5B                        POP
-60FC: 44                        ADM
-60FD: 24                        IXL
-60FE: 6700                      CPIA  $00
+60F5: 85        LBL60F5:        LP    $05           ; High byte of BASIC token table in Xh.
+60F6: DB                        EXAM                ;
+60F7: 022F                      LIA   $2F           ; LOW  byte of BASIC token table in Xl.
+60F9: 84                        LP    $04           ;
+60FA: DB                        EXAM                ;
+60FB: 5B                        POP                 ; Offset into token table.
+60FC: 44                        ADM                 ; Add offset to start of table.
+60FD: 24                        IXL                 ; Read  
+60FE: 6700                      CPIA  $00           ; Does any command exist stating with
+                                                    ;  this character?
 6100: 383A                      JRZP  LBL613B
 6102: 7861F1                    CALL  MDL61F1
-6105: F195      LBL6105:        CAL   $1195
+6105: F195      LBL6105:        CAL   $1195         ; Get BASIC ROM pointer in X.
 6107: 24        LBL6107:        IXL
 6108: 674A                      CPIA  $4A
 610A: 3873                      JRZP  LBL617E
@@ -4834,8 +4940,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 61CA: 11DA                      LIDL  $DA
 61CC: D4DF                      ANID  $DF
 61CE: 37        LBL61CE:        RTN
-61CF: 0240      LBL61CF:        LIA   $40
-61D1: 2DDD                      JRM   LBL60F5
+61CF: 0240      LBL61CF:        LIA   $40           ; Load the HIGH byte of the
+61D1: 2DDD                      JRM   LBL60F5       ;  BASIC ROM into the A register.
 61D3: 24        LBL61D3:        IXL
 61D4: 6734                      CPIA  $34
 61D6: 3811                      JRZP  LBL61E8
@@ -4853,12 +4959,12 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 61EC: 0283      LBL61EC:        LIA   $83
 61EE: 2D4D                      JRM   LBL61A2
 61F0: 24                        IXL
-61F1: DA        MDL61F1:        EXAB
-61F2: 24                        IXL
-61F3: 84                        LP    $04
-61F4: 1302                      LIQ   $02
-61F6: 0A                        MVB
-61F7: 37                        RTN
+61F1: DA        MDL61F1:        EXAB                ; Save high byte of pointer.
+61F2: 24                        IXL                 ; Get low byte.
+61F3: 84                        LP    $04           ; [Xh, Xl] <- [B, A]
+61F4: 1302                      LIQ   $02           ;
+61F6: 0A                        MVB                 ;
+61F7: 37                        RTN                 ;
 61F8: 84        MDL61F8:        LP    $04
 61F9: 1318                      LIQ   $18
 61FB: 0A                        MVB
@@ -5646,7 +5752,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 678F: 84                        LP    $04
 6790: 1A                        MVBD
 6791: 37                        RTN
-6792: F162      MDL6792:        CAL   $1162
+6792: F162      MDL6792:        CAL   $1162         ; DP <- $F8BE
 6794: D4E0                      ANID  $E0
 6796: D501                      ORID  $01
 6798: 11BF                      LIDL  $BF
@@ -6043,44 +6149,49 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ; This routine takes a string of characters starting at 0x20 and stores the
 ;  appropriate bit map for each character in the buffer into the LCD display.
 ; Each character is made up of 5 columns.
-69F9: 0200      MDL69F9:        LIA   $00         ; Load $F800 in Y. $F800 is the
-69FB: 03F8                      LIB   $F8         ; LCD display RAM.
-69FD: F1F5                      CAL   load_y
-69FF: A0                        LP    $20         ; Pointer in scratchapd memory with
-                                                  ; string to print.
-6A00: 20                        LDP               ; Pointer in A.
-6A01: 88                        LP    $08         ; Store pointer in K.
-6A02: DB                        EXAM
-6A03: 020C                      LIA   $0C
-6A05: 89                        LP    $09
-6A06: DB                        EXAM
-6A07: 786093    LBL6A07:        CALL  MDL6093     ; K holds the pointer in
-                                                  ; scratchpad memory with the
-                                                  ; next character to print. Load the
-                                                  ; pointer to character memory for the
-                                                  ; next letter to print. ($4559 for 'A')
-6A0A: 0305                      LIB   $05         ; Number of bytes to move.
-                                                  ; 5 bytes per digit to print
-6A0C: FFB6                      CAL   memcpy
-6A0E: 48                        INCK
-6A0F: C9                        DECL
-6A10: 290A                      JRNZM LBL6A07
-6A12: 027C                      LIA   $7C
-6A14: 86                        LP    $06
-6A15: DB                        EXAM
-6A16: 020C                      LIA   $0C
-6A18: 89                        LP    $09
-6A19: DB                        EXAM            ; L = 9.    
-6A1A: 786093    LBL6A1A:        CALL  MDL6093
-6A1D: 0305                      LIB   $05
-6A1F: 24        LBL6A1F:        IXL
-6A20: 27                        DYS
-6A21: C3                        DECB
-6A22: 2904                      JRNZM LBL6A1F
-6A24: 48                        INCK
-6A25: C9                        DECL
-6A26: 290D                      JRNZM LBL6A1A
-6A28: 37                        RTN
+69F9: 0200      MDL69F9:        LIA   $00       ; Load $F800 in Y. $F800 is the
+69FB: 03F8                      LIB   $F8       ; LCD display RAM.
+69FD: F1F5                      CAL   load_y    ;
+69FF: A0                        LP    $20       ; Pointer in scratchapd memory with
+                                                ; string to print.
+6A00: 20                        LDP             ; Pointer in A.
+6A01: 88                        LP    $08       ; Store pointer in K.
+6A02: DB                        EXAM            ;
+; In the PC1251 the first 12 characters start at 0xF800 and move on to 0xF83C
+; The second set of 12 characters start at 0xF87C and move backwards to 0xF840.
+; This loop handles the first 12.       
+6A03: 020C                      LIA   $0C       ;
+6A05: 89                        LP    $09       ; L = 12.  
+6A06: DB                        EXAM            ;
+; K now holds a pointer in scratchpad memory containing the next character to
+;  print. This next call computes a pointer to the character bitmap memory
+;  coresponding to the character to print and returns it in
+;  the X register. ($4559 for 'A')
+6A07: 786093    LBL6A07:        CALL  MDL6093   ;
+6A0A: 0305                      LIB   $05       ; Number of bytes to move.
+                                                ; 5 bytes per digit to print
+6A0C: FFB6                      CAL   memcpy    ;
+6A0E: 48                        INCK            ; Next character.
+6A0F: C9                        DECL            ;
+6A10: 290A                      JRNZM LBL6A07   ;
+; Now handle the second set of 12 characters (12 to 23). The first column of
+;  character 12 is 0xF87C, the second column is 0xF87B etc.
+6A12: 027C                      LIA   $7C       ;
+6A14: 86                        LP    $06       ;    
+6A15: DB                        EXAM            ; Y = 0xF87C
+6A16: 020C                      LIA   $0C       ;
+6A18: 89                        LP    $09       ;
+6A19: DB                        EXAM            ; L = 12.    
+6A1A: 786093    LBL6A1A:        CALL  MDL6093   ;
+6A1D: 0305                      LIB   $05       ; 5 columns per characters.
+6A1F: 24        LBL6A1F:        IXL             ;
+6A20: 27                        DYS             ; Go backwards.
+6A21: C3                        DECB            ;
+6A22: 2904                      JRNZM LBL6A1F   ;
+6A24: 48                        INCK            ;
+6A25: C9                        DECL            ;
+6A26: 290D                      JRNZM LBL6A1A   ;
+6A28: 37                        RTN             ;
 ; Print an error message the number of which is stored in 0x14.
 6A29: A0        MDL6A29:        LP    $20       ; Clear 24 bytes of scratchpad
 6A2A: 0017                      LII   $17       ;  memory starting at 0x20 to
@@ -6089,16 +6200,16 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A2F: F200                      CAL   $1200     ; [$1C, $1D] <- X
 6A31: 10402B                    LIDP  $402B     ; Pointer to "ERROR " string.
 6A34: A1                        LP    $21       ; Transfer string.
-6A35: 0004                      LII   $04
-6A37: 18                        MVWD
+6A35: 0004                      LII   $04       ;
+6A37: 18                        MVWD            ;
 6A38: 94                        LP    $14       ; Load error code.
 6A39: 607F                      ANIM  $7F       ; Limit to printable characters.
 6A3B: 6140                      ORIM  $40       ; Add numeric offset (0x40='0')
-6A3D: 59                        LDM           
+6A3D: 59                        LDM             ;
 6A3E: A7                        LP    $27       ; Store in output string.
-6A3F: DB                        EXAM
+6A3F: DB                        EXAM            ;
 6A40: F162                      CAL   $1162     ; DP <- $F8BE
-6A42: D4E1                      ANID  $E1
+6A42: D4E1                      ANID  $E1       ;
 6A44: 7869F9                    CALL  MDL69F9   ; Print the error message.
 6A47: F16A                      CAL   $116A     ; DP <- $C6DA
 6A49: D4FA                      ANID  $FA
@@ -8716,7 +8827,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7C71: 785CCF    LBL7C71:        CALL  MDL5CCF
 7C74: 10C6D7                    LIDP  $C6D7
 7C77: D520                      ORID  $20
-7C79: F125                      CAL   $1125
+7C79: F125                      CAL   $1125         ; X <- ($C6B6, $C6B5)
 7C7B: D1        LBL7C7B:        RC
 7C7C: 37                        RTN
 7C7D: 10C6B4    MDL7C7D:        LIDP  $C6B4
@@ -8926,27 +9037,27 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7DF9: D604                      TSID  $04
 7DFB: 285D                      JRNZP LBL7E59
 7DFD: D1                        RC
-7DFE: 125D      MDL7DFE:        LIP   $5D
-7E00: 600F                      ANIM  $0F
-7E02: 6120                      ORIM  $20
-7E04: DD        LBL7E04:        OUTB
-7E05: 4EDC                      WAIT  $DC
-7E07: 37                        RTN
+7DFE: 125D      MDL7DFE:        LIP   $5D           ; Port B.
+7E00: 600F                      ANIM  $0F           ;
+7E02: 6120                      ORIM  $20           ; SEL2 = 1.
+7E04: DD        LBL7E04:        OUTB                ;
+7E05: 4EDC                      WAIT  $DC           ;
+7E07: 37                        RTN                 ;
 7E08: 125D      MDL7E08:        LIP   $5D
 7E0A: 600F                      ANIM  $0F
 7E0C: 2D09                      JRM   LBL7E04
-7E0E: 4EC8      MDL7E0E:        WAIT  $C8
-7E10: 125E                      LIP   $5E
-7E12: 60FC                      ANIM  $FC
-7E14: 5F                        OUTF
-7E15: 51                        DECP
-7E16: 600F                      ANIM  $0F
-7E18: 6120                      ORIM  $20
-7E1A: DD                        OUTB
-7E1B: 6130                      ORIM  $30
-7E1D: DD                        OUTB
-7E1E: 4EFF                      WAIT  $FF
-7E20: 37                        RTN
+7E0E: 4EC8      MDL7E0E:        WAIT  $C8           ; 
+7E10: 125E                      LIP   $5E           ;
+7E12: 60FC                      ANIM  $FC           ;
+7E14: 5F                        OUTF                ;
+7E15: 51                        DECP                ; Port B.
+7E16: 600F                      ANIM  $0F           ; Clear the Option B port signals.
+7E18: 6120                      ORIM  $20           ; SEL2 = 1.
+7E1A: DD                        OUTB                ;
+7E1B: 6130                      ORIM  $30           ; SEL1 = 1.
+7E1D: DD                        OUTB                ;
+7E1E: 4EFF                      WAIT  $FF           ;
+7E20: 37                        RTN                 ;
 7E21: 787E0E    MDL7E21:        CALL  MDL7E0E
 7E24: 787DFE                    CALL  MDL7DFE
 7E27: 10C6BB                    LIDP  $C6BB
@@ -9212,714 +9323,3 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7FFB: A5                        LP    $25
 7FFC: 790A59                    JP    $0A59
 7FFF: F000                      CAL   $10FF
-
-DISASSEMBLY COMPLETE
-
-SC61860 DISASSEMBLER Rev 0.05 - MAP LIST OF [bas-1251.rom]
- LABEL           : ADDRESS(hex)    LABEL           : ADDRESS(hex)
-------------------------------------------------------------------
- load_x          :   111Eh         load_y          :   11F5h
- copy_x          :   11E9h         xchg_y          :   113Eh
- xchg_x          :   1143h         copy_y          :   11EEh
- clr_bcd         :   00A3h         copy_y2x        :   1172h
- copy_x2y        :   1177h         basic_2x        :   118Fh
- kbd_bufx        :   119Ah         ab_mul2         :   172Bh
- ab_div2         :   1731h         kbd_bufy        :   11F9h
- lcd_on          :   11E0h         lcd_off         :   11E5h
- rd_irom         :   1B68h         wr_portc        :   1FB1h
- memcpy          :   1FB6h         LBL7F21         :   7F21h
- LBL6DEA         :   6DEAh         LBL6D0F         :   6D0Fh
- LBL5A01         :   5A01h         MDL69F9         :   69F9h
- MDL6AD3         :   6AD3h         MDL6AF9         :   6AF9h
- LBL6B21         :   6B21h         MDL7F45         :   7F45h
- LBL7F93         :   7F93h         LBL472E         :   472Eh
- LBL40FF         :   40FFh         LBL407D         :   407Dh
- LBL4086         :   4086h         LBL414E         :   414Eh
- LBL5E41         :   5E41h         LBL40E1         :   40E1h
- LBL427C         :   427Ch         LBL6999         :   6999h
- LBL5963         :   5963h         LBL6259         :   6259h
- LBL649F         :   649Fh         LBL5F57         :   5F57h
- LBL5C5E         :   5C5Eh         LBL5C55         :   5C55h
- LBL5E7F         :   5E7Fh         LBL5556         :   5556h
- LBL555D         :   555Dh         LBL5D55         :   5D55h
- LBL5755         :   5755h         LBL719D         :   719Dh
- LBL5D59         :   5D59h         LBL5568         :   5568h
- LBL6486         :   6486h         LBL5567         :   5567h
- LBL55E4         :   55E4h         LBL5F5E         :   5F5Eh
- LBL563C         :   563Ch         LBL5F11         :   5F11h
- LBL6564         :   6564h         LBL6451         :   6451h
- LBL56CD         :   56CDh         LBL64C1         :   64C1h
- LBL5163         :   5163h         LBL555B         :   555Bh
- LBL605F         :   605Fh         LBL55CE         :   55CEh
- LBL5165         :   5165h         LBL6355         :   6355h
- LBL6255         :   6255h         LBL4295         :   4295h
- LBL43E9         :   43E9h         LBL6656         :   6656h
- LBL4752         :   4752h         LBL640F         :   640Fh
- LBL690E         :   690Eh         LBL5D5A         :   5D5Ah
- LBL5900         :   5900h         LBL4053         :   4053h
- LBL550D         :   550Dh         LBL6863         :   6863h
- LBL4935         :   4935h         LBL5161         :   5161h
- LBL4542         :   4542h         LBL4A04         :   4A04h
- LBL4141         :   4141h         LBL6300         :   6300h
- LBL5F00         :   5F00h         LBL7F22         :   7F22h
- LBL6215         :   6215h         LBL7C16         :   7C16h
- LBL4110         :   4110h         LBL7F01         :   7F01h
- LBL5B3B         :   5B3Bh         LBL413E         :   413Eh
- LBL4955         :   4955h         LBL5000         :   5000h
- LBL4122         :   4122h         LBL797F         :   797Fh
- LBL7945         :   7945h         LBL795C         :   795Ch
- LBL7968         :   7968h         LBL7962         :   7962h
- LBL796A         :   796Ah         LBL7969         :   7969h
- LBL796D         :   796Dh         LBL796C         :   796Ch
- LBL453E         :   453Eh         LBL427F         :   427Fh
- LBL5149         :   5149h         LBL4149         :   4149h
- LBL4B31         :   4B31h         LBL4545         :   4545h
- LBL4930         :   4930h         LBL4949         :   4949h
- LBL6060         :   6060h         LBL7F7F         :   7F7Fh
- LBL4040         :   4040h         LBL417F         :   417Fh
- LBL4936         :   4936h         LBL7F49         :   7F49h
- LBL4941         :   4941h         LBL7F08         :   7F08h
- LBL413F         :   413Fh         LBL407F         :   407Fh
- LBL7F04         :   7F04h         LBL4626         :   4626h
- LBL6018         :   6018h         LBL7F20         :   7F20h
- LBL6303         :   6303h         LBL7804         :   7804h
- LBL6151         :   6151h         LBL4543         :   4543h
- LBL4A65         :   4A65h         LBL5C32         :   5C32h
- LBL50C7         :   50C7h         LBL7FB0         :   7FB0h
- LBL5003         :   5003h         LBL50C3         :   50C3h
- LBL7847         :   7847h         LBL7705         :   7705h
- LBL595A         :   595Ah         LBL5987         :   5987h
- LBL471C         :   471Ch         LBL7249         :   7249h
- LBL786A         :   786Ah         LBL7856         :   7856h
- MDL7855         :   7855h         MDL7FA7         :   7FA7h
- MDL46E4         :   46E4h         LBL46CF         :   46CFh
- LBL468C         :   468Ch         LBL4662         :   4662h
- LBL4651         :   4651h         LBL46C6         :   46C6h
- LBL4604         :   4604h         MDL6A51         :   6A51h
- LBL46DF         :   46DFh         MDL7036         :   7036h
- LBL4729         :   4729h         LBL4721         :   4721h
- LBL49F3         :   49F3h         LBL4834         :   4834h
- LBL4751         :   4751h         LBL475A         :   475Ah
- MDL688E         :   688Eh         LBL47AC         :   47ACh
- LBL476B         :   476Bh         LBL479B         :   479Bh
- LBL4788         :   4788h         LBL477F         :   477Fh
- LBL4DF6         :   4DF6h         LBL4785         :   4785h
- MDL5C78         :   5C78h         MDL62DD         :   62DDh
- LBL478B         :   478Bh         LBL4900         :   4900h
- LBL4835         :   4835h         LBL4839         :   4839h
- MDL5A21         :   5A21h         LBL4890         :   4890h
- MDL5A31         :   5A31h         MDL6301         :   6301h
- MDL631F         :   631Fh         LBL47E8         :   47E8h
- LBL48F9         :   48F9h         MDL4E5E         :   4E5Eh
- MDL59EA         :   59EAh         LBL482E         :   482Eh
- LBL4811         :   4811h         LBL480E         :   480Eh
- LBL48A8         :   48A8h         LBL48B9         :   48B9h
- LBL4828         :   4828h         MDL4BEF         :   4BEFh
- LBL48A1         :   48A1h         MDL6317         :   6317h
- MDL659A         :   659Ah         LBL47BB         :   47BBh
- LBL486D         :   486Dh         MDL634A         :   634Ah
- LBL48A4         :   48A4h         MDL6A29         :   6A29h
- LBL48C6         :   48C6h         LBL489D         :   489Dh
- LBL482D         :   482Dh         LBL48AB         :   48ABh
- MDL6787         :   6787h         LBL48E3         :   48E3h
- LBL48F1         :   48F1h         LBL48F4         :   48F4h
- LBL48E9         :   48E9h         MDL678C         :   678Ch
- MDL631C         :   631Ch         MDL6437         :   6437h
- LBL4915         :   4915h         LBL4917         :   4917h
- LBL495A         :   495Ah         MDL6369         :   6369h
- LBL494B         :   494Bh         LBL493F         :   493Fh
- LBL4933         :   4933h         LBL475B         :   475Bh
- LBL49A8         :   49A8h         LBL4957         :   4957h
- LBL4E65         :   4E65h         LBL499E         :   499Eh
- MDL4DFF         :   4DFFh         LBL499B         :   499Bh
- LBL496F         :   496Fh         LBL498F         :   498Fh
- LBL49E6         :   49E6h         LBL49C9         :   49C9h
- LBL49E8         :   49E8h         LBL4991         :   4991h
- LBL4A30         :   4A30h         LBL4A0D         :   4A0Dh
- LBL4A2D         :   4A2Dh         LBL4A14         :   4A14h
- MDL4A4E         :   4A4Eh         LBL4A54         :   4A54h
- LBL4AA9         :   4AA9h         LBL4AB3         :   4AB3h
- LBL4CBF         :   4CBFh         LBL4DB1         :   4DB1h
- LBL4A4C         :   4A4Ch         LBL4DCB         :   4DCBh
- LBL4E1D         :   4E1Dh         MDL4E35         :   4E35h
- LBL4DB6         :   4DB6h         LBL4B98         :   4B98h
- LBL4A59         :   4A59h         MDL7FAF         :   7FAFh
- LBL4AA6         :   4AA6h         LBL4A99         :   4A99h
- LBL4A90         :   4A90h         LBL4A89         :   4A89h
- LBL4AB0         :   4AB0h         LBL4AE3         :   4AE3h
- LBL4ADB         :   4ADBh         LBL4ADA         :   4ADAh
- MDL637D         :   637Dh         LBL4AC3         :   4AC3h
- LBL4AE2         :   4AE2h         LBL4B27         :   4B27h
- LBL4AD7         :   4AD7h         LBL4B12         :   4B12h
- LBL4B0D         :   4B0Dh         MDL640D         :   640Dh
- MDL63CA         :   63CAh         MDL63DA         :   63DAh
- LBL4B09         :   4B09h         LBL4B26         :   4B26h
- MDL4AFF         :   4AFFh         MDL63D4         :   63D4h
- LBL4AF9         :   4AF9h         LBL4B44         :   4B44h
- LBL4B83         :   4B83h         LBL4B66         :   4B66h
- MDL61F8         :   61F8h         LBL4B6B         :   4B6Bh
- LBL4CAA         :   4CAAh         LBL4C83         :   4C83h
- LBL4CBA         :   4CBAh         LBL4C7F         :   4C7Fh
- LBL4BE4         :   4BE4h         MDL5A71         :   5A71h
- MDL65AF         :   65AFh         LBL4C60         :   4C60h
- LBL4C36         :   4C36h         LBL4C08         :   4C08h
- LBL4C4E         :   4C4Eh         LBL4C22         :   4C22h
- LBL4C49         :   4C49h         LBL4BD4         :   4BD4h
- MDL537E         :   537Eh         LBL4C33         :   4C33h
- MDL60B8         :   60B8h         LBL4C64         :   4C64h
- LBL4C6C         :   4C6Ch         LBL4C69         :   4C69h
- LBL4CAB         :   4CABh         MDL65E7         :   65E7h
- LBL4CA5         :   4CA5h         LBL4CEE         :   4CEEh
- LBL4CED         :   4CEDh         LBL4D95         :   4D95h
- LBL4D7F         :   4D7Fh         LBL4D47         :   4D47h
- LBL4D68         :   4D68h         LBL4D63         :   4D63h
- LBL4D3A         :   4D3Ah         LBL4DAC         :   4DACh
- LBL4CE2         :   4CE2h         LBL4D54         :   4D54h
- LBL4CDF         :   4CDFh         LBL4D44         :   4D44h
- LBL4D1B         :   4D1Bh         LBL4D77         :   4D77h
- LBL4D88         :   4D88h         LBL4CF8         :   4CF8h
- LBL4CFB         :   4CFBh         LBL4D99         :   4D99h
- LBL4D05         :   4D05h         MDL6209         :   6209h
- LBL4CDA         :   4CDAh         LBL4DA1         :   4DA1h
- LBL4CC4         :   4CC4h         LBL4DC0         :   4DC0h
- MDL6B6F         :   6B6Fh         LBL4DCA         :   4DCAh
- LBL4E1C         :   4E1Ch         LBL4E22         :   4E22h
- LBL4E14         :   4E14h         LBL4E13         :   4E13h
- LBL4E0E         :   4E0Eh         LBL4DD0         :   4DD0h
- LBL4E30         :   4E30h         LBL4E2B         :   4E2Bh
- LBL4E5D         :   4E5Dh         MDL6899         :   6899h
- LBL4E7C         :   4E7Ch         LBL4BCA         :   4BCAh
- LBL4E9F         :   4E9Fh         LBL4E8C         :   4E8Ch
- LBL4EA2         :   4EA2h         LBL4EB1         :   4EB1h
- LBL4EAA         :   4EAAh         LBL5076         :   5076h
- LBL4FA2         :   4FA2h         LBL5028         :   5028h
- LBL4EDD         :   4EDDh         LBL4F0B         :   4F0Bh
- LBL4EE5         :   4EE5h         LBL5010         :   5010h
- MDL46E9         :   46E9h         LBL4F22         :   4F22h
- LBL4EF7         :   4EF7h         LBL4F25         :   4F25h
- LBL5021         :   5021h         MDL5EBA         :   5EBAh
- LBL4EFD         :   4EFDh         LBL4F48         :   4F48h
- LBL4F56         :   4F56h         LBL4FA6         :   4FA6h
- LBL4F6E         :   4F6Eh         LBL4F8A         :   4F8Ah
- LBL4F9F         :   4F9Fh         LBL4F80         :   4F80h
- LBL4FEF         :   4FEFh         LBL4FD8         :   4FD8h
- LBL4F84         :   4F84h         LBL5008         :   5008h
- LBL4FC7         :   4FC7h         LBL4EF9         :   4EF9h
- LBL4FAF         :   4FAFh         MDL6432         :   6432h
- LBL506C         :   506Ch         LBL505F         :   505Fh
- LBL5057         :   5057h         LBL503E         :   503Eh
- LBL5122         :   5122h         LBL511E         :   511Eh
- LBL511A         :   511Ah         LBL5097         :   5097h
- LBL510B         :   510Bh         LBL50C0         :   50C0h
- LBL50AA         :   50AAh         LBL50C6         :   50C6h
- LBL50B6         :   50B6h         LBL5102         :   5102h
- LBL50DA         :   50DAh         LBL50D5         :   50D5h
- LBL5117         :   5117h         LBL50E4         :   50E4h
- LBL50F4         :   50F4h         LBL50F0         :   50F0h
- LBL500D         :   500Dh         LBL50C2         :   50C2h
- LBL50E9         :   50E9h         LBL5091         :   5091h
- LBL5104         :   5104h         LBL513C         :   513Ch
- LBL513A         :   513Ah         LBL5129         :   5129h
- LBL5171         :   5171h         LBL5172         :   5172h
- MDL59D4         :   59D4h         LBL514B         :   514Bh
- LBL5195         :   5195h         LBL5194         :   5194h
- LBL51D0         :   51D0h         MDL59E0         :   59E0h
- LBL5271         :   5271h         LBL526A         :   526Ah
- LBL5279         :   5279h         LBL5272         :   5272h
- MDL59F1         :   59F1h         LBL5267         :   5267h
- MDL59F9         :   59F9h         LBL51D1         :   51D1h
- LBL5203         :   5203h         LBL5275         :   5275h
- MDL5A61         :   5A61h         LBL5314         :   5314h
- LBL5323         :   5323h         LBL531D         :   531Dh
- LBL5320         :   5320h         MDL5A0D         :   5A0Dh
- MDL5A16         :   5A16h         LBL5315         :   5315h
- MDL5A3B         :   5A3Bh         LBL52FD         :   52FDh
- LBL532F         :   532Fh         LBL534B         :   534Bh
- LBL5343         :   5343h         LBL5371         :   5371h
- LBL536F         :   536Fh         LBL53ED         :   53EDh
- LBL53F1         :   53F1h         LBL5413         :   5413h
- LBL540A         :   540Ah         LBL53A6         :   53A6h
- LBL5399         :   5399h         LBL53F4         :   53F4h
- MDL5A6B         :   5A6Bh         LBL53E7         :   53E7h
- LBL53E8         :   53E8h         LBL53D0         :   53D0h
- LBL53E3         :   53E3h         LBL53E0         :   53E0h
- LBL53D6         :   53D6h         LBL5407         :   5407h
- LBL53B8         :   53B8h         LBL53F8         :   53F8h
- LBL5452         :   5452h         LBL5467         :   5467h
- LBL5463         :   5463h         LBL5435         :   5435h
- LBL544A         :   544Ah         LBL5453         :   5453h
- LBL544E         :   544Eh         MDL5326         :   5326h
- LBL545D         :   545Dh         LBL542F         :   542Fh
- LBL5477         :   5477h         LBL54B5         :   54B5h
- LBL54DD         :   54DDh         LBL5494         :   5494h
- LBL54AE         :   54AEh         LBL54BF         :   54BFh
- MDL5DFB         :   5DFBh         LBL54B6         :   54B6h
- LBL54A5         :   54A5h         LBL54A0         :   54A0h
- LBL54D1         :   54D1h         MDL5E09         :   5E09h
- LBL54A3         :   54A3h         MDL5EE9         :   5EE9h
- MDL5E77         :   5E77h         LBL554D         :   554Dh
- MDL54FF         :   54FFh         LBL54FE         :   54FEh
- LBL54E3         :   54E3h         MDL632D         :   632Dh
- MDL5C70         :   5C70h         LBL5526         :   5526h
- LBL5523         :   5523h         LBL5553         :   5553h
- LBL554E         :   554Eh         LBL5543         :   5543h
- LBL554B         :   554Bh         LBL553A         :   553Ah
- LBL55DC         :   55DCh         LBL55E1         :   55E1h
- LBL55DD         :   55DDh         LBL5592         :   5592h
- LBL556D         :   556Dh         LBL55C0         :   55C0h
- LBL55B7         :   55B7h         LBL55C4         :   55C4h
- LBL55DA         :   55DAh         LBL5639         :   5639h
- LBL5653         :   5653h         LBL560D         :   560Dh
- LBL5608         :   5608h         MDL5198         :   5198h
- LBL56A8         :   56A8h         LBL5659         :   5659h
- LBL5656         :   5656h         LBL5667         :   5667h
- LBL568D         :   568Dh         LBL5687         :   5687h
- LBL5689         :   5689h         LBL5670         :   5670h
- LBL566A         :   566Ah         MDL5126         :   5126h
- LBL56A5         :   56A5h         MDL5355         :   5355h
- LBL5741         :   5741h         LBL5728         :   5728h
- LBL5721         :   5721h         LBL5725         :   5725h
- MDL7C57         :   7C57h         MDL5A78         :   5A78h
- LBL5708         :   5708h         LBL5711         :   5711h
- MDL69C7         :   69C7h         LBL5709         :   5709h
- LBL5705         :   5705h         MDL5C7D         :   5C7Dh
- MDL6A82         :   6A82h         LBL5719         :   5719h
- MDL7DDD         :   7DDDh         MDL7C27         :   7C27h
- LBL573E         :   573Eh         MDL7544         :   7544h
- LBL575F         :   575Fh         LBL579E         :   579Eh
- LBL57B4         :   57B4h         LBL57A7         :   57A7h
- LBL57A3         :   57A3h         LBL5783         :   5783h
- LBL57A9         :   57A9h         LBL57A0         :   57A0h
- LBL5797         :   5797h         LBL5798         :   5798h
- LBL57D7         :   57D7h         LBL57D6         :   57D6h
- LBL57B9         :   57B9h         LBL57D0         :   57D0h
- LBL57C6         :   57C6h         LBL581A         :   581Ah
- LBL581B         :   581Bh         LBL57F4         :   57F4h
- LBL5838         :   5838h         MDL5338         :   5338h
- LBL5855         :   5855h         LBL5854         :   5854h
- LBL584E         :   584Eh         LBL5869         :   5869h
- LBL58BC         :   58BCh         LBL58BF         :   58BFh
- LBL58C0         :   58C0h         MDL5B39         :   5B39h
- MDL5CCF         :   5CCFh         LBL58CD         :   58CDh
- LBL58D3         :   58D3h         LBL58D2         :   58D2h
- LBL5964         :   5964h         LBL5976         :   5976h
- LBL5906         :   5906h         LBL5965         :   5965h
- LBL5928         :   5928h         LBL592E         :   592Eh
- LBL591A         :   591Ah         LBL5929         :   5929h
- LBL594C         :   594Ch         LBL5943         :   5943h
- LBL5946         :   5946h         LBL5915         :   5915h
- MDL5502         :   5502h         LBL5948         :   5948h
- LBL58EC         :   58ECh         LBL5983         :   5983h
- LBL59C0         :   59C0h         LBL59BF         :   59BFh
- MDL51A4         :   51A4h         LBL59BC         :   59BCh
- LBL5992         :   5992h         LBL59F0         :   59F0h
- LBL5A05         :   5A05h         LBL5A30         :   5A30h
- LBL5A54         :   5A54h         LBL5A51         :   5A51h
- LBL5A68         :   5A68h         LBL5B0E         :   5B0Eh
- LBL5AD4         :   5AD4h         LBL5AB0         :   5AB0h
- LBL5AD5         :   5AD5h         LBL5AB7         :   5AB7h
- LBL5AC2         :   5AC2h         MDL68B5         :   68B5h
- LBL5AF8         :   5AF8h         LBL5AF2         :   5AF2h
- LBL5A89         :   5A89h         LBL5B0A         :   5B0Ah
- LBL5AE3         :   5AE3h         LBL5B34         :   5B34h
- LBL5AF5         :   5AF5h         LBL5A8F         :   5A8Fh
- LBL5BAE         :   5BAEh         LBL5B6A         :   5B6Ah
- LBL5BC4         :   5BC4h         LBL5BED         :   5BEDh
- LBL5C22         :   5C22h         LBL5C5B         :   5C5Bh
- LBL5BAD         :   5BADh         LBL5B55         :   5B55h
- LBL5BC1         :   5BC1h         LBL5BBE         :   5BBEh
- LBL5B8A         :   5B8Ah         LBL5B8B         :   5B8Bh
- LBL5B99         :   5B99h         LBL5BB6         :   5BB6h
- LBL5BA5         :   5BA5h         LBL5B98         :   5B98h
- LBL5B7B         :   5B7Bh         LBL5BCF         :   5BCFh
- LBL5BE7         :   5BE7h         LBL5BDE         :   5BDEh
- LBL5BCD         :   5BCDh         LBL5BDB         :   5BDBh
- LBL5BD7         :   5BD7h         LBL5BF5         :   5BF5h
- LBL5C17         :   5C17h         LBL5C1D         :   5C1Dh
- LBL5C10         :   5C10h         LBL5C1F         :   5C1Fh
- LBL5C4D         :   5C4Dh         LBL5C3F         :   5C3Fh
- LBL5C4A         :   5C4Ah         LBL5BE4         :   5BE4h
- LBL5C3A         :   5C3Ah         LBL5C73         :   5C73h
- LBL5C8F         :   5C8Fh         LBL5C7F         :   5C7Fh
- MDL4712         :   4712h         LBL5CB0         :   5CB0h
- LBL5CAF         :   5CAFh         LBL5CBE         :   5CBEh
- MDL5A2A         :   5A2Ah         LBL5CA7         :   5CA7h
- LBL5CDF         :   5CDFh         LBL5D11         :   5D11h
- LBL5CFA         :   5CFAh         LBL5D3E         :   5D3Eh
- MDL696F         :   696Fh         LBL5D4C         :   5D4Ch
- LBL5D37         :   5D37h         LBL5D35         :   5D35h
- LBL5DE5         :   5DE5h         MDL6B61         :   6B61h
- MDL6B35         :   6B35h         MDL5D4F         :   5D4Fh
- MDL6B66         :   6B66h         LBL5DD2         :   5DD2h
- LBL5D8E         :   5D8Eh         LBL5DAB         :   5DABh
- LBL5DB7         :   5DB7h         LBL5DBA         :   5DBAh
- MDL5D15         :   5D15h         LBL5DC2         :   5DC2h
- MDL5D56         :   5D56h         MDL5D5C         :   5D5Ch
- MDL5D1F         :   5D1Fh         LBL5DE1         :   5DE1h
- LBL5DDA         :   5DDAh         LBL5D70         :   5D70h
- LBL5E6B         :   5E6Bh         LBL5E62         :   5E62h
- LBL5E15         :   5E15h         LBL5E0E         :   5E0Eh
- LBL5E03         :   5E03h         LBL5E36         :   5E36h
- LBL5E2A         :   5E2Ah         LBL5E54         :   5E54h
- LBL5EB0         :   5EB0h         LBL5EB6         :   5EB6h
- MDL5F15         :   5F15h         LBL5EA4         :   5EA4h
- LBL5E81         :   5E81h         MDL5F26         :   5F26h
- LBL5EAB         :   5EABh         MDL5EA6         :   5EA6h
- LBL5EA1         :   5EA1h         LBL5EC6         :   5EC6h
- LBL5EE2         :   5EE2h         LBL5E9B         :   5E9Bh
- LBL5F14         :   5F14h         LBL5F13         :   5F13h
- LBL5F09         :   5F09h         LBL5F21         :   5F21h
- LBL5FAF         :   5FAFh         LBL5F8E         :   5F8Eh
- MDL6B4D         :   6B4Dh         LBL5F67         :   5F67h
- LBL5F4E         :   5F4Eh         LBL5FEE         :   5FEEh
- LBL5F51         :   5F51h         LBL5F4B         :   5F4Bh
- LBL5F85         :   5F85h         LBL5F6A         :   5F6Ah
- LBL5F3B         :   5F3Bh         LBL5F3E         :   5F3Eh
- LBL5FF2         :   5FF2h         LBL5FD2         :   5FD2h
- LBL5FCB         :   5FCBh         LBL5FC6         :   5FC6h
- LBL6008         :   6008h         LBL6050         :   6050h
- LBL603E         :   603Eh         MDL7D77         :   7D77h
- LBL604C         :   604Ch         MDL62F1         :   62F1h
- MDL60AA         :   60AAh         LBL6072         :   6072h
- MDL60A3         :   60A3h         LBL608A         :   608Ah
- LBL6082         :   6082h         LBL604A         :   604Ah
- LBL6049         :   6049h         LBL609E         :   609Eh
- LBL61C1         :   61C1h         LBL61AF         :   61AFh
- LBL61A9         :   61A9h         LBL6192         :   6192h
- LBL61CF         :   61CFh         LBL613B         :   613Bh
- MDL61F1         :   61F1h         LBL617E         :   617Eh
- LBL6107         :   6107h         LBL6105         :   6105h
- LBL6135         :   6135h         LBL6120         :   6120h
- LBL6189         :   6189h         LBL616B         :   616Bh
- LBL6154         :   6154h         MDL687D         :   687Dh
- LBL6158         :   6158h         LBL6140         :   6140h
- LBL612D         :   612Dh         LBL60C5         :   60C5h
- LBL6174         :   6174h         LBL61D3         :   61D3h
- LBL61DB         :   61DBh         LBL618D         :   618Dh
- LBL61A2         :   61A2h         LBL61B5         :   61B5h
- LBL61BD         :   61BDh         LBL61CE         :   61CEh
- LBL60F5         :   60F5h         LBL61E8         :   61E8h
- LBL61EC         :   61ECh         LBL61D8         :   61D8h
- MDL6345         :   6345h         LBL6208         :   6208h
- MDL6200         :   6200h         LBL6218         :   6218h
- MDL6272         :   6272h         LBL6235         :   6235h
- LBL6246         :   6246h         LBL6229         :   6229h
- LBL6251         :   6251h         LBL626C         :   626Ch
- LBL6268         :   6268h         MDL6279         :   6279h
- MDL6A6B         :   6A6Bh         LBL62BF         :   62BFh
- LBL62C7         :   62C7h         LBL62A0         :   62A0h
- LBL62D3         :   62D3h         MDL684B         :   684Bh
- LBL62C3         :   62C3h         LBL62B7         :   62B7h
- LBL62BE         :   62BEh         MDL62D7         :   62D7h
- LBL6290         :   6290h         LBL62B1         :   62B1h
- LBL62C9         :   62C9h         MDL62FE         :   62FEh
- LBL633D         :   633Dh         LBL633B         :   633Bh
- LBL6361         :   6361h         LBL635A         :   635Ah
- LBL6354         :   6354h         LBL637C         :   637Ch
- LBL637B         :   637Bh         LBL636F         :   636Fh
- LBL638F         :   638Fh         LBL63C7         :   63C7h
- LBL63A5         :   63A5h         LBL63CE         :   63CEh
- LBL63DE         :   63DEh         LBL63FC         :   63FCh
- LBL6408         :   6408h         LBL63E7         :   63E7h
- LBL6411         :   6411h         LBL6450         :   6450h
- LBL644C         :   644Ch         LBL643C         :   643Ch
- LBL6674         :   6674h         LBL66ED         :   66EDh
- LBL6560         :   6560h         LBL6569         :   6569h
- LBL64A0         :   64A0h         LBL649E         :   649Eh
- LBL6499         :   6499h         LBL6735         :   6735h
- MDL6792         :   6792h         LBL648B         :   648Bh
- LBL648D         :   648Dh         LBL673A         :   673Ah
- MDL6763         :   6763h         LBL667B         :   667Bh
- MDL6777         :   6777h         LBL64D5         :   64D5h
- MDL600F         :   600Fh         LBL6712         :   6712h
- LBL64F2         :   64F2h         LBL6733         :   6733h
- LBL64CE         :   64CEh         LBL6527         :   6527h
- LBL6503         :   6503h         LBL673F         :   673Fh
- LBL666B         :   666Bh         LBL651B         :   651Bh
- LBL6548         :   6548h         LBL64B4         :   64B4h
- LBL652B         :   652Bh         LBL674B         :   674Bh
- LBL646A         :   646Ah         LBL66D8         :   66D8h
- LBL6680         :   6680h         LBL6521         :   6521h
- LBL671A         :   671Ah         LBL6727         :   6727h
- LBL6661         :   6661h         MDL68A3         :   68A3h
- LBL663B         :   663Bh         LBL6626         :   6626h
- LBL65F0         :   65F0h         LBL6605         :   6605h
- LBL65F2         :   65F2h         LBL675D         :   675Dh
- MDL6897         :   6897h         LBL6638         :   6638h
- LBL65C9         :   65C9h         LBL65C0         :   65C0h
- LBL65D5         :   65D5h         LBL6746         :   6746h
- LBL6676         :   6676h         MDL483D         :   483Dh
- LBL6491         :   6491h         LBL66D3         :   66D3h
- LBL66C6         :   66C6h         LBL665D         :   665Dh
- LBL6694         :   6694h         LBL659C         :   659Ch
- LBL66E5         :   66E5h         MDL46E7         :   46E7h
- LBL672D         :   672Dh         LBL6646         :   6646h
- LBL67A7         :   67A7h         LBL682C         :   682Ch
- LBL6823         :   6823h         LBL67E5         :   67E5h
- MDL679E         :   679Eh         LBL6845         :   6845h
- LBL6840         :   6840h         LBL6813         :   6813h
- LBL67F5         :   67F5h         LBL681D         :   681Dh
- LBL680C         :   680Ch         LBL6803         :   6803h
- LBL683F         :   683Fh         LBL67AF         :   67AFh
- LBL6835         :   6835h         LBL686C         :   686Ch
- LBL685E         :   685Eh         LBL686D         :   686Dh
- LBL685B         :   685Bh         LBL6888         :   6888h
- LBL6882         :   6882h         LBL6916         :   6916h
- MDL5CE6         :   5CE6h         LBL6904         :   6904h
- LBL68E7         :   68E7h         LBL68FF         :   68FFh
- MDL5D62         :   5D62h         LBL68F9         :   68F9h
- LBL68EF         :   68EFh         LBL68E1         :   68E1h
- MDL5F2C         :   5F2Ch         LBL68E4         :   68E4h
- LBL692B         :   692Bh         LBL692A         :   692Ah
- LBL693A         :   693Ah         LBL696C         :   696Ch
- LBL6967         :   6967h         LBL6946         :   6946h
- LBL6964         :   6964h         LBL6958         :   6958h
- MDL69BC         :   69BCh         LBL695F         :   695Fh
- LBL698A         :   698Ah         LBL6988         :   6988h
- LBL6993         :   6993h         LBL69BB         :   69BBh
- LBL69AC         :   69ACh         MDL67A9         :   67A9h
- LBL69D4         :   69D4h         LBL69DA         :   69DAh
- LBL69F6         :   69F6h         MDL6093         :   6093h
- LBL6A07         :   6A07h         LBL6A1F         :   6A1Fh
- LBL6A1A         :   6A1Ah         MDL4886         :   4886h
- LBL6A6A         :   6A6Ah         LBL6A69         :   6A69h
- LBL6A95         :   6A95h         LBL6A73         :   6A73h
- LBL6A92         :   6A92h         LBL6AA4         :   6AA4h
- LBL6AC5         :   6AC5h         LBL6ABC         :   6ABCh
- LBL6ABF         :   6ABFh         LBL6A85         :   6A85h
- LBL6AC8         :   6AC8h         LBL6AA9         :   6AA9h
- LBL6AE6         :   6AE6h         LBL6AE0         :   6AE0h
- LBL6AE3         :   6AE3h         LBL6B1F         :   6B1Fh
- MDL686F         :   686Fh         LBL6B1E         :   6B1Eh
- LBL6B08         :   6B08h         LBL6B31         :   6B31h
- LBL6B4B         :   6B4Bh         LBL6B45         :   6B45h
- LBL6B4C         :   6B4Ch         LBL6B5D         :   6B5Dh
- LBL6B68         :   6B68h         LBL6CF2         :   6CF2h
- LBL6BC9         :   6BC9h         LBL6BBD         :   6BBDh
- LBL6BA7         :   6BA7h         LBL6BB2         :   6BB2h
- LBL6BC3         :   6BC3h         LBL6BE8         :   6BE8h
- LBL6BE3         :   6BE3h         LBL6BE1         :   6BE1h
- LBL6BFF         :   6BFFh         LBL6BFA         :   6BFAh
- LBL6C16         :   6C16h         LBL6C11         :   6C11h
- LBL6C3B         :   6C3Bh         LBL6C44         :   6C44h
- LBL6C4D         :   6C4Dh         LBL6C37         :   6C37h
- LBL6C54         :   6C54h         LBL6C19         :   6C19h
- MDL6C82         :   6C82h         MDL7E5B         :   7E5Bh
- LBL6C80         :   6C80h         MDL7C7D         :   7C7Dh
- MDL6D54         :   6D54h         LBL6C91         :   6C91h
- LBL6C8F         :   6C8Fh         LBL6CBA         :   6CBAh
- LBL6CAC         :   6CACh         LBL6CB7         :   6CB7h
- LBL6CF1         :   6CF1h         MDL7D2A         :   7D2Ah
- LBL6CE3         :   6CE3h         LBL6CD8         :   6CD8h
- LBL6C59         :   6C59h         LBL6D09         :   6D09h
- LBL6D2E         :   6D2Eh         LBL6D01         :   6D01h
- LBL6D65         :   6D65h         MDL6C81         :   6C81h
- LBL6D07         :   6D07h         LBL6D43         :   6D43h
- MDL7CEE         :   7CEEh         LBL6D78         :   6D78h
- LBL6D72         :   6D72h         LBL6D74         :   6D74h
- MDL7EC2         :   7EC2h         LBL6D6E         :   6D6Eh
- LBL6D61         :   6D61h         LBL6D67         :   6D67h
- LBL6D85         :   6D85h         LBL7341         :   7341h
- LBL6DCF         :   6DCFh         LBL6DD1         :   6DD1h
- LBL6DCA         :   6DCAh         LBL6DDF         :   6DDFh
- LBL6DDB         :   6DDBh         LBL6E06         :   6E06h
- LBL6E60         :   6E60h         LBL6E08         :   6E08h
- LBL6E5E         :   6E5Eh         LBL6E1F         :   6E1Fh
- LBL6E5C         :   6E5Ch         LBL6E53         :   6E53h
- LBL6E2D         :   6E2Dh         LBL6E32         :   6E32h
- LBL6E47         :   6E47h         LBL6E38         :   6E38h
- LBL6E71         :   6E71h         LBL6E7E         :   6E7Eh
- MDL7828         :   7828h         LBL6ED9         :   6ED9h
- MDL6EF1         :   6EF1h         LBL6E86         :   6E86h
- MDL6EDF         :   6EDFh         LBL6EA8         :   6EA8h
- LBL6E85         :   6E85h         LBL6EAB         :   6EABh
- LBL6EC1         :   6EC1h         LBL6EDB         :   6EDBh
- LBL6FC2         :   6FC2h         MDL6EF7         :   6EF7h
- MDL6FD7         :   6FD7h         LBL6F7F         :   6F7Fh
- LBL6EF0         :   6EF0h         LBL6E63         :   6E63h
- LBL6F3D         :   6F3Dh         LBL6F27         :   6F27h
- LBL6F55         :   6F55h         LBL6F70         :   6F70h
- LBL6FC4         :   6FC4h         LBL7012         :   7012h
- MDL6FC6         :   6FC6h         MDL7041         :   7041h
- MDL704E         :   704Eh         LBL7EE2         :   7EE2h
- MDL7002         :   7002h         LBL6FAE         :   6FAEh
- LBL6F8D         :   6F8Dh         MDL70B0         :   70B0h
- LBL6F89         :   6F89h         LBL6F82         :   6F82h
- LBL6FB8         :   6FB8h         MDL7F0B         :   7F0Bh
- LBL6FCF         :   6FCFh         MDL7EF8         :   7EF8h
- MDL70B7         :   70B7h         LBL6FEC         :   6FECh
- LBL6FEE         :   6FEEh         MDL708B         :   708Bh
- LBL6FFC         :   6FFCh         LBL6FF1         :   6FF1h
- LBL7010         :   7010h         LBL703D         :   703Dh
- LBL7023         :   7023h         LBL702A         :   702Ah
- LBL6D57         :   6D57h         LBL7003         :   7003h
- MDL705D         :   705Dh         LBL7051         :   7051h
- LBL7055         :   7055h         MDL7077         :   7077h
- MDL7076         :   7076h         LBL7081         :   7081h
- LBL7085         :   7085h         LBL70AA         :   70AAh
- LBL7096         :   7096h         LBL70C2         :   70C2h
- LBL70D3         :   70D3h         LBL70C0         :   70C0h
- LBL70B9         :   70B9h         LBL70E1         :   70E1h
- LBL7126         :   7126h         LBL70E8         :   70E8h
- LBL7103         :   7103h         LBL70F3         :   70F3h
- LBL70ED         :   70EDh         LBL70F2         :   70F2h
- LBL7122         :   7122h         MDL7416         :   7416h
- LBL7129         :   7129h         MDL7464         :   7464h
- MDL7AAE         :   7AAEh         MDL72B1         :   72B1h
- LBL7184         :   7184h         LBL714D         :   714Dh
- LBL714F         :   714Fh         LBL717D         :   717Dh
- LBL715D         :   715Dh         LBL7159         :   7159h
- LBL7152         :   7152h         LBL7399         :   7399h
- LBL70D8         :   70D8h         LBL74D1         :   74D1h
- LBL71AD         :   71ADh         LBL71C7         :   71C7h
- LBL71D7         :   71D7h         MDL7437         :   7437h
- LBL71F1         :   71F1h         LBL7280         :   7280h
- LBL71FD         :   71FDh         LBL7200         :   7200h
- LBL720C         :   720Ch         LBL721B         :   721Bh
- LBL7218         :   7218h         MDL729C         :   729Ch
- LBL7253         :   7253h         MDL72EF         :   72EFh
- LBL723B         :   723Bh         LBL7248         :   7248h
- LBL7227         :   7227h         LBL724E         :   724Eh
- MDL7291         :   7291h         LBL7380         :   7380h
- LBL7223         :   7223h         LBL721C         :   721Ch
- LBL7267         :   7267h         LBL7237         :   7237h
- LBL728C         :   728Ch         LBL5C93         :   5C93h
- MDL73BD         :   73BDh         MDL7400         :   7400h
- MDL72DB         :   72DBh         LBL72E8         :   72E8h
- LBL72E9         :   72E9h         LBL72E1         :   72E1h
- LBL7326         :   7326h         LBL7318         :   7318h
- LBL7322         :   7322h         LBL733E         :   733Eh
- LBL734D         :   734Dh         LBL7389         :   7389h
- LBL735E         :   735Eh         LBL7361         :   7361h
- LBL739D         :   739Dh         LBL738F         :   738Fh
- LBL736C         :   736Ch         LBL73B8         :   73B8h
- LBL737D         :   737Dh         LBL73B5         :   73B5h
- LBL7368         :   7368h         LBL73FA         :   73FAh
- LBL73C9         :   73C9h         LBL7411         :   7411h
- LBL73FD         :   73FDh         LBL7408         :   7408h
- LBL744E         :   744Eh         LBL745B         :   745Bh
- LBL743A         :   743Ah         LBL745E         :   745Eh
- LBL7449         :   7449h         MDL7AB1         :   7AB1h
- LBL7478         :   7478h         LBL747A         :   747Ah
- MDL6CA6         :   6CA6h         LBL747F         :   747Fh
- LBL74A0         :   74A0h         LBL74B5         :   74B5h
- LBL74BD         :   74BDh         LBL74AB         :   74ABh
- LBL74B9         :   74B9h         LBL74CC         :   74CCh
- LBL74A5         :   74A5h         LBL74AA         :   74AAh
- LBL74E1         :   74E1h         LBL74F4         :   74F4h
- LBL7523         :   7523h         LBL7541         :   7541h
- LBL7502         :   7502h         LBL74FE         :   74FEh
- LBL74F7         :   74F7h         LBL7535         :   7535h
- LBL753A         :   753Ah         LBL7578         :   7578h
- LBL7860         :   7860h         LBL7564         :   7564h
- LBL756A         :   756Ah         LBL7642         :   7642h
- LBL757D         :   757Dh         LBL7641         :   7641h
- LBL7879         :   7879h         LBL75A4         :   75A4h
- MDL77DA         :   77DAh         LBL75FA         :   75FAh
- MDL77A7         :   77A7h         MDL77FB         :   77FBh
- LBL75B5         :   75B5h         LBL75CD         :   75CDh
- LBL75A7         :   75A7h         LBL75D0         :   75D0h
- MDL7812         :   7812h         LBL75D3         :   75D3h
- LBL75C1         :   75C1h         MDL784D         :   784Dh
- LBL75EB         :   75EBh         MDL70D4         :   70D4h
- LBL75F3         :   75F3h         LBL79C7         :   79C7h
- LBL75FE         :   75FEh         LBL7620         :   7620h
- LBL7616         :   7616h         LBL7612         :   7612h
- LBL7631         :   7631h         LBL79CA         :   79CAh
- LBL764E         :   764Eh         LBL765F         :   765Fh
- LBL76E5         :   76E5h         LBL7658         :   7658h
- LBL7696         :   7696h         LBL79E5         :   79E5h
- LBL758F         :   758Fh         LBL76BF         :   76BFh
- LBL76AD         :   76ADh         LBL79E9         :   79E9h
- LBL76DC         :   76DCh         LBL759A         :   759Ah
- LBL76FD         :   76FDh         LBL7A08         :   7A08h
- LBL777E         :   777Eh         LBL7723         :   7723h
- MDL7760         :   7760h         LBL7726         :   7726h
- LBL7751         :   7751h         LBL75D8         :   75D8h
- LBL773C         :   773Ch         LBL7737         :   7737h
- LBL778B         :   778Bh         LBL778E         :   778Eh
- LBL77A2         :   77A2h         LBL7625         :   7625h
- LBL7797         :   7797h         LBL7795         :   7795h
- LBL77BE         :   77BEh         LBL77C8         :   77C8h
- LBL77E7         :   77E7h         LBL77F1         :   77F1h
- LBL7802         :   7802h         LBL784B         :   784Bh
- LBL784A         :   784Ah         LBL7833         :   7833h
- LBL7841         :   7841h         LBL784F         :   784Fh
- LBL754B         :   754Bh         LBL786B         :   786Bh
- LBL7871         :   7871h         LBL756C         :   756Ch
- MDL7A51         :   7A51h         LBL789F         :   789Fh
- LBL7895         :   7895h         LBL7888         :   7888h
- MDL7AA4         :   7AA4h         LBL79A2         :   79A2h
- LBL78AC         :   78ACh         MDL79D8         :   79D8h
- LBL78A5         :   78A5h         LBL78D6         :   78D6h
- LBL78E6         :   78E6h         LBL7942         :   7942h
- LBL790F         :   790Fh         LBL788A         :   788Ah
- LBL78F0         :   78F0h         LBL78E9         :   78E9h
- MDL7773         :   7773h         LBL792A         :   792Ah
- LBL7EE5         :   7EE5h         LBL799D         :   799Dh
- LBL76A7         :   76A7h         LBL797E         :   797Eh
- LBL79B5         :   79B5h         LBL79D0         :   79D0h
- LBL79C0         :   79C0h         LBL79E4         :   79E4h
- LBL787F         :   787Fh         LBL7A02         :   7A02h
- LBL7A05         :   7A05h         LBL788C         :   788Ch
- LBL7A3B         :   7A3Bh         LBL7A47         :   7A47h
- LBL7A2E         :   7A2Eh         LBL7A29         :   7A29h
- LBL7A8B         :   7A8Bh         LBL7A9C         :   7A9Ch
- LBL7A74         :   7A74h         LBL7A64         :   7A64h
- LBL7A7F         :   7A7Fh         LBL7A5E         :   7A5Eh
- MDL7AB9         :   7AB9h         LBL7AC4         :   7AC4h
- LBL7AD3         :   7AD3h         LBL7AE3         :   7AE3h
- LBL7AA2         :   7AA2h         LBL7AF6         :   7AF6h
- LBL7AF9         :   7AF9h         LBL7AC9         :   7AC9h
- LBL7B09         :   7B09h         LBL7B97         :   7B97h
- LBL7C52         :   7C52h         LBL7B84         :   7B84h
- MDL7DF7         :   7DF7h         LBL7B56         :   7B56h
- MDL7C0C         :   7C0Ch         LBL7B72         :   7B72h
- MDL7FBB         :   7FBBh         LBL7B99         :   7B99h
- LBL7B9E         :   7B9Eh         LBL7B05         :   7B05h
- MDL7BEC         :   7BECh         LBL7B95         :   7B95h
- LBL7BBD         :   7BBDh         LBL7B4C         :   7B4Ch
- MDL7BF9         :   7BF9h         LBL7B67         :   7B67h
- LBL7BD6         :   7BD6h         LBL7C08         :   7C08h
- MDL7CF4         :   7CF4h         LBL7C14         :   7C14h
- LBL7C21         :   7C21h         LBL7C22         :   7C22h
- LBL7C4C         :   7C4Ch         MDL56C7         :   56C7h
- MDL7E08         :   7E08h         LBL7C38         :   7C38h
- LBL7C7B         :   7C7Bh         LBL7C71         :   7C71h
- LBL7C9C         :   7C9Ch         LBL7CB7         :   7CB7h
- MDL7D0C         :   7D0Ch         LBL7CBA         :   7CBAh
- LBL7CA3         :   7CA3h         LBL7CA5         :   7CA5h
- LBL7CE6         :   7CE6h         LBL7CD5         :   7CD5h
- MDL7D1C         :   7D1Ch         LBL7CD8         :   7CD8h
- LBL7CC7         :   7CC7h         MDL7D06         :   7D06h
- LBL7C8E         :   7C8Eh         LBL7CE7         :   7CE7h
- LBL7EA5         :   7EA5h         LBL7CEB         :   7CEBh
- LBL7D18         :   7D18h         LBL7D03         :   7D03h
- LBL7D1A         :   7D1Ah         LBL7D47         :   7D47h
- LBL7D48         :   7D48h         LBL7D3C         :   7D3Ch
- LBL7D71         :   7D71h         LBL7D75         :   7D75h
- LBL7D6F         :   7D6Fh         LBL7D80         :   7D80h
- MDL7D62         :   7D62h         LBL7D8D         :   7D8Dh
- MDL7DFE         :   7DFEh         LBL7DBA         :   7DBAh
- LBL7DB0         :   7DB0h         LBL7D97         :   7D97h
- LBL7DD6         :   7DD6h         LBL7DC7         :   7DC7h
- LBL7DBF         :   7DBFh         LBL7DF5         :   7DF5h
- LBL7E59         :   7E59h         LBL7E04         :   7E04h
- MDL7E0E         :   7E0Eh         LBL7E38         :   7E38h
- LBL7E2E         :   7E2Eh         LBL7E50         :   7E50h
- LBL7E4A         :   7E4Ah         LBL7E55         :   7E55h
- LBL7E3E         :   7E3Eh         LBL7E74         :   7E74h
- LBL7E68         :   7E68h         LBL7EA6         :   7EA6h
- LBL7E90         :   7E90h         LBL7EAF         :   7EAFh
- LBL7E9B         :   7E9Bh         LBL7EF1         :   7EF1h
- LBL7E82         :   7E82h         LBL7EC4         :   7EC4h
- LBL7EDE         :   7EDEh         LBL7F0A         :   7F0Ah
- LBL7F4F         :   7F4Fh         MDL7F30         :   7F30h
- MDL7F37         :   7F37h         LBL7F6B         :   7F6Bh
- LBL7F65         :   7F65h         LBL7F8F         :   7F8Fh
- LBL7FA6         :   7FA6h         MDL7E21         :   7E21h
- LBL7FD8         :   7FD8h         LBL7FEB         :   7FEBh
-
- START ADDRESS   = 4000h
- END ADDRESS     = 7FFFh
- EXECUTE ADDRESS = 0000h

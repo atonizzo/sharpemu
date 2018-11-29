@@ -41,30 +41,31 @@ uint16_t sc43536_base_address[] = {SC43536_BASE_ADDRESS};
 
 address_descriptor_t address_descriptors[] =
 {
-    {0x009F, "Xreg = 0"},              {0x00A9, "Yreg = 0"},
-    {0x00AF, "Zreg = 0"},              {0x0159, "YReg += XReg"},
-    {0x012F, "YReg = 1.0"},            {0x020F, "XReg = WReg"},
-    {0x01FF, "WReg = XReg"},           {0x0238, "YReg = XReg"},
+    {0x009F, "Xreg = 0"},               {0x00A9, "Yreg = 0"},
+    {0x00AF, "Zreg = 0"},               {0x0159, "YReg += XReg"},
+    {0x012F, "YReg = 1.0"},             {0x020F, "XReg = WReg"},
+    {0x01FF, "WReg = XReg"},            {0x0238, "YReg = XReg"},
     {0x023D, "(0x30 .. 0x37) <- (0x28 .. 0x2F)"},
     {0x02CD, "XReg += YReg"},           {0x02CA, "YReg += XReg"},
     {0x02DB, "YReg -= XReg"},           {0x02E2, "XReg -= YReg"},
     {0x0D2F, "X <- (0x26, 0x25) - 1"},  {0x0D37, "X <- (0x2E, 0x2D) - 1"},
     {0x0DAA, "(0x22 .. 0x24) <- (0x2A .. 0x2C)"},
-    {0x1118, "[$C6B6, $C6B5] <- X"},    {0x1125, "X <- [$C6B6, $C6B5]"},
+    {0x1118, "($C6B6, $C6B5) <- X"},    {0x1125, "X <- ($C6B6, $C6B5)"},
     {0x115E, "DP <- $F83E"},            {0x1162, "DP <- $F8BE"},
     {0x1166, "DP <- $C6B7"},            {0x116A, "DP <- $C6DA"},
-    {0x1172, "X <- Y"},                 {0x118F, "X <- [$C6E2, $C6E1]"},
+    {0x1172, "X <- Y"},                 {0x118F, "X <- ($C6E2, $C6E1)"},
     {0x1177, "Y <- X"},                 {0x1195, "[$0C, $0D] <-> X"},
-    {0x119A, "X <- $C7B0 (rambuf)"},
+    {0x119A, "X <- $C7B0 - 1 (rambuf)"},
     {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
     {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
     {0x11F1, "X <- [B, A] - 1"},        {0x11F5, "Y <- [B, A] - 1"},
     {0x11F9, "Y <- 0xC7B0 (kbdbuf)"},   {0x1200, "[$1C, $1D] <- X"},
-    {0x12BD, "Clear ZReg"},
-    {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> [$1C, $1D]"},
-    {0x172B, "[B,A] <<= 1"},            {0x1731, "[B,A] >>= 1"},
+    {0x12BD, "XReg = 0"},
+    {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> ($1C, $1D)"},
+    {0x172B, "[B, A] <<= 1"},           {0x1731, "[B, A] >>= 1"},
+    {0x1899, "X <- ($1D, $1C)"},
     {0x18C5, "print_prompt"},           {0x1FB1, "wr_portc"},
-    {0x18DB, "Y <- [B, A]"},            {0x1FB6, "memcpy"},
+    {0x18DB, "Y <- (B, A)"},            {0x1FB6, "memcpy"},
     {0x400C, "write_lcd"},
 
     {0, 0}
@@ -235,7 +236,6 @@ static void lcd_service(uint16_t address, uint8_t data)
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
         lcd_status[0][0x3E] = data;
-        printf("lcd_status[0][0x3E] = 0x%02X\r\n", data);
         return;
     }
 
@@ -320,20 +320,16 @@ static uint8_t pc_1251_read_memory(uint16_t address)
 static void pc_1251_write_memory(uint16_t address, uint8_t value)
 {
     // RAM memory.
-    // More RAM can be arbitrarily added by decreasing the firstr of these two
+    // More RAM can be arbitrarily added by decreasing the first of these two
     //  numbers. The MEM command will reflect the increase.
     if ((address >= 0xB800) && (address < 0xC800))
         memory_image[address] = value;
 
     // LCD memory.
-    if ((address >= 0xF800) && (address <= 0xF87B))
+    if ((address >= 0xF800) && (address < 0xF900))
     {
         memory_image[address] = value;
-#if 1        
         lcd_service(address, value);
-#else
-        sc43536_service(0, 0, address, value);
-#endif
     }
 }
 

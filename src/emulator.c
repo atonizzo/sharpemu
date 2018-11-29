@@ -90,12 +90,119 @@ static int load_roms(void)
     return 0;
 }
 
+int read_debug_events(void)
+{
+    memset((void *)&breakpoint_list, 0, sizeof(breakpoint_list));
+    FILE *fp_events = fopen("events.dbg", "r");
+    if (fp_events != NULL)
+    {
+        __break__
+        char event_descriptor[128];
+        char *rc;
+        int done = 0;
+        do
+        {
+            rc = fgets(event_descriptor, 127, fp_events);
+            if (rc == 0)
+                continue;
+            int k = 0;    
+            while (event_descriptor[k] == ' ')
+                k++;
+            switch (event_descriptor[k])
+            {
+            case '#':
+                // A comment.
+                break;
+            // P is a breakpoint that is triggered when the program counter
+            //  reaches it.
+            // 'P' is a breakpoint that remains in place when it it hit.
+            // 'p' is a temporary breakpoint, that expires (i.e. it is removed)
+            // the first time that it is hit.
+            case 'P':
+            case 'p':
+                if (event_descriptor[k + 1] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                if ((event_descriptor[k + 2] == '0') &&
+                                              (event_descriptor[k + 3] == 'x'))
+                {
+                    uint16_t address =
+                          (uint16_t)strtol(&event_descriptor[k + 2], NULL, 0);
+                    if (address >= 0x10000)
+                        break;
+                    if (event_descriptor[k] == 'i')
+                        set_breakpoint(address,
+                                       BREAKPOINT_ATTRIB_PC |
+                                       BREAKPOINT_ATTRIB_TEMPORARY);
+                    else
+                        set_breakpoint(address, BREAKPOINT_ATTRIB_PC);
+                }
+                break;
+            // I is a breakpoint that is triggered when an instruction with
+            //  a given opcode is about to be executed.
+            // 'I' is a breakpoint that remains in place when it it hit.
+            // 'i' is a temporary breakpoint, that expires (i.e. it is removed)
+            // the first time that it is hit.
+            case 'I':
+            case 'i':
+                if (event_descriptor[k + 1] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                if ((event_descriptor[k + 2] == '0') &&
+                                              (event_descriptor[k + 3] == 'x'))
+                {
+                    uint8_t instruction =
+                          (uint8_t)strtol(&event_descriptor[k + 2], NULL, 0);
+                    if (event_descriptor[k + 0] == 'i')
+                        set_breakpoint(instruction,
+                                       BREAKPOINT_ATTRIB_INSTRUCTION |
+                                       BREAKPOINT_ATTRIB_TEMPORARY);
+                    else
+                        set_breakpoint(instruction,
+                                       BREAKPOINT_ATTRIB_INSTRUCTION);
+                }
+                break;
+            // S is a a value for one of the scratchpad memory locations.
+            // The format is S:AA:BB where AA is the register number (<96)
+            //  and BB is the new content.
+            case 'S':
+            case 's':
+                if (event_descriptor[k + 1] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                char *next_ptr;
+
+                uint32_t address =
+                      (uint32_t)strtol(&event_descriptor[k + 2], &next_ptr, 0);
+                if (next_ptr[0] != ':')
+                {
+                    done = 1;
+                    break;
+                }
+                uint32_t value = (uint32_t)strtol(&next_ptr[1], NULL, 0);
+                cpu_state.scratchpad.raw.mem[address] = value;
+                break;
+            default:
+                break;
+            }
+        }
+        while ((rc != NULL) && (done == 0));
+        fclose(fp_events);
+    }
+    return 0;
+}
+
 int setup_emulator(void)
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
     memset((void *)&cpu_state_past, '\0', sizeof(cpu_state));
     memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
-    memset((void *)&breakpoint_list, 0, sizeof(breakpoint_list));
     memset((void *)&mem_view_past, 0, sizeof(mem_view_past));
 
     int personality = load_roms();
@@ -155,102 +262,7 @@ int setup_emulator(void)
     cpu_state.q                  = DEFAULT_Q_VALUE;
     cpu_state.pc                 = DEFAULT_PC_VALUE;
 
-    FILE *fp_events = fopen("events.dbg", "r");
-    if (fp_events != NULL)
-    {
-        //
-        char event_descriptor[128];
-        char *rc;
-        int done = 0;
-        do
-        {
-            rc = fgets(event_descriptor, 127, fp_events);
-            if (rc == 0)
-                continue;
-            switch (event_descriptor[0])
-            {
-            // P is a breakpoint that is triggered when the program counter
-            //  reaches it.
-            // 'P' is a breakpoint that remains in place when it it hit.
-            // 'p' is a temporary breakpoint, that expires (i.e. it is removed)
-            // the first time that it is hit.
-            case 'P':
-            case 'p':
-                if (event_descriptor[1] != ':')
-                {
-                    done = 1;
-                    break;
-                }
-                if ((event_descriptor[2] == '0') &&
-                                              (event_descriptor[3] == 'x'))
-                {
-                    uint16_t address =
-                          (uint16_t)strtol(&event_descriptor[2], NULL, 0);
-                    if (address >= 0x10000)
-                        break;
-                    if (event_descriptor[0] == 'i')
-                        set_breakpoint(address,
-                                       BREAKPOINT_ATTRIB_PC |
-                                       BREAKPOINT_ATTRIB_TEMPORARY);
-                    else
-                        set_breakpoint(address, BREAKPOINT_ATTRIB_PC);
-                }
-                break;
-            // I is a breakpoint that is triggered when an instruction with
-            //  a given opcode is about to be executed.
-            // 'I' is a breakpoint that remains in place when it it hit.
-            // 'i' is a temporary breakpoint, that expires (i.e. it is removed)
-            // the first time that it is hit.
-            case 'I':
-            case 'i':
-                if (event_descriptor[1] != ':')
-                {
-                    done = 1;
-                    break;
-                }
-                if ((event_descriptor[2] == '0') &&
-                                              (event_descriptor[3] == 'x'))
-                {
-                    uint8_t instruction =
-                          (uint8_t)strtol(&event_descriptor[2], NULL, 0);
-                    if (event_descriptor[0] == 'i')
-                        set_breakpoint(instruction,
-                                       BREAKPOINT_ATTRIB_INSTRUCTION |
-                                       BREAKPOINT_ATTRIB_TEMPORARY);
-                    else
-                        set_breakpoint(instruction,
-                                       BREAKPOINT_ATTRIB_INSTRUCTION);
-                }
-                break;
-            // S is a a value for one of the scratchpad memory locations.
-            // The format is S:AA:BB where AA is the register number (<96)
-            //  and BB is the new content.
-            case 'S':
-            case 's':
-                if (event_descriptor[1] != ':')
-                {
-                    done = 1;
-                    break;
-                }
-                char *next_ptr;
-
-                uint32_t address =
-                          (uint32_t)strtol(&event_descriptor[2], &next_ptr, 0);
-                if (next_ptr[0] != ':')
-                {
-                    done = 1;
-                    break;
-                }
-                uint32_t value = (uint32_t)strtol(&next_ptr[1], NULL, 0);
-                cpu_state.scratchpad.raw.mem[address] = value;
-                break;
-            default:
-                break;
-            }
-        }
-        while ((rc != NULL) && (done == 0));
-        fclose(fp_events);
-    }
+    read_debug_events();
 
     gettimeofday(&timeval_start, NULL);
     write_mem(0xF8BA, 0xFF);

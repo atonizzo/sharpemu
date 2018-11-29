@@ -55,14 +55,20 @@ static void pre_run(void)
     gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
     widget = gtk_builder_get_object(builder, "menu_debug_step");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
+    widget = gtk_builder_get_object(builder, "menu_debug_next");
+    gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
     widget = gtk_builder_get_object(builder, "buttonbar_run");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
-    widget = gtk_builder_get_object(builder, "menu_debug_run");
+    widget = gtk_builder_get_object(builder, "menu_debug_reset");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
 
     // Enable the Stop button.
     widget = gtk_builder_get_object(builder, "buttonbar_stop");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+
+    // Disable the Reset button.
+    widget = gtk_builder_get_object(builder, "buttonbar_reset");
+    gtk_widget_set_sensitive(GTK_WIDGET(widget), FALSE);
     write_status_bar("Running...");
 }
 
@@ -75,9 +81,15 @@ static void post_run(void)
     gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
     widget = gtk_builder_get_object(builder, "menu_debug_step");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+    widget = gtk_builder_get_object(builder, "buttonbar_next");
+    gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
     widget = gtk_builder_get_object(builder, "buttonbar_run");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
-    widget = gtk_builder_get_object(builder, "menu_debug_run");
+    widget = gtk_builder_get_object(builder, "menu_debug_reset");
+    gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
+
+    // Enable the Reset button.
+    widget = gtk_builder_get_object(builder, "buttonbar_reset");
     gtk_widget_set_sensitive(GTK_WIDGET(widget), TRUE);
 
     // Disable the stop button.
@@ -256,23 +268,7 @@ static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
         gtk_label_set_text(GTK_LABEL(mode_label), "MODE: OFF");
 
-/*        // The calculator mode is changed to one of the operative ones.
-        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);*/
+        // Menus.
         this_widget = gtk_builder_get_object(builder, "menu_mode_run");
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
         this_widget = gtk_builder_get_object(builder, "menu_mode_pro");
@@ -386,6 +382,7 @@ static gboolean debug_reset_callback(GtkWidget *widget, gpointer user_data )
     cpu_state.p = DEFAULT_P_VALUE;
     cpu_state.q = DEFAULT_Q_VALUE;
     cpu_state.pc = DEFAULT_PC_VALUE;
+    read_debug_events();
     display_core_info();
     return TRUE;
 }

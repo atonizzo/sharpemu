@@ -79,9 +79,9 @@ static void print_scratchpad_reg(uint16_t reg)
     char label_name[32];
     if (cpu_state.scratchpad.raw.mem[reg] !=
                                     cpu_state_past.scratchpad.raw.mem[reg])
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     char *markup = g_markup_printf_escaped(format,
                                            cpu_state.scratchpad.raw.mem[reg]);
     sprintf(label_name, "label_reg_%s", reg_to_str[reg]);
@@ -317,14 +317,14 @@ void display_core_info(void)
     }
 
     // P
-    sprintf(label_text, "%02X", cpu_state.p);
+    sprintf(label_text, "$%02X", cpu_state.p);
     if (cpu_state.p < 12)
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
                 reg_to_str[cpu_state.p]);
     else            
         sprintf(label_text + strlen(label_text),
-                " (0x%02X)",
+                " ($%02X)",
                 cpu_state.scratchpad.raw.mem[cpu_state.p]);
     if ((cpu_state.p >= PORTA_OFFSET) && (cpu_state.p <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
@@ -350,7 +350,7 @@ void display_core_info(void)
                 reg_to_str[cpu_state.q]);
     else            
         sprintf(label_text + strlen(label_text),
-                " (0x%02X)",
+                " ($%02X)",
                 cpu_state.scratchpad.raw.mem[cpu_state.p]);
     if ((cpu_state.q >= PORTA_OFFSET) && (cpu_state.q <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
@@ -374,7 +374,7 @@ void display_core_info(void)
 
     // PC
     format = "<span foreground=\"black\">\%s</span>";
-    sprintf(label_text, "%04X", cpu_state.pc);
+    sprintf(label_text, "$%04X", cpu_state.pc);
     markup = g_markup_printf_escaped(format, label_text);
     this_label = gtk_builder_get_object(builder, "label_reg_PC");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -383,11 +383,11 @@ void display_core_info(void)
     // DP
     if (cpu_state.dp != cpu_state_past.dp)
     {
-        format = "<span foreground=\"red\">\%04X</span>";
+        format = "<span foreground=\"red\">$\%04X</span>";
         cpu_state_past.dp = cpu_state.dp;
     }
     else
-        format = "<span foreground=\"black\">\%04X</span>";
+        format = "<span foreground=\"black\">$\%04X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.dp);
     this_label = gtk_builder_get_object(builder, "label_reg_DP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -396,11 +396,11 @@ void display_core_info(void)
     // cDP
     if (read_mem(cpu_state.dp) != cpu_state_past.cdp)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
         cpu_state_past.cdp = read_mem(cpu_state.dp);
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, read_mem(cpu_state.dp));
     this_label = gtk_builder_get_object(builder, "label_reg_cDP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -409,11 +409,11 @@ void display_core_info(void)
     // r
     if (cpu_state.r != cpu_state_past.r)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
         cpu_state_past.r = cpu_state.r;
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.r);
     this_label = gtk_builder_get_object(builder, "label_reg_r");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -422,7 +422,7 @@ void display_core_info(void)
     // Zero flag
     if (cpu_state.flags.zero != cpu_state_past.flags.zero)
     {
-        format = "<span foreground=\"red\">\%d</span>";
+        format = "<span foreground=\"red\">%d</span>";
         cpu_state_past.flags.zero = cpu_state.flags.zero;
     }
     else
@@ -448,11 +448,11 @@ void display_core_info(void)
     // IOport A
     if (cpu_state.porta != cpu_state_past.porta)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
          cpu_state_past.porta = cpu_state.porta;
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.porta);
     this_label = gtk_builder_get_object(builder, "label_ioport_a");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -461,11 +461,11 @@ void display_core_info(void)
     // IOport B
     if (cpu_state.portb != cpu_state_past.portb)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
          cpu_state_past.portb = cpu_state.portb;
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portb);
     this_label = gtk_builder_get_object(builder, "label_ioport_b");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -474,11 +474,11 @@ void display_core_info(void)
     // IOport C
     if (cpu_state.portc != cpu_state_past.portc)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
          cpu_state_past.portc = cpu_state.portc;
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portc);
     this_label = gtk_builder_get_object(builder, "label_ioport_c");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -487,11 +487,11 @@ void display_core_info(void)
     // IOport F
     if (cpu_state.portf != cpu_state_past.portf)
     {
-        format = "<span foreground=\"red\">\%02X</span>";
+        format = "<span foreground=\"red\">$\%02X</span>";
          cpu_state_past.portf = cpu_state.portf;
     }
     else
-        format = "<span foreground=\"black\">\%02X</span>";
+        format = "<span foreground=\"black\">$\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portf);
     this_label = gtk_builder_get_object(builder, "label_ioport_f");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
