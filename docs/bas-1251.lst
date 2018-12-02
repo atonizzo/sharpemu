@@ -1,6 +1,7 @@
 SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 
 [0xC6B6, 0xC6B5] ; Used to save a copy of the X register
+0xC6D9 : Bit 5 set for password active.
 [0xC6E2, 0xC6E1] ; First byte of memory used by BASIC
 [0xC6E4, 0xC6E3] ; Last byte of memory used by BASIC.
 [0xC6F2, 0xC6F1] ; Pointer to the start of the BASIC token being decoded.
@@ -3307,17 +3308,17 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 575C: F1E5                      CAL   lcd_off
 575E: D1                        RC
 575F: 37        LBL575F:        RTN
-5760: FACF                      CAL   $1ACF
-5762: F18F                      CAL   basic_2x
-5764: 88                        LP    $08
-5765: 0207                      LIA   $07
-5767: DB                        EXAM
+5760: FACF                      CAL   $1ACF         ; X <-> ($1C, $1D)
+5762: F18F                      CAL   basic_2x      ; X <- ($C6E2, $C6E1)
+5764: 88                        LP    $08           ; K = 7, the maximum length
+5765: 0207                      LIA   $07           ;  of the password command.
+5767: DB                        EXAM                ;
 5768: 24                        IXL
 5769: 67FF                      CPIA  $FF
 576B: 3832                      JRZP  LBL579E
-576D: F899                      CAL   $1899
-576F: 24                        IXL
-5770: 6712                      CPIA  $12
+576D: F899                      CAL   $1899         ; X <- ($1D, $1C)       
+576F: 24                        IXL                 ; Read char from password
+5770: 6712                      CPIA  $12           ; Seek a double quote.
 5772: 282B                      JRNZP LBL579E
 5774: 10C6D9                    LIDP  $C6D9
 5777: D620                      TSID  $20
@@ -3356,29 +3357,29 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 57AE: 6712                      CPIA  $12
 57B0: 3919                      JRZM  LBL5798
 57B2: 2D0A                      JRM   LBL57A9
-57B4: F1F5      LBL57B4:        CAL   load_y
-57B6: 02F5                      LIA   $F5
-57B8: 26                        IYS
-57B9: 24        LBL57B9:        IXL
-57BA: 6712                      CPIA  $12
-57BC: 381A                      JRZP  LBL57D7
-57BE: 6700                      CPIA  $00
-57C0: 3815                      JRZP  LBL57D6
-57C2: 26                        IYS
-57C3: 49                        DECK
-57C4: 290C                      JRNZM LBL57B9
+57B4: F1F5      LBL57B4:        CAL   load_y        ; Y <- [B, A] - 1
+57B6: 02F5                      LIA   $F5           ; marker?
+57B8: 26                        IYS                 ;
+57B9: 24        LBL57B9:        IXL                 ; Password character
+57BA: 6712                      CPIA  $12           ; Double quote?
+57BC: 381A                      JRZP  LBL57D7       ;
+57BE: 6700                      CPIA  $00           ; End of string?
+57C0: 3815                      JRZP  LBL57D6       '
+57C2: 26                        IYS                 ; Store char.
+57C3: 49                        DECK                ; K is PASS length counter.
+57C4: 290C                      JRNZM LBL57B9       ;
 57C6: 24        LBL57C6:        IXL
 57C7: 6712                      CPIA  $12
 57C9: 3806                      JRZP  LBL57D0
 57CB: 6700                      CPIA  $00
 57CD: 2908                      JRNZM LBL57C6
 57CF: 05                        DX
-57D0: 10C6D9    LBL57D0:        LIDP  $C6D9
-57D3: D520                      ORID  $20
-57D5: 37                        RTN
+57D0: 10C6D9    LBL57D0:        LIDP  $C6D9         ; Flag pass enabled.
+57D3: D520                      ORID  $20           ;
+57D5: 37                        RTN                 ;
 57D6: 05        LBL57D6:        DX
-57D7: 0200      LBL57D7:        LIA   $00
-57D9: 26                        IYS
+57D7: 0200      LBL57D7:        LIA   $00           ; Store marker for end of string.
+57D9: 26                        IYS                 ;
 57DA: 2D0B                      JRM   LBL57D0
 57DC: F205                      CAL   $1205
 57DE: 3A3B                      JRCP  LBL581A

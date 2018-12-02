@@ -351,7 +351,7 @@ void display_core_info(void)
     else            
         sprintf(label_text + strlen(label_text),
                 " ($%02X)",
-                cpu_state.scratchpad.raw.mem[cpu_state.p]);
+                cpu_state.scratchpad.raw.mem[cpu_state.q]);
     if ((cpu_state.q >= PORTA_OFFSET) && (cpu_state.q <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
