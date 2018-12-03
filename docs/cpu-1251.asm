@@ -319,7 +319,7 @@ MDL01B6:          LP    0x21
                   LP    0x21
                   ORMA
                   RTN
-MDL01C5:          LP    0x29        ; Add 1 to the 
+MDL01C5:          LP    0x29        ; Add 1 to the
 LBL01C6:          LII   0x01
                   LIA   0x10
                   ADN
@@ -2192,16 +2192,16 @@ LBL0D5B:          LP    0x0E            ; ($0E, $0F) <- ($28, $29)
                   EXAM                  ;
                   LP    0x0F
                   LDM
-                  LP    0x0E            
+                  LP    0x0E
                   EXAM                  ; (0x0E) <- (0x0F)
                   CAL   MDL0D8D         ; Convert (0x0E) to BCD in XReg.
 ; The exponent of the floating point number XReg is set to 4, meaning 10000.
 ; This is because 9999 is the highest number that can be represented using
 ; 4 digits.
-                  LP    0x21            
+                  LP    0x21
                   ORIM  0x40
 ; Change the exponent of the floating point number in XReg to the format X.YEZ.
-                  CAL   MDL0330         
+                  CAL   MDL0330
                   LP    0x10
                   TSIM  0x02
                   JRNZP LBL0D8B
@@ -2228,7 +2228,7 @@ LBL0D95:          CAL   MDL0DA3         ; (0x22 .. 0x24) <-> (0x32 .. 0x34)
                   DECK
                   JRNCM MDL0D8D
                   RTN
-MDL0DA3:          LP    0x22            
+MDL0DA3:          LP    0x22
                   LIQ   0x32
                   LII   0x02
                   EXW
@@ -2946,7 +2946,7 @@ MDL11D2:          LDR                   ; Load stack pointer.
                   INCA                  ; Increment by 2, bypassing current
                   INCA                  ;  return address.
                   LP      0x04          ; Address for X register.
-                  STQ                   ;       
+                  STQ                   ;
                   MVB                   ; Move tucked address to X.
                   STP                   ; Destination address to move the return address to.
                   EXAB                  ; Save updated stack pointer.
@@ -3125,7 +3125,7 @@ LBL130B:          RC
 LBL130D:          CAL   MDL16BA
                   JRNCM LBL12F6
                   RTN
-; Enters with the token of the BASIC instruction in A.                  
+; Enters with the token of the BASIC instruction in A.
 MDL1312:            EXAB
                     CAL     MDL16A5
                     EXAB
@@ -3142,7 +3142,7 @@ LBL1324:            CAL     MDL1CD7
                     RTN
 LBL132B:            CAL     err_syntax
                     RTN
-LBL132E:            CPIA    0x80        
+LBL132E:            CPIA    0x80
                     JRCM    LBL1324     ; Jump if token < 0x80.
                     CPIA    0x86
                     JRCP    LBL13C1     ; Jump if token < 0x86.
@@ -3209,7 +3209,7 @@ LBL138E:            CPIA    0xB2        ; Compare with BASIC token "MEM".
 LBL13A0:          CAL   MDL1CF2
                   JRCP  LBL13C0
                   LIDP  0xC6FC          ; End of BASIC RAM.
-                  LP    0x0A            ; 
+                  LP    0x0A            ;
                   MVBD                  ; Store in [N, M]
                   LIDP  0xC6E3          ; Last byte used by BASIC.
                   LP    0x02            ;
@@ -3747,7 +3747,7 @@ LBL16FC:          LP    0x13
 LBL1702:          CAL   err_syntax
                   RTN
 ; This is where a particular error message (1 through 9) is stored in 0x14.
-; If the command returns with c=1 then this error message is printed.                  
+; If the command returns with c=1 then this error message is printed.
 err_syntax:       LIA   0x01        ;          1 Syntax Error
 LBL1707:          LP    0x14        ; (0x1707)
                   EXAM              ;
@@ -3767,7 +3767,7 @@ err_print:        LIA   0x07        ; (0x171F) 7 Print Format Error
                   JRM   LBL1707     ;
 err_io:           LIA   0x08        ; (0x1723) 8 I/O Device Error
                   JRM   LBL1707     ;
-err_other:        LIA   0x09        ; (0x1727) 9 Other                 
+err_other:        LIA   0x09        ; (0x1727) 9 Other
                   JRM   LBL1707     ;
 ab_mul2:          RC                ; (0x172B)
                   SL                ;
@@ -4052,7 +4052,7 @@ MDL18C0:          DY
                   LIA   0x32        ; Store in LCD buffer.
                   EXAM
                   LP    0x21        ; Fill rest of buffer with blanks.
-                  LIA   0x11        ; 
+                  LIA   0x11        ;
                   LII   0x16        ; 23 of them.
                   FILM
                   CALL  0x400C      ; Print the line with the characters
@@ -4759,17 +4759,17 @@ LBL1D27:          LIP   0x5C            ; Set Port A to 0xFF.
                   JRCP  LBL1D44         ; Taken if PRO pressed.
                   LIA   0x01            ; Calculator is OFF.
                   RTN                   ; Return to $472A
-LBL1D44:          TSID  0x01
-                  JRNZP LBL1D63
-                  ANID  0xF8
-                  ORID  0x01
-LBL1D4C:          LIA   0x08
+LBL1D44:          TSID  0x01            ;
+                  JRNZP LBL1D63         ;
+                  ANID  0xF8            ;
+                  ORID  0x01            ;
+LBL1D4C:          LIA   0x08            ;
                   RTN                   ; Return to $472A
-LBL1D4F:          TSID  0x04
-                  JRNZP LBL1D63
-                  ANID  0xF8
-                  ORID  0x04
-                  JRM   LBL1D4C
+LBL1D4F:          TSID  0x04            ;
+                  JRNZP LBL1D63         ;
+                  ANID  0xF8            ;
+                  ORID  0x04            ;
+                  JRM   LBL1D4C         ;
 LBL1D59:          TSID  0x02            ; Is the RUN symbol already showing
                                         ;  on the LCD?
                   JRNZP LBL1D63         ; If so, scan keyboard.
@@ -4787,9 +4787,9 @@ LBL1D63:          CAL   scan_keybd      ; Code at 0x1F44.
                   CPMA                  ;
                   JRNZP LBL1E66         ;
 LBL1D74:          CAL   MDL1162         ; DP <- $F8BE
-                  TSID  0x01
-                  JRNZP LBL1E3B
-                  ORID  0x01
+                  TSID  0x01            ;
+                  JRNZP LBL1E3B         ;
+                  ORID  0x01            ;
                   LIDL  0xBF            ;
                   STD                   ; Store the character in 0xF8BF.
                   LIDL  0x3D
@@ -4854,7 +4854,7 @@ LBL1DE2:          LIDL  0x3C
                   LIA   0xD1
                   RTN
 LBL1DF1:          CPIA  0x51            ; Compare with 'A'.
-                  JRNCP LBL1E1B
+                  JRNCP LBL1E1B         ; Branch if above A.
                   CPIA  0x34
                   JRZP  LBL1E05
                   TSID  0x02
@@ -4917,7 +4917,7 @@ LBL1E4D:          LP    0x08
                   LIDP  0xF8BF
                   LDD
 LBL1E65:          RTN
-LBL1E66:          CAL   MDL1162
+LBL1E66:          CAL   MDL1162         ; DP <- $F8BE
                   TSID  0x01
                   JRZP  LBL1F05
                   TSID  0x02
@@ -4997,11 +4997,11 @@ LBL1EE0:          CAL   MDL1FBC         ; Given a character in A return the
                                         ;  the first 12 go to 60.
                   LIB   0x05            ; 5 bytes per character.
                   JRNCP LBL1EF4         ;
-                  CAL   memcpy          ;    
+                  CAL   memcpy          ;
                   RTN                   ;
 LBL1EF4:          IXL                   ; Write the data ad decreasing memory
                   DYS                   ; addresses.
-                  DECB                  ;   
+                  DECB                  ;
                   JRNZM LBL1EF4         ;
                   RTN                   ;
 LBL1EFA:          ORID  0x10

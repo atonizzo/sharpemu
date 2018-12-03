@@ -93,7 +93,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 40A4: 0000                      .dw     $0000       ;
 40A6: 4365                      .dw     $4365       ; .string "ROM"
 40A8: 4263                      .dw     $4263       ; .string "LPRINT"
-40AA: 437B                      .dw     $437B       ; .string "SIN"   
+40AA: 437B                      .dw     $437B       ; .string "SIN"
 40AC: 419B                      .dw     $419B       ; .string "COS"
 40AE: 43AB                      .dw     $43AB       ; .string "TAN"
 40B0: 4149                      .dw     $4149       ; .string "ASN"
@@ -113,7 +113,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 40CC: 42B8                      .dw     $42B8       ; .string "NEW"
 40CE: 4291                      .dw     $4291       ; .string "MEM"
 40D0: 4252                      .dw     $4252       ; .string "LIST"
-40D2: 4166                      .dw     $4166       ; .string "CONT"  
+40D2: 4166                      .dw     $4166       ; .string "CONT"
 40D4: 41E1                      .dw     $41E1       ; .string "DEBUG"
 40D6: 4180                      .dw     $4180       ; .string "CSAVE"
 40D8: 4177                      .dw     $4177       ; .string "CLOAD"
@@ -121,7 +121,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 40DC: 43B2                      .dw     $43B2       ; .string "TRON"
 40DE: 43BA                      .dw     $43BA       ; .string "TROFF"
 40E0: 42EE                      .dw     $42EE       ; .string "PASS"
-40E2: 425A                      .dw     $425A       ; .string "LLIST" 
+40E2: 425A                      .dw     $425A       ; .string "LLIST"
 40E4: 42F6                      .dw     $42F6       ; .string "PI"
 40E6: 42CD                      .dw     $42CD       ; .string "OUTSTAT"
 40E8: 4230                      .dw     $4230       ; .string "INSTAT"
@@ -131,9 +131,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 40F0: 4354                      .dw     $4354       ; .string "RADIAN"
 40F2: 41C1                      .dw     $41C1       ; .string "DEGREE"
 40F4: 416E                      .dw     $416E       ; .string "CLEAR"
-40F6: 0000                      .dw     $0000
-40F8: 0000                      .dw     $0000
-40FA: 0000                      .dw     $0000
+40F6: 0000                      .dw     $0000       ; Unencoded instruction.
+40F8: 0000                      .dw     $0000       ; Unencoded instruction.
+40FA: 0000                      .dw     $0000       ; Unencoded instruction.
 40FC: 41B2                      .dw     $41B2       ; .string "CALL"
 40FE: 41BA                      .dw     $41BA       ; .string "DIM"
 4100: 41D9                      .dw     $41D9       ; .string "DATA"
@@ -752,14 +752,14 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4605: 02 50                     LIA      $50     ; $50 through $57 are written
 4607: 03 08                     LIB      $08     ; into the scratchpad starting
 4609: DB                        EXAM             ; at address $30 (P).
-460A: 59                        LDM              ; 
+460A: 59                        LDM              ;
 460B: 42                        INCA             ;
 460C: 50                        INCP             ;
 460D: C3                        DECB             ;
 460E: 29 FF                     JRNZM    $4609   ;
 4610: 02 04                     LIA      $04     ;
 4612: 8A                        LP       $0A     ;
-4613: DB                        EXAM             ; M = 4 
+4613: DB                        EXAM             ; M = 4
 4614: 02 03                     LIA      $03     ;
 4616: 88                        LP       $08     ;
 4617: DB                        EXAM             ; K = 3
@@ -806,7 +806,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 464A: F1 72                     CAL      $1172   ; X <- Y
 464C: 49                        DECK
 464D: 29 CF                     JRNZM    $462E
-464F: F1 77                     CAL      $1177   ; Y <- X 
+464F: F1 77                     CAL      $1177   ; Y <- X
 4651: 78 6A 51                  CALL     $6A51
 4654: 3A CF                     JRCP     $46A8
 4656: 10 20 0A                  LIDP     $200A
@@ -829,7 +829,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4671: 11 E1                     LIDL    $E1     ; Store the start of BASIC
 4673: 82                        LP      $02     ;  area at 0xC6E1
 4674: 1B                        EXBD
-4675: 78 56 0D                  CALL    $560D   ; Print cursor.    
+4675: 78 56 0D                  CALL    $560D   ; Print cursor.
 4678: 78 55 F8                  CALL    $55F8
 467B: 10 F8 3C                  LIDP    $F83C
 467E: D4 00                     ANID    $00     ; Clear labels.
@@ -921,9 +921,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ; Verify that the data in the scratchpad starting at $30 is $50, $51, $52, $53.
 ; This is part of the code that searches the lowest active SRAM address.
 ; Return with z = 1 if the data found in the scratchpad is correct.
-471C: 0250      LBL471C:        LIA   $50           ; 
+471C: 0250      LBL471C:        LIA   $50           ;
 471E: 0304                      LIB   $04           ; Compare 4 characters.
-4720: B0                        LP    $30           ; Starting at $30. 
+4720: B0                        LP    $30           ; Starting at $30.
 4721: C7        LBL4721:        CPMA                ;
 4722: 2806                      JRNZP LBL4729       ; Return with Z=1 if the
 4724: 42                        INCA                ;  data is found.
@@ -954,7 +954,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 474B: 3805                      JRZP  LBL4751
 474D: D601                      TSID  $01
 474F: 380A                      JRZP  LBL475A
-4751: 78688E    LBL4751:        CALL  MDL688E
+4751: 78688E    LBL4751:        CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 4754: 02B0                      LIA   $B0
 4756: 10C6EA                    LIDP  $C6EA
 4759: 52                        STD
@@ -1298,7 +1298,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 49AA: D4ED                      ANID  $ED
 49AC: D520                      ORID  $20
 49AE: DA                        EXAB
-49AF: 78688E                    CALL  MDL688E
+49AF: 78688E                    CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 49B2: 24                        IXL
 49B3: 05                        DX
 49B4: 671E                      CPIA  $1E
@@ -1981,7 +1981,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4E9B: 55                        MVMD
 4E9C: 05                        DX
 4E9D: 2C04                      JRP   LBL4EA2
-4E9F: 78688E    LBL4E9F:        CALL  MDL688E
+4E9F: 78688E    LBL4E9F:        CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 4EA2: F177      LBL4EA2:        CAL   copy_x2y
 4EA4: 7860B8                    CALL  MDL60B8
 4EA7: 0200                      LIA   $00
@@ -2741,7 +2741,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5384: 6202                      TSIM  $02
 5386: 286A                      JRNZP LBL53F1
 5388: 6712                      CPIA  $12
-538A: 78688E                    CALL  MDL688E
+538A: 78688E                    CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 538D: 05                        DX
 538E: 2884                      JRNZP LBL5413
 5390: 04                        IX
@@ -3108,7 +3108,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 55F2: F15E                      CAL   $115E         ; DP <- $F83E
 55F4: D601                      TSID  $01
 55F6: 2816                      JRNZP LBL560D
-55F8: 10C6C4                    LIDP  $C6C4         
+55F8: 10C6C4                    LIDP  $C6C4
 55FB: 86                        LP    $06
 55FC: 1A                        MVBD                ; Y <- ($C6C5, $C6C4)
 55FD: 06                        IY
@@ -3316,7 +3316,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5768: 24                        IXL
 5769: 67FF                      CPIA  $FF
 576B: 3832                      JRZP  LBL579E
-576D: F899                      CAL   $1899         ; X <- ($1D, $1C)       
+576D: F899                      CAL   $1899         ; X <- ($1D, $1C)
 576F: 24                        IXL                 ; Read char from password
 5770: 6712                      CPIA  $12           ; Seek a double quote.
 5772: 282B                      JRNZP LBL579E
@@ -3489,7 +3489,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ; Entry point for the RADIAN command.
 588C: 10F83C                    LIDP  $F83C     ; Turn off the G in the GRAD
 588F: D4F3                      ANID  $F3       ;  sign.
-5891: 113D                      LIDL  $3D       
+5891: 113D                      LIDL  $3D
 5893: D504                      ORID  $04       ; Turn on the RAD sign.
 5895: 37                        RTN
 5896: 95                        LP    $15
@@ -4778,7 +4778,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60C3: 53                        MVDM                ;
 60C4: 05                        DX                  ;
 60C5: 24        LBL60C5:        IXL                 ; Fetch the next token character.
-60C6: 93                        LP    $13           ; 
+60C6: 93                        LP    $13           ;
 60C7: 6700                      CPIA  $00           ; Is it ENTER?
 60C9: 38F7                      JRZP  LBL61C1       ;
 60CB: 6712                      CPIA  $12           ; Undefined char??
@@ -4814,7 +4814,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60FA: DB                        EXAM                ;
 60FB: 5B                        POP                 ; Offset into token table.
 60FC: 44                        ADM                 ; Add offset to start of table.
-60FD: 24                        IXL                 ; Read  
+60FD: 24                        IXL                 ; Read
 60FE: 6700                      CPIA  $00           ; Does any command exist stating with
                                                     ;  this character?
 6100: 383A                      JRZP  LBL613B
@@ -5167,7 +5167,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 633F: 3905                      JRZM  LBL633B
 6341: 0200                      LIA   $00
 6343: 2D09                      JRM   LBL633B
-6345: 78688E    MDL6345:        CALL  MDL688E
+6345: 78688E    MDL6345:        CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 6348: F1F9                      CAL   kbd_bufy
 634A: 24        MDL634A:        IXL
 634B: 640F                      ANIA  $0F
@@ -6160,9 +6160,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A02: DB                        EXAM            ;
 ; In the PC1251 the first 12 characters start at 0xF800 and move on to 0xF83C
 ; The second set of 12 characters start at 0xF87C and move backwards to 0xF840.
-; This loop handles the first 12.       
+; This loop handles the first 12.
 6A03: 020C                      LIA   $0C       ;
-6A05: 89                        LP    $09       ; L = 12.  
+6A05: 89                        LP    $09       ; L = 12.
 6A06: DB                        EXAM            ;
 ; K now holds a pointer in scratchpad memory containing the next character to
 ;  print. This next call computes a pointer to the character bitmap memory
@@ -6178,11 +6178,11 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ; Now handle the second set of 12 characters (12 to 23). The first column of
 ;  character 12 is 0xF87C, the second column is 0xF87B etc.
 6A12: 027C                      LIA   $7C       ;
-6A14: 86                        LP    $06       ;    
+6A14: 86                        LP    $06       ;
 6A15: DB                        EXAM            ; Y = 0xF87C
 6A16: 020C                      LIA   $0C       ;
 6A18: 89                        LP    $09       ;
-6A19: DB                        EXAM            ; L = 12.    
+6A19: DB                        EXAM            ; L = 12.
 6A1A: 786093    LBL6A1A:        CALL  MDL6093   ;
 6A1D: 0305                      LIB   $05       ; 5 columns per characters.
 6A1F: 24        LBL6A1F:        IXL             ;
@@ -6217,7 +6217,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A4B: D502                      ORID  $02
 6A4D: 784886                    CALL  MDL4886   ; Turn on E and then turn on LCD.
 6A50: 37                        RTN
-6A51: 0200      MDL6A51:        LIA   $00         
+6A51: 0200      MDL6A51:        LIA   $00
 6A53: 0320                      LIB   $20
 6A55: F1F1                      CAL   $11F1       ; X <- [B, A] - 1
 6A57: 78687D                    CALL  MDL687D
@@ -6785,7 +6785,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6E1F: 10C6DA    LBL6E1F:        LIDP  $C6DA
 6E22: D620                      TSID  $20
 6E24: 2808                      JRNZP LBL6E2D
-6E26: 78688E                    CALL  MDL688E
+6E26: 78688E                    CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 6E29: 02AF                      LIA   $AF
 6E2B: 2C06                      JRP   LBL6E32
 6E2D: 10C6EA    LBL6E2D:        LIDP  $C6EA
@@ -9047,7 +9047,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7E08: 125D      MDL7E08:        LIP   $5D
 7E0A: 600F                      ANIM  $0F
 7E0C: 2D09                      JRM   LBL7E04
-7E0E: 4EC8      MDL7E0E:        WAIT  $C8           ; 
+7E0E: 4EC8      MDL7E0E:        WAIT  $C8           ;
 7E10: 125E                      LIP   $5E           ;
 7E12: 60FC                      ANIM  $FC           ;
 7E14: 5F                        OUTF                ;
