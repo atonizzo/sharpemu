@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@ int check_breakpoint(uint16_t data)
                           BREAKPOINT_ATTRIB_TEMPORARY) != 0)
                     breakpoint_list[i].attribute = 0;
                 return i;
-            }    
+            }
         }
 
         // Now check for instruction pointer breakpoints.
@@ -89,8 +89,8 @@ int check_breakpoint(uint16_t data)
                           BREAKPOINT_ATTRIB_TEMPORARY) != 0)
                     breakpoint_list[i].attribute = 0;
                 return i;
-            }    
+            }
         }
-    }    
+    }
     return -1;
 }

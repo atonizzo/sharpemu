@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 GtkWidget *lcd_label_box;
 GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
                             [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
+int brk_pressed;
 
 uint16_t sc43536_base_address[] = {SC43536_BASE_ADDRESS};
 
@@ -56,6 +57,7 @@ address_descriptor_t address_descriptors[] =
     {0x1172, "X <- Y"},                 {0x118F, "X <- ($C6E2, $C6E1)"},
     {0x1177, "Y <- X"},                 {0x1195, "[$0C, $0D] <-> X"},
     {0x119A, "X <- $C7B0 - 1 (rambuf)"},
+    {0x11AF, "Show screen"},
     {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
     {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
     {0x11F1, "X <- [B, A] - 1"},        {0x11F5, "Y <- [B, A] - 1"},
@@ -67,20 +69,27 @@ address_descriptor_t address_descriptors[] =
     {0x18C5, "print_prompt"},           {0x1FB1, "wr_portc"},
     {0x18DB, "Y <- (B, A)"},            {0x1FB6, "memcpy"},
     {0x400C, "write_lcd"},
-
+    {0x688E, "Clear 80 bytes of input buffer."},
     {0, 0}
 };
 
+// This arrary represents the PC-1251 keyboard matrix. Each bit of each byte
+//  represents a wire intersections in the matrix but because the way the
+//  keyboard is scanned not all bits are valid.
+// For example, the key 'O' is found at the intersection of the 2rd bit of
+//  portA (IA3 in the schematic) and the 4th bit of port A (IA4 in the
+//  schematic) and so the A3 byte in the porta_kbd[] array will be written
+//  with 0x08. A7 (IA8) is not scanned.
 uint8_t porta_kbd[] =
 {
-//   A1    A2    A3    A4    A5    A6    A7    A8    B1    B2    B3
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+//   A1    A2    A3    A4    A5    A6    A7    B1    B2    B3
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 uint8_t porta_kbd_past[] =
 {
-//   A1    A2    A3    A4    A5    A6    A7    A8    B1    B2    B3
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+//   A1    A2    A3    A4    A5    A6    A7    B1    B2    B3
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 label_layout_t lcd_labels[15] =
@@ -105,6 +114,8 @@ label_descriptor_t label_descriptor[] =
 
 static void lcd_service(uint16_t address, uint8_t data)
 {
+//    if ((cpu_state.portc & 0x01) == 0)
+//        return;
     char *format = "<span foreground=\"%s\">DEF</span>";
     char *markup;
     GtkWidget *this_label;
@@ -239,26 +250,29 @@ static void lcd_service(uint16_t address, uint8_t data)
         return;
     }
 
-    uint16_t column_number;
-    if (((address >= 0xF800) && (address < 0xF83C)) ||
-                                    ((address >= 0xF840) && (address < 0xF87C)))
+    if (address < 0xF8C0)
     {
-        if (address < 0xF83C)
-            column_number = address - 0xF800;
-        else
-            column_number = 0xF87B - address + 60;
-        int i;
-        char *file_name;
-        for (i = 0; i < 7; i++)
+        if (((address >= 0xF800) && (address < 0xF83C)) ||
+                                ((address >= 0xF840) && (address < 0xF87C)))
         {
-            if ((data & 1) == 0)
-                file_name = "./pixmaps/lcd_pixel_off.jpg";
+            uint16_t column_number;
+            if (address < 0xF83C)
+                column_number = address - 0xF800;
             else
-                file_name = "./pixmaps/lcd_pixel_on.jpg";
-            data >>= 1;
-            gtk_image_set_from_file(GTK_IMAGE(
+                column_number = 0xF87B - address + 60;
+            int i;
+            char *file_name;
+            for (i = 0; i < 7; i++)
+            {
+                if ((data & 1) == 0)
+                    file_name = "./pixmaps/lcd_pixel_off.jpg";
+                else
+                    file_name = "./pixmaps/lcd_pixel_on.jpg";
+                data >>= 1;
+                gtk_image_set_from_file(GTK_IMAGE(
                        lcd_display[0][column_number / 5][column_number % 5][i]),
-                                    file_name);
+                                        file_name);
+            }
         }
         lcd_status[0][address - 0xF800] = data;
     }
@@ -306,9 +320,13 @@ static int32_t pc_1251_setup(void)
     GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
     gtk_window_set_resizable(GTK_WINDOW(lcd_window), FALSE);
     gtk_widget_show(GTK_WIDGET(lcd_window));
-    calculator_mode = CALC_MODE_OFF;
     memset(lcd_status, '\0', sizeof(lcd_status));
     lcd_off();
+    brk_pressed = 0;
+
+    // Debug.
+//    porta_kbd[KEYBOARD_PORT_INDEX_B3] = KEYBOARD_PORT_BIT_A2; // 0x38 - '8'
+//    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A4; // 'P'
     return 0;
 }
 
@@ -322,6 +340,8 @@ static void pc_1251_write_memory(uint16_t address, uint8_t value)
     // RAM memory.
     // More RAM can be arbitrarily added by decreasing the first of these two
     //  numbers. The MEM command will reflect the increase.
+    if ((address >= 0xB000) && address < 0xB800)
+        address += 0x800;
     if ((address >= 0xB800) && (address < 0xC800))
         memory_image[address] = value;
 
@@ -341,56 +361,26 @@ static void pc_1251_write_memory(uint16_t address, uint8_t value)
 //  has been pressed.
 static void pc_1251_ina(void)
 {
-    uint16_t id = ((cpu_state.portb & 0x07) << 8) | cpu_state.porta;
-    int i;
-    for (i = 0; i < sizeof(porta_kbd); i++)
-    {
+    uint16_t id = ((cpu_state.portb & 0x07) << 7) | cpu_state.porta;
+    cpu_state.imem[IRAM_REG_A] = cpu_state.porta;
+    for (int i = 0; i < sizeof(porta_kbd); i++)
         if ((id & (1 << i)) != 0)
-        {
-            if (porta_kbd[i] != 0)
-            {
-                if ((keyboard_count.id != id) ||
-                                           (keyboard_count.kbd != porta_kbd[i]))
-                {
-                    keyboard_count.id = id;
-                    keyboard_count.kbd = porta_kbd[i];
-                    keyboard_count.count = 0;
-                }
-                keyboard_count.count += 1;
-            }
-
-            if (keyboard_count.count < 3)
-                cpu_state.scratchpad.regs.a = porta_kbd[i];
-            else
-                cpu_state.scratchpad.regs.a = 0;
-            if (i < 8)
-            {
-                // If we are driving any bits of cpu_state.porta also return
-                //  the bits being driven.
-                cpu_state.scratchpad.regs.a |= cpu_state.porta;
-            }
-
-            return;
-        }
-    }
-
-    // Should never be here...
-    cpu_state.scratchpad.regs.a = 0;
+            cpu_state.imem[IRAM_REG_A] |= porta_kbd[i];
 }
 
 static void pc_1251_inb(void)
 {
-    cpu_state.scratchpad.regs.a = calculator_mode;
+    cpu_state.imem[IRAM_REG_A] = cpu_state.mode;
 }
 
 static void pc_1251_outa(void)
 {
-    cpu_state.porta = cpu_state.scratchpad.raw.mem[PORTA_OFFSET];
+    cpu_state.porta = cpu_state.imem[PORTA_OFFSET];
 }
 
 static void pc_1251_outb(void)
 {
-    cpu_state.portb = cpu_state.scratchpad.raw.mem[PORTB_OFFSET];
+    cpu_state.portb = cpu_state.imem[PORTB_OFFSET];
 }
 
 static void pc_1251_outc(void)
@@ -398,25 +388,25 @@ static void pc_1251_outc(void)
     fprintf(fp_memaccess,
             "S: %04x W: PORTC - %02X\r\n",
             cpu_state.pc,
-            cpu_state.scratchpad.raw.mem[PORTC_OFFSET]);
+            cpu_state.imem[PORTC_OFFSET]);
 
-    if ((cpu_state.scratchpad.raw.mem[PORTC_OFFSET] & PORTC_BITS_CNTRST) != 0)
+    if ((cpu_state.imem[PORTC_OFFSET] & PORTC_CPU_HLT) != 0)
+    {
+        fprintf(fp_memaccess, "S: %04x CPU clock is halted.\r\n", cpu_state.pc);
+    }
+
+    if ((cpu_state.imem[PORTC_OFFSET] & PORTC_CNTRST) != 0)
     {
         fprintf(fp_memaccess, "S: %04x Counter is reset\r\n", cpu_state.pc);
-        printf("Timer cleared\r\n");
         gettimeofday(&timeval_start, NULL);
-        cpu_state.scratchpad.raw.mem[PORTC_OFFSET] &= ~PORTC_BITS_CNTRST;
+        cpu_state.imem[PORTC_OFFSET] &= ~PORTC_CNTRST;
     }
-    if ((cpu_state.scratchpad.raw.mem[PORTC_OFFSET] & PORTC_BITS_HLT) != 0)
-    {
-        fprintf(fp_memaccess, "S: %04x CPU is halted.\r\n", cpu_state.pc);
-    }
-    cpu_state.portc = cpu_state.scratchpad.raw.mem[PORTC_OFFSET];
+    cpu_state.portc = cpu_state.imem[PORTC_OFFSET];
 }
 
 static void pc_1251_outf(void)
 {
-    cpu_state.portf = cpu_state.scratchpad.raw.mem[PORTF_OFFSET];
+    cpu_state.portf = cpu_state.imem[PORTF_OFFSET];
 }
 
 static const keyboard_encoding_t key_map[] =
@@ -575,13 +565,22 @@ static void pc_1251_keypress(uint16_t key)
     if ((key >= 0x20) && (key < 0xB0))
     {
         porta_kbd[key_map[key - 0x20].row] |= key_map[key - 0x20].mask;
+        single_step_break = 1;
         return;
     }
 
     switch (key)
     {
+    case 0x24:                      // '$'
+        g_print("'$' pressed\r\n");
+        porta_kbd[KEYBOARD_PORT_INDEX_A1] |= KEYBOARD_PORT_BIT_A6;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] |= KEYBOARD_PORT_BIT_A5;
+        break;
     case 0xFF0D:                    // Enter
         porta_kbd[KEYBOARD_PORT_INDEX_A6] |= KEYBOARD_PORT_BIT_A8;
+        break;
+    case 0xFF13:                    // Break
+        brk_pressed = 1;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] |= KEYBOARD_PORT_BIT_A5;
@@ -637,8 +636,16 @@ static void pc_1251_keyrelease(uint16_t key)
 
     switch (key)
     {
+    case 0x24:                      // '$'
+        g_print("'$' released\r\n");
+        porta_kbd[KEYBOARD_PORT_INDEX_A1] &= ~KEYBOARD_PORT_BIT_A6;
+        porta_kbd[KEYBOARD_PORT_INDEX_B2] &= ~KEYBOARD_PORT_BIT_A5;
+        break;
     case 0xFF0D:                    // Enter
         porta_kbd[KEYBOARD_PORT_INDEX_A6] &= ~KEYBOARD_PORT_BIT_A8;
+        break;
+    case 0xFF13:                    // Break
+        brk_pressed = 0;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] &= ~KEYBOARD_PORT_BIT_A5;
@@ -672,7 +679,7 @@ static void pc_1251_keyrelease(uint16_t key)
         porta_kbd[KEYBOARD_PORT_INDEX_B1] &= ~KEYBOARD_PORT_BIT_A2;
         break;
     default:
-        g_print("Unhandled Key Released - %04X, (%d)\r\n", key, (int16_t)key);
+        g_print("Unhandled Key Released - 0x%04X, (%d)\r\n", key, (int16_t)key);
         // Discard.
         break;
     }

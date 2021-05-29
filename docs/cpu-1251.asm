@@ -2848,19 +2848,19 @@ xchg_y:           LP    0x14
                   SC
                   RTN
 MDL1144:          JP    0x4000
-                  LP    0x30
-                  LII   0x07
-                  LIA   0x00
-                  FILM
-                  LP    0x30
-                  ORIM  0xF5
-                  RTN
+                  LP    0x30            ; Clear 8 bytes of internal memory
+                  LII   0x07            ;  starting at 0x30
+                  LIA   0x00            ;
+                  FILM                  ;
+                  LP    0x30            ; Store the 0xF5 marker at the beginning
+                  ORIM  0xF5            ;  of the cleared area, thus reserving
+                  RTN                   ;  this memory for a character string.
 MDL1151:          CAL   save_X          ; ($C6B6, $C6B5) <- X
-                  LDR
-                  ADIA  0x02
-                  LIDP  0xC6B3
-                  STD
-                  RTN
+                  LDR                   ; Save the stack pointer in $C6B3.
+                  ADIA  0x02            ; Add 2 so the stack pointer is
+                  LIDP  0xC6B3          ; adjusted for the caller.
+                  STD                   ;
+                  RTN                   ;
 MDL115B:          JP    0x4006
 MDL115E:          LIDP  0xF83E
                   RTN
@@ -2891,10 +2891,10 @@ MDL117C:          LIA   0x0D
                   LIB   0xF8
                   CAL   load_x
                   RTN
-MDL1189:          CALL    0x44F5
-                  JRCP    basic_2x
+MDL1189:          CALL    0x44F5        ; Verify thre presence of memory at 0x2000.
+                  JRCP    basic_2x      ; If not present C = 1.
                   RTN
-MDL118F:          LIDP    0xC6E1
+basic_2x:         LIDP    0xC6E1        ; X <- [0xC602, 0xC601]
                   LP      0x04
                   MVBD
                   RTN
@@ -2932,6 +2932,7 @@ show_screen:      LIA     0x20
                   RTN
 ;
 ; Tucks the X register in the stack, just after (i.e. above) the return value.
+; The callee will then find the X register on the top of the stack.
 MDL11C7:          LDR                   ; Make room on the stack for 2 bytes.
                   DECA
                   DECA
@@ -2942,6 +2943,7 @@ MDL11C7:          LDR                   ; Make room on the stack for 2 bytes.
                   EXB                   ; Exchange P and Q.
                   STR                   ; Store the new stack pointer.
                   RTN                   ;
+; Read X from the stack where it is stored just above the return address.
 MDL11D2:          LDR                   ; Load stack pointer.
                   INCA                  ; Increment by 2, bypassing current
                   INCA                  ;  return address.
@@ -2970,12 +2972,12 @@ copy_y:           LP      0x06          ; Destination: Y
 load_x:           CAL     copy_x        ; 0x11F1
                   DX
                   RTN
-load_y:           CAL     copy_y
+load_y:           CAL     copy_y        ; 0x11F5
                   DY
                   RTN
-kbd_bufy:         LIA     0xB0
-                  LIB     0xC7
-                  CAL     load_y
+kbd_bufy:         LIA     0xB0          ; 0x11F9
+                  LIB     0xC7          ;
+                  CAL     load_y        ; Y <- $C7B0
                   RTN
                   LP      0x1C          ; [$1C, $1D] <- Xvb
                   LIQ     0x04
@@ -4785,7 +4787,8 @@ LBL1D63:          CAL   scan_keybd      ; Code at 0x1F44.
                   JPNC  0x4003          ; No key pressed if taken.
                   LP    0x03            ; Compare A with B.
                   CPMA                  ;
-                  JRNZP LBL1E66         ;
+                  JRNZP LBL1E66         ; Taken if the 2 characters are
+                                        ;  different.
 LBL1D74:          CAL   MDL1162         ; DP <- $F8BE
                   TSID  0x01            ;
                   JRNZP LBL1E3B         ;
@@ -4925,7 +4928,7 @@ LBL1E66:          CAL   MDL1162         ; DP <- $F8BE
 LBL1E70:          LIDL  0xBE
                   ANID  0xFD
 LBL1E74:          LII   0xFB
-LBL1E76:          TEST  0x01
+LBL1E76:          TEST  0x01            ; 0.5 ms test
                   JRZP  LBL1EBC
                   LIA   0xBA
                   LIB   0xF8
@@ -4986,7 +4989,7 @@ MDL1ED4:          LIDL  0xBE
                   LDD
 LBL1EE0:          CAL   MDL1FBC         ; Given a character in A return the
                                         ;  start of the character table for that
-                                        ;  caracter.
+                                        ;  character.
                   LIDP  0xC6E9          ;
                   LDD                   ;
                   INCA                  ;
@@ -5062,7 +5065,9 @@ LBL1F42:          EXAB                  ; Return offset in B. A holds the leftov
 ; The second phase drives the B[2:0] one bit at a time and reads the entire
 ;  A[7:0] port.
 ;
-; Returns: A = 0xFF and C = 0 if no key is pressed.
+; Returns: A = character and C = 1 if any key pressed.
+;          A = 0x07 and C = 1 if BRK is pressed.
+;          A = 0xFF and C = 0 if no key is pressed.
 ; ------------------------------------------------------------------------------
 scan_keybd:       TEST  0x08            ; Check if BRK key is pressed.
                   JRZP  LBL1F4C         ; If not, scan keyboard.
@@ -5070,12 +5075,10 @@ scan_keybd:       TEST  0x08            ; Check if BRK key is pressed.
                   JRP   LBL1FAF         ;
 LBL1F4C:          LP    0x08            ; Clear K. K is used as the running
                   ANIM  0x00            ; offset within the character table.
-                  LP    0x09            ; L is 7 and has dual use: is used to
-                                        ;  count the number of keys that have
-                                        ;  already been scanned and it is used
-                                        ;  as loop counter
-                  LIA   0x07            ;
-                  EXAM                  ;
+                  LP    0x09            ; L is 7 and has dual use:
+                  LIA   0x07            ;  1) count the number of keys that have
+                  EXAM                  ;       already been scanned
+                                        ;  2) as loop counter
                   LP    0x0A            ; M = 0xFF.
                   ORIM  0xFF            ; This is the mask used to AND against
                                         ;  the data read from PortA.
@@ -5096,7 +5099,7 @@ LBL1F63:          LDM                   ; Shift left the A Port to select the
                   RC                    ; next row to scan.
                   SL                    ;
                   EXAM                  ;
-                  LP    0x0A            ;
+                  LP    0x0A            ; The value read from porta goes to M.
                   INA                   ; Read the status of the A Port
                   OUTA                  ; Drive the new value of PORTA.
                   EXAM                  ; Store value read from Port A in M.
@@ -5104,8 +5107,10 @@ LBL1F63:          LDM                   ; Shift left the A Port to select the
                   SL                    ; Shift the mask left by 1.
                   ANMA                  ; Mask out the kline that are currently
                                         ; being driven HIGH to avoid confusing
-                                        ; them with key presses.
-                  EXAM                  ;
+                                        ; them with actual key presses. At this
+                                        ;  point any bit set in M is key
+                                        ;  pressed. Z=1 if no key pressed.
+                  EXAM                  ; A != 0 if any key pressed.
                   JRZP  LBL1F73         ; Branch if no key pressed.
                   CAL   MDL1F32         ;
 LBL1F73:          LP    0x09            ; Increment the number of keys that we
@@ -5114,8 +5119,8 @@ LBL1F73:          LP    0x09            ; Increment the number of keys that we
                   ADM                   ;
                   DECL                  ; During the first part of the scan
                                         ;  the number of keys scanned
-                                        ;  decreases by 1 each loop because of the
-                                        ;  peculiar wiring of the keyboard.
+                                        ;  decreases by 1 each loop because of
+                                        ;  the peculiar wiring of the keyboard.
                   LIP   0x5C            ;
                   JRNZM LBL1F63         ;
                   ANIM  0x00            ; Drive high on all Porta A pins.
@@ -5130,8 +5135,10 @@ LBL1F86:          LIP   0x5D            ;
                   LDM                   ;
                   ANIA  0x03            ;
                   ADM                   ; Add the contents of PORTB (ldm) with
-                                        ;  themselves, thus multiplying by 2
-                                        ;  (equivalent to a shift LEFT by 1)
+                                        ;  itself, thus multiplying by 2
+                                        ;  (equivalent to a shift LEFT by 1).
+                                        ; This prepares Port B for the next bit
+                                        ;  to send out.
                   WAIT  0x17            ;
                   INA                   ; Read PortA.
                   JRZP  LBL1F94         ; If no key pressed skip decode.
@@ -5163,11 +5170,11 @@ wr_portc:         LIP   0x5F
                   EXAM
                   OUTC
                   RTN
-memcpy:           IXL
-                  IYS
-                  DECB
-                  JRNZM memcpy
-                  RTN
+memcpy:           IXL                   ; 0x1FB6
+                  IYS                   ;
+                  DECB                  ;
+                  JRNZM memcpy          ;
+                  RTN                   ;
 ; Loads X with the address of character ROM corresponding to the character in A.
 MDL1FBC:          PUSH
                   LIA   0x64            ; $4464 start of Character ROM.
@@ -5176,13 +5183,13 @@ MDL1FBC:          PUSH
                   POP
                   LIB   0x00
                   CPIA  0x20            ; Make sure the character code is above
-                                        ;  0x20, which is the first printable code
-                                        ;  in the Sharp character map.
+                                        ;  0x20. The first printable character
+                                        ;  is 0x20.
                   JRNCP LBL1FDC         ; Jump taken for valid characters.
                   SBIA  0x10            ; The char is between 0x00 and 0x20. There
-                                        ;  are no printable characters at 0x10 but
-                                        ;  there are Japanese characters at 0x10,
-                                        ;  so subtract the missing characters.
+                                        ;  are printable characters between 0x11
+                                        ;  and 0x1F inclusive so subtract an
+                                        ;  offset.
 LBL1FCC:          LP    0x0B            ; Save a copy of the character code in N
                   EXAM                  ;  to make the multplication by 5 easier.
                   LDM

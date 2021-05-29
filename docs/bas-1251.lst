@@ -1,5 +1,6 @@
 SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 
+0xC6B3           ; Used to store the value of the stack pointer.
 [0xC6B6, 0xC6B5] ; Used to save a copy of the X register
 0xC6D9 : Bit 5 set for password active.
 [0xC6E2, 0xC6E1] ; First byte of memory used by BASIC
@@ -445,7 +446,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 435D: E3                        .db     $5E
 435E: 62555D                    .string "REM"
 4361: D3                        .db     $D3
-4362: 5A71                      .db     $5A71
+4362: 5A71                      .dw     $5A71
+4362: 5A71                      .dw     $5A71
 4364: A3                        .db     $A3
 4365: 625F5D                    .string "ROM"
 4368: 9E                        .db     $9E
@@ -936,7 +938,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 472D: 4D                        NOPW
 ; This is where input characters from the keyboard are handled. Execution
 ;  arrives here with the character in the A register.
-472E: 10F83C    LBL472E:        LIDP  $F83C         ; Turn off PRO
+472E: 10F83C    LBL472E:        LIDP  $F83C         ; Turn off DEF
 4731: D4FE                      ANID  $FE           ;
 4733: 113D                      LIDL  $3D           ; Turn off SHIFT
 4735: D4FD                      ANID  $FD           ;
@@ -1365,13 +1367,13 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4A30: F16A      LBL4A30:        CAL   $116A         ; DP <- $C6DA
 4A32: D602                      TSID  $02
 4A34: 2908                      JRNZM LBL4A2D
-4A36: 7A054A4C                  CASE1 $05,LBL4A4C
-4A3A: 69                        CASE2
-4A3B: 004E65                      $00,JR LBL4E65
-4A3E: 054DCB                      $05,JR LBL4DCB
-4A41: 064E1D                      $06,JR LBL4E1D
-4A44: 074E35                      $07,JR MDL4E35
-4A47: 0B4DB6                      $0B,JR LBL4DB6
+4A36: 7A054A4C                  DTJ     $05,LBL4A4C
+4A3A: 69                        PTJ
+4A3B: 004E65                    CASE    $00, LBL4E65
+4A3E: 054DCB                    CASE    $05, LBL4DCB
+4A41: 064E1D                    CASE    $06, LBL4E1D
+4A44: 074E35                    CASE    $07, MDL4E35
+4A47: 0B4DB6                    CASE    $0B, LBL4DB6
 4A4A: 4B98                        JR LBL4B98
 4A4C: 2D20      LBL4A4C:        JRM   LBL4A2D
 4A4E: 10F83D    MDL4A4E:        LIDP  $F83D
@@ -1983,18 +1985,19 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4E9D: 2C04                      JRP   LBL4EA2
 4E9F: 78688E    LBL4E9F:        CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 4EA2: F177      LBL4EA2:        CAL   copy_x2y
-4EA4: 7860B8                    CALL  MDL60B8
-4EA7: 0200                      LIA   $00
-4EA9: 86                        LP    $06
-4EAA: 63FF      LBL4EAA:        CPIM  $FF
+4EA4: 7860B8                    CALL  MDL60B8       ; Tokenizes the BASIC command
+                                                    ;  at $C7B0
+4EA7: 0200                      LIA   $00           ; Fill with 0 the area starting
+4EA9: 86                        LP    $06           ;  at the address in Y all the
+4EAA: 63FF      LBL4EAA:        CPIM  $FF           ;  way to Yl = 0xFF.
 4EAC: 3804                      JRZP  LBL4EB1
 4EAE: 26                        IYS
 4EAF: 2D06                      JRM   LBL4EAA
-4EB1: F19A      LBL4EB1:        CAL   kbd_bufx
-4EB3: F15E                      CAL   $115E
+4EB1: F19A      LBL4EB1:        CAL   kbd_bufx      ; X <- $C7B0 - 1 (rambuf)
+4EB3: F15E                      CAL   $115E         ; DP <- $F83E
 4EB5: D601                      TSID  $01
-4EB7: 7E5076                    JPZ   LBL5076
-4EBA: F16A                      CAL   $116A
+4EB7: 7E5076                    JPZ   LBL5076       ; Jump taken if not in PRO mode.
+4EBA: F16A                      CAL   $116A         ; DP <- $C6DA
 4EBC: D620                      TSID  $20
 4EBE: 38E3                      JRZP  LBL4FA2
 4EC0: D601                      TSID  $01
@@ -4773,15 +4776,15 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60BB: 93                        LP    $13
 60BC: 60FC                      ANIM  $FC
 60BE: 04                        IX                  ;
-60BF: 10C6F1                    LIDP  $C6F1         ; Store the address of the start
-60C2: 84                        LP    $04           ;  of the next token in $C6F1.
+60BF: 10C6F1                    LIDP  $C6F1         ; Store the content of Xl
+60C2: 84                        LP    $04           ;  @ $C6F1.
 60C3: 53                        MVDM                ;
 60C4: 05                        DX                  ;
 60C5: 24        LBL60C5:        IXL                 ; Fetch the next token character.
 60C6: 93                        LP    $13           ;
-60C7: 6700                      CPIA  $00           ; Is it ENTER?
+60C7: 6700                      CPIA  $00           ; Is it 'ENTER'?
 60C9: 38F7                      JRZP  LBL61C1       ;
-60CB: 6712                      CPIA  $12           ; Undefined char??
+60CB: 6712                      CPIA  $12           ; Is it '"'?
 60CD: 38E1                      JRZP  LBL61AF       ;
 60CF: 6201                      TSIM  $01           ;
 60D1: 28D7                      JRNZP LBL61A9       ;
@@ -4798,7 +4801,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60E4: DB                        EXAM                ; M register.
 60E5: 59                        LDM                 ;
 60E6: F195                      CAL   $1195         ; [$0C, $0D] <-> X
-60E8: 7551                      SBIA  $51           ; Subtract 'A' offset.
+60E8: 7551                      SBIA  'A'           ; Subtract 'A' offset (0x51).
 60EA: 5A                        SL                  ; Double to use it as offset
                                                     ; into a table if 16 bits pointers.
 60EB: 34                        PUSH                ;
@@ -5909,6 +5912,10 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6878: 5A                        SL
 6879: 7464                      ADIA  $64
 687B: 2D21                      JRM   LBL685B
+; Compares the memory pointed to by X with up to 4 bytes, starting from 0x50
+;  and incrementing by 1 each successive compare. Return with C = 1 is
+;  there is any compare error, C = 0 for 4 correct compares.
+; This seems to be a way to verify the presence of memory at a specific address.
 687D: 0004      MDL687D:        LII   $04
 687F: 0350                      LIB   $50
 6881: 83                        LP    $03
@@ -5922,6 +5929,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 688A: 2909                      JRNZM LBL6882
 688C: D1                        RC
 688D: 37                        RTN
+; Clear 80 bytes of the input buffer starting at 0xC7B0.
 688E: 10C7B0    MDL688E:        LIDP  $C7B0
 6891: 0200                      LIA   $00
 6893: 004F                      LII   $4F
@@ -6220,7 +6228,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A51: 0200      MDL6A51:        LIA   $00
 6A53: 0320                      LIB   $20
 6A55: F1F1                      CAL   $11F1       ; X <- [B, A] - 1
-6A57: 78687D                    CALL  MDL687D
+6A57: 78687D                    CALL  MDL687D   ; Verify the presence of memory
+                                                ;  at address 0x2000
 6A5A: 3A0F                      JRCP  LBL6A6A
 6A5C: 102004                    LIDP  $2004
 6A5F: D6FF                      TSID  $FF

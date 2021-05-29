@@ -1,0 +1,66 @@
+Before the user presses any button on the keyboard the software seems to handle
+a key code of 0x08, which I have not been able to figure out what it maps to.
+
+The line input is "19 REM COMMENT"
+
+At this point the line input by the user is stored in the bytes starting at
+0xC7B0. The string of characters is 0 terminated.
+
+0x49F3 : We arrive here when we press a number of buttons, including [ENTER].
+
+0x4E65 : This is where we end up then [ENTER] is pressed.
+0x4E65 : LDC off.
+0x4E76 : Calls 0x4E5e which stores a 0 at 0xC7FF. This seems to done to ensure
+          that there is a 0 terminator at the end of the input buffer.
+0x4E7C : Load X with 0xC7B0 - 1 (Address of input buffer)
+0x4EA2 : Copies X into Y. Y is used to write back into the input buffer the
+          tokenized version of the input string.
+0x4EA4 : Call to 0x60B8 which tokenizes the BASIC line input by the user. It
+          reads the untokenized data using X (IXL) and store the tokenized
+          data using Y (IYS).
+0x4EA7 : Fills the rest of the input buffer (the part not used by the tokenized
+          string) with 0, all the way to 0xC7FF.
+0x4EB7 : Jumps to 0x5076 is not in PRO mode.
+0x4EC4 : Reads a character from the input buffer.
+0x4EC6 : Compares the character with '0'
+0x4EC6 : Compares the character with '0'. Jumps to 0x5028 is below '0'.
+0x4ECB : Compares the character with 'A'. Jumps to 0x5028 is above '9'.
+0x4ED7 : Clears bytes 0x28 and 0x29 of scratchpad memory. These 2 bytes are used
+          later to up to 4 BCD digits of the BASIC line number.
+0x4EDD : Loads the first character of the string and jumps to 0x4EDD id it's '0'.
+0x4EE0 : Jumps is >= '0'. This is a BASIC line number.
+0x4EE2 : Loads B with 3, which is the maximum number of digits that make up the
+          number of a BASIC line. This is going to be used as a counter later.
+0x4EE5 : Reloads the first character and comperea it to '0'.
+0x4EE8 : Jumps to 0x4F0B is below '0'.
+0x4EEC : Jumps to 0x4F0B is above '9'.
+0x4EEF : Shift [28, 29] left 4 bits thus multiplying by 10 (BCD digits).
+0x4EF0 : Retains the least significant nibble of the line number digit and
+          ORs it in 0x29 thus building up the BCD version of the line number.
+0x4EF5 : Decrements B and loops back to 0x4F0B for at least 3 times. When the
+          BASIC token is eventually found it jumps to 0x4F0B (see jump at 0x4EEC).
+0x4EF7 : If the count of 3 is exceeded prints a line error (see Error Printing)
+0x4F0C : Saves the content of X to [0x1C, 0x1D] (call to 0x1200) since X will
+          be corrupted by the following call to 0x46E9
+0x4712 : Tests for presence of memory at 0x2000 and if not present loads X
+          with the content of [0xC6B2, 0xC6B1]. For the PC-1251 this is 0xB030.
+         This seems to be the start of the BASIC memory area.
+
+Error printing.
+Errors are printed in 2 steps.
+1) Store the error number at scratchpad address 0x14. In the kernel code this
+is accomplished with the following calls:
+
+                Error       Number       Call
+                ------------------------------------------
+                Syntax      1           0x1705
+                Calculation 2           0x170B
+                Dim/Range   3           0x170F
+                Line Number 4           0x1713
+                Nesting     5           0x1717
+                Memory      6           0x171B
+                Print       7           0x171F
+                I/O Device  8           0x1723
+                Other       9           0x1727
+
+2) Print the error by calling 0x6A29

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <gtk/gtk.h>
+#include <sys/time.h>
 #include <sc61860_emu.h>
 
 #define HEX_COLUMN                                   6
@@ -48,7 +48,10 @@
 #define SC61860_FORMAT_CASE                         (11 << 24)
 #define SC61860_FORMAT_DEFAULT                      (12 << 24)
 
-struct __cpu_state cpu_state;
+char *scratchpad_regs[] =
+{
+    "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L"
+};
 
 void sim_not_implemented(void)
 {
@@ -79,7 +82,7 @@ static int16_t sub_bcd(uint8_t a, uint8_t b, uint8_t carry)
         {
             b = 1;
             carry = 0;
-        }    
+        }
     }
     b = 0x99 - b;       // 10s complement of b.
     if (carry == 0)
@@ -95,102 +98,98 @@ void sim_arith(void)
     {
     case 0x14:          // "adb"        [P+1,P] + (B,A) -> [P+1,P]
                         //              P + 1 -> P
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p + 1] << 8;
-        tmp0 |= cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp1 = cpu_state.scratchpad.regs.b << 8;
-        tmp1 |= cpu_state.scratchpad.regs.a;
+        tmp0 = cpu_state.imem[cpu_state.p + 1] << 8;
+        tmp0 |= cpu_state.imem[cpu_state.p];
+        tmp1 = (cpu_state.imem[IRAM_REG_B] << 8) | cpu_state.imem[IRAM_REG_A];
         tmp0 += tmp1;
-        cpu_state.scratchpad.raw.mem[cpu_state.p + 1] = tmp0 >> 8;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        cpu_state.imem[cpu_state.p + 1] = tmp0 >> 8;
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.p += 1;
         cpu_state.p &= 0x7F;
-        cpu_state.flags.carry = (tmp0 > 0xFFFF);
-        cpu_state.flags.zero = (tmp0 == 0);
+        cpu_state.flags.carry = ((tmp0 & 0xFFFF0000) != 0);
+        cpu_state.flags.zero = ((tmp0 & 0xFFFF) == 0);
         cpu_state.cycles += 5;
         break;
     case 0x15:          // "sbb"        [P+1,P] - (B,A)-> [P+1,P]
                         //              P + 1 -> P
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p + 1] << 8;
-        tmp0 |= cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp1 = cpu_state.scratchpad.regs.b << 8;
-        tmp1 |= cpu_state.scratchpad.regs.a;
+        tmp0 = cpu_state.imem[cpu_state.p + 1] << 8;
+        tmp0 |= cpu_state.imem[cpu_state.p];
+        tmp1 = (cpu_state.imem[IRAM_REG_B] << 8) | cpu_state.imem[IRAM_REG_A];
         tmp0 -= tmp1;
-        cpu_state.scratchpad.raw.mem[cpu_state.p + 1] = tmp0 >> 8;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        cpu_state.imem[cpu_state.p + 1] = tmp0 >> 8;
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.p += 1;
         cpu_state.p &= 0x7F;
-        cpu_state.flags.carry = (tmp0 < 0);
-        cpu_state.flags.zero = (tmp0 == 0);
+        cpu_state.flags.carry = ((tmp0 & 0xFFFF0000) != 0);
+        cpu_state.flags.zero = ((tmp0 & 0xFFFF) == 0);
         cpu_state.cycles += 5;
         break;
     case 0x44:          // "adm"        [P] + A -> [P]
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 += cpu_state.scratchpad.regs.a;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        tmp0 = cpu_state.imem[cpu_state.p] + cpu_state.imem[IRAM_REG_A];
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.flags.carry = (tmp0 > 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     case 0x45:          // "sbm"        [P] - A -> [P]
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 -= cpu_state.scratchpad.regs.a;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        tmp0 = cpu_state.imem[cpu_state.p] - cpu_state.imem[IRAM_REG_A];
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.flags.carry = (tmp0 < 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     case 0x70:          // "adim"       [P] + n -> [P]
         cpu_state.pc += 1;
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 += read_mem(cpu_state.pc);
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
-        cpu_state.flags.carry = (tmp0 > 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        tmp0 = cpu_state.imem[cpu_state.p] + read_mem(cpu_state.pc);
+        cpu_state.imem[cpu_state.p] = tmp0;
+        cpu_state.flags.carry = (tmp0 & 0x0100) >> 8;
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x71:          // "sbim"       [P] - n -> [P]
+        __break__
+        g_print("Untested instruction: SBIM\r\n");
         cpu_state.pc += 1;
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 -= read_mem(cpu_state.pc);
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        tmp0 = cpu_state.imem[cpu_state.p] - read_mem(cpu_state.pc);
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.flags.carry = (tmp0 < 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x74:          // "adia"       A + n -> A
         cpu_state.pc += 1;
-        tmp0 = cpu_state.scratchpad.regs.a;
-        tmp0 += read_mem(cpu_state.pc);
-        cpu_state.scratchpad.regs.a = tmp0;
-        cpu_state.flags.carry = (tmp0 > 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        tmp0 = cpu_state.imem[IRAM_REG_A] + read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_A] = tmp0;
+        cpu_state.flags.carry = (tmp0 & 0x0100) >> 8;
+        cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 3;
         break;
     case 0x75:          // "sbia"       A - n -> A
         cpu_state.pc += 1;
-        tmp0 = cpu_state.scratchpad.regs.a;
-        tmp0 -= read_mem(cpu_state.pc);
-        cpu_state.scratchpad.regs.a = tmp0;
+        tmp0 = cpu_state.imem[IRAM_REG_A] - read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_A] = tmp0;
         cpu_state.flags.carry = tmp0 < 0;
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        cpu_state.flags.zero = (tmp0 == 0);
         cpu_state.cycles += 3;
         break;
     case 0xc4:          // "adcm"       [P] + A + C -> [P]
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 += cpu_state.scratchpad.regs.a;
+        __break__
+        g_print("Untested instruction: ADCM\r\n");
+        tmp0 = cpu_state.imem[cpu_state.p] + cpu_state.imem[IRAM_REG_A];
         tmp0 += cpu_state.flags.carry;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.flags.carry = (tmp0 > 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     case 0xc5:          // "sbcm"       [P] - A - C -> [P]
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp0 -= cpu_state.scratchpad.regs.a;
+        __break__
+        g_print("Untested instruction: SBCM\r\n");
+        tmp0 = cpu_state.imem[cpu_state.p] - cpu_state.imem[IRAM_REG_A];
         tmp0 -= cpu_state.flags.carry;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp0;
+        cpu_state.imem[cpu_state.p] = tmp0;
         cpu_state.flags.carry = (tmp0 < 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     default:
@@ -215,25 +214,35 @@ void sim_bcd(void)
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
-        fprintf(fp_memaccess, "adn - %d\r\n", cpu_state.d);
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        fprintf(fp_memaccess, "adn - %d\r\n", cpu_state.d + 1);
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         cpu_state.cycles += 7 + 3 * cpu_state.d;
-        b = cpu_state.scratchpad.regs.a;
+        b = cpu_state.imem[IRAM_REG_A];
         cpu_state.flags.carry = 0;
+        cpu_state.flags.zero = 1;
         do
         {
-            fprintf(fp_memaccess, "adn - ");
-            tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+            fprintf(fp_memaccess,
+                    "(p): %02x a: %02x carry: %d ",
+                    cpu_state.imem[cpu_state.p],
+                    b,
+                    cpu_state.flags.carry);
+            tmp = add_bcd(cpu_state.imem[cpu_state.p],
                           b,
                           cpu_state.flags.carry);
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            cpu_state.imem[cpu_state.p] = tmp;
             b = 0;
             cpu_state.flags.carry = (tmp > 0xFF);
+            cpu_state.flags.zero &= (tmp == 0);
+            fprintf(fp_memaccess,
+                    "result: %02x carry: %d, zero: %d\r\n",
+                    cpu_state.imem[cpu_state.p],
+                    cpu_state.flags.carry,
+                    cpu_state.flags.zero);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0d:        // "sbn"  I -> d
                       //        repeat
@@ -241,74 +250,79 @@ void sim_bcd(void)
                       //            P - 1 -> P
                       //            d - 1 -> d
                       //        until d=FF
-        cpu_state.d = cpu_state.scratchpad.regs.i;
-        fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.scratchpad.regs.i);
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
+        fprintf(fp_memaccess, "sbn - %d\r\n", cpu_state.d + 1);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
-        b = cpu_state.scratchpad.regs.a;
+        b = cpu_state.imem[IRAM_REG_A];
         cpu_state.flags.carry = 0;
+        cpu_state.flags.zero = 1;
         do
         {
             fprintf(fp_memaccess,
-                    "    (p): %02x a: %02x carry: %d ",
-                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    "(p): %02x a: %02x carry: %d ",
+                    cpu_state.imem[cpu_state.p],
                     b,
                     cpu_state.flags.carry);
-            tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
+            tmp = sub_bcd(cpu_state.imem[cpu_state.p],
                           b,
                           cpu_state.flags.carry);
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            cpu_state.imem[cpu_state.p] = tmp;
             b = 0;
             cpu_state.flags.carry = (tmp > 0xFF);
-            fprintf(fp_memaccess, 
-                    "result: %02x carry: %d\r\n",
-                    cpu_state.scratchpad.raw.mem[cpu_state.p],
-                    cpu_state.flags.carry);
+            cpu_state.flags.zero &= (tmp == 0);
+            fprintf(fp_memaccess,
+                    "result: %02x carry: %d, zero: %d\r\n",
+                    cpu_state.imem[cpu_state.p],
+                    cpu_state.flags.carry,
+                    cpu_state.flags.zero);
             cpu_state.p -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
-        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0e:        // "adw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "adw - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         cpu_state.flags.carry = 0;
+        cpu_state.flags.zero = 1;
         do
         {
-            tmp = add_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
-                          cpu_state.scratchpad.raw.mem[cpu_state.q],
+            tmp = add_bcd(cpu_state.imem[cpu_state.p],
+                          cpu_state.imem[cpu_state.q],
                           cpu_state.flags.carry);
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            cpu_state.imem[cpu_state.p] = tmp & 0xFF;
             cpu_state.flags.carry = (tmp > 0xFF);
+            cpu_state.flags.zero &= (tmp == 0);
             cpu_state.p -= 1;
             cpu_state.q -= 1;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
         cpu_state.q -= 1;
-        cpu_state.flags.zero = (tmp == 0);
         break;
     case 0x0f:        // "sbw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "sbw - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 3 * cpu_state.d;
         cpu_state.flags.carry = 0;
+        cpu_state.flags.zero = 1;
         do
         {
             fprintf(fp_memaccess,
                     "    (p): %02x (q): %02x carry: %d ",
-                    cpu_state.scratchpad.raw.mem[cpu_state.p],
-                    cpu_state.scratchpad.raw.mem[cpu_state.q],
+                    cpu_state.imem[cpu_state.p],
+                    cpu_state.imem[cpu_state.q],
                     cpu_state.flags.carry);
-            tmp = sub_bcd(cpu_state.scratchpad.raw.mem[cpu_state.p],
-                          cpu_state.scratchpad.raw.mem[cpu_state.q],
+            tmp = sub_bcd(cpu_state.imem[cpu_state.p],
+                          cpu_state.imem[cpu_state.q],
                           cpu_state.flags.carry);
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp & 0xFF;
+            cpu_state.imem[cpu_state.p] = tmp & 0xFF;
             cpu_state.flags.carry = (tmp > 0xFF);
-            fprintf(fp_memaccess, 
+            cpu_state.flags.zero &= (tmp == 0);
+            fprintf(fp_memaccess,
                     "result: %02x carry: %d\r\n",
-                    cpu_state.scratchpad.raw.mem[cpu_state.p],
+                    cpu_state.imem[cpu_state.p],
                     cpu_state.flags.carry);
             cpu_state.p -= 1;
             cpu_state.q -= 1;
@@ -316,7 +330,6 @@ void sim_bcd(void)
         }
         while (cpu_state.d != 0xff);
         cpu_state.q -= 1;
-        cpu_state.flags.zero = (tmp == 0);
         break;
     default:
         sim_not_implemented();
@@ -332,78 +345,81 @@ void sim_bool(void)
     switch (instruction)
     {
     case 0x46:        // "anma"
-        cpu_state.scratchpad.raw.mem[cpu_state.p] &=
-                                                    cpu_state.scratchpad.regs.a;
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.imem[cpu_state.p] &= cpu_state.imem[IRAM_REG_A];
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     case 0x47:        // "orma"
-        cpu_state.scratchpad.raw.mem[cpu_state.p] |=
-                                                    cpu_state.scratchpad.regs.a;
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.imem[cpu_state.p] |= cpu_state.imem[IRAM_REG_A];
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 3;
         break;
     case 0x60:        // "anim"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] &= read_mem(cpu_state.pc);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.imem[cpu_state.p] &= read_mem(cpu_state.pc);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x61:        // "orim"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] |= read_mem(cpu_state.pc);
-        cpu_state.flags.zero = (cpu_state.scratchpad.raw.mem[cpu_state.p] == 0);
+        cpu_state.imem[cpu_state.p] |= read_mem(cpu_state.pc);
+        cpu_state.flags.zero = (cpu_state.imem[cpu_state.p] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x62:        // "tsim"
         cpu_state.pc += 1;
-        cpu_state.flags.zero = ((cpu_state.scratchpad.raw.mem[cpu_state.p] &
+        cpu_state.flags.zero = ((cpu_state.imem[cpu_state.p] &
                                                   read_mem(cpu_state.pc)) == 0);
         cpu_state.cycles += 4;
         break;
     case 0x64:        // "ania"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.a &= read_mem(cpu_state.pc);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        cpu_state.imem[IRAM_REG_A] &= read_mem(cpu_state.pc);
+        cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x65:        // "oria"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.a |= read_mem(cpu_state.pc);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        cpu_state.imem[IRAM_REG_A] |= read_mem(cpu_state.pc);
+        cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 4;
         break;
     case 0x66:        // "tsia"
         cpu_state.pc += 1;
-        cpu_state.flags.zero = ((cpu_state.scratchpad.regs.a &
+        cpu_state.flags.zero = ((cpu_state.imem[IRAM_REG_A] &
                                                   read_mem(cpu_state.pc)) == 0);
         cpu_state.cycles += 4;
         break;
     case 0xc6:        // "tsma"
-        // This instruction does not exist in the PC-1251 machine language
+        // This instruction does not exist in the SC61860 machine language
         //  manual and is never used in the disassembly of the ROM.
-        cpu_state.flags.zero = ((cpu_state.scratchpad.raw.mem[cpu_state.p] &
-                                             cpu_state.scratchpad.regs.a) == 0);
+        __break__
+        g_print("Untested instruction: TSMA\r\n");
+        cpu_state.flags.zero = ((cpu_state.imem[cpu_state.p] &
+                                             cpu_state.imem[IRAM_REG_A]) == 0);
         cpu_state.cycles += 3;
         break;
-    case 0xd4:        // "anid"
+    case 0xd4:        // "anid"  (DP) & n -> (DP)
         cpu_state.pc += 1;
         tmp = read_mem(cpu_state.dp) & read_mem(cpu_state.pc);
         write_mem(cpu_state.dp, tmp);
+        cpu_state.imem[cpu_state.r - 1] = tmp;
         cpu_state.flags.zero = (tmp == 0);
         cpu_state.cycles += 6;
         break;
-    case 0xd5:        // "orid"
+    case 0xd5:        // "orid"  (DP) | n -> (DP)
         cpu_state.pc += 1;
         tmp = read_mem(cpu_state.dp) | read_mem(cpu_state.pc);
         write_mem(cpu_state.dp, tmp);
+        cpu_state.imem[cpu_state.r - 1] = tmp;
         cpu_state.flags.zero = (tmp == 0);
         cpu_state.cycles += 6;
         break;
-    case 0xd6:        // "tsid"
+    case 0xd6:        // "tsid" (DP) & n
         cpu_state.pc += 1;
         cpu_state.flags.zero = ((read_mem(cpu_state.dp) &
                                                   read_mem(cpu_state.pc)) == 0);
+        cpu_state.imem[cpu_state.r - 1] = read_mem(cpu_state.dp);
         cpu_state.cycles += 6;
         break;
     default:
@@ -422,8 +438,8 @@ void sim_cal(void)
     if (instruction == 0x78)
     {
         // CALL instruction.
-        cpu_state.scratchpad.raw.mem[cpu_state.r + 1] = (cpu_state.pc + 3) >> 8;
-        cpu_state.scratchpad.raw.mem[cpu_state.r] = (cpu_state.pc + 3) & 0xFF;
+        cpu_state.imem[cpu_state.r + 1] = (cpu_state.pc + 3) >> 8;
+        cpu_state.imem[cpu_state.r] = (cpu_state.pc + 3) & 0xFF;
         new_pc = read_mem(cpu_state.pc + 1) << 8;
         new_pc |= read_mem(cpu_state.pc + 2);
         cpu_state.pc = new_pc;
@@ -432,8 +448,8 @@ void sim_cal(void)
     else
     {
         // CAL instruction.
-        cpu_state.scratchpad.raw.mem[cpu_state.r + 1] = (cpu_state.pc + 2) >> 8;
-        cpu_state.scratchpad.raw.mem[cpu_state.r] = (cpu_state.pc + 2) & 0xFF;
+        cpu_state.imem[cpu_state.r + 1] = (cpu_state.pc + 2) >> 8;
+        cpu_state.imem[cpu_state.r] = (cpu_state.pc + 2) & 0xFF;
         new_pc = (read_mem(cpu_state.pc) & 0x1F) << 8;
         new_pc |= read_mem(cpu_state.pc + 1);
         cpu_state.pc = new_pc;
@@ -468,24 +484,21 @@ void sim_case(void)
 void sim_cp(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint8_t tmp0, tmp1;
+    int16_t tmp0;
     switch (instruction)
     {
     case 0x63:        // "cpim"
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp1 = read_mem(cpu_state.pc + 1);
+        tmp0 = cpu_state.imem[cpu_state.p] - read_mem(cpu_state.pc + 1);
         cpu_state.pc += 2;
         cpu_state.cycles += 4;
         break;
     case 0x67:        // "cpia"
-        tmp0 = cpu_state.scratchpad.regs.a;
-        tmp1 = read_mem(cpu_state.pc + 1);
+        tmp0 = cpu_state.imem[IRAM_REG_A] - read_mem(cpu_state.pc + 1);
         cpu_state.pc += 2;
         cpu_state.cycles += 4;
         break;
     case 0xc7:        // "cpma"
-        tmp0 = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        tmp1 = cpu_state.scratchpad.regs.a;
+        tmp0 = cpu_state.imem[cpu_state.p] - cpu_state.imem[IRAM_REG_A];
         cpu_state.pc += 1;
         cpu_state.cycles += 3;
         break;
@@ -494,19 +507,20 @@ void sim_cp(void)
         break;
     }
 
-    cpu_state.flags.carry = tmp0 < tmp1;
-    cpu_state.flags.zero = (tmp0 == tmp1);
+    cpu_state.flags.carry = (tmp0 & 0x0100) >> 8;
+    cpu_state.flags.zero = tmp0 == 0;
 }
 
 void sim_data(void)
 {
-    cpu_state.d = cpu_state.scratchpad.regs.i;
+    // (BA)...(BA+1)→(P)...(P+1)
+    cpu_state.d = cpu_state.imem[IRAM_REG_I];
     cpu_state.cycles += 11 + 4 * cpu_state.d;
-    uint16_t src = (cpu_state.scratchpad.regs.b << 8);
-    src |= cpu_state.scratchpad.regs.a;
+    uint16_t src = (cpu_state.imem[IRAM_REG_B] << 8);
+    src |= cpu_state.imem[IRAM_REG_A];
     do
     {
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(src);
+        cpu_state.imem[cpu_state.p] = read_mem(src);
         cpu_state.p += 1;
         cpu_state.p &= 0x7F;
         src += 1;
@@ -527,17 +541,18 @@ void sim_exa(void)
     switch (instruction)
     {
     case 0xda:        // "exab"
-        tmp = cpu_state.scratchpad.regs.b;
-        cpu_state.scratchpad.regs.b = cpu_state.scratchpad.regs.a;
-        cpu_state.scratchpad.regs.a = tmp;
+        tmp = cpu_state.imem[IRAM_REG_B];
+        cpu_state.imem[IRAM_REG_B] = cpu_state.imem[IRAM_REG_A];
+        cpu_state.imem[IRAM_REG_A] = tmp;
+        cpu_state.cycles += 5;
         break;
     case 0xdb:        // "exam"
-        tmp = cpu_state.scratchpad.regs.a;
-        cpu_state.scratchpad.regs.a = cpu_state.scratchpad.raw.mem[cpu_state.p];
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp;
+        tmp = cpu_state.imem[IRAM_REG_A];
+        cpu_state.imem[IRAM_REG_A] = cpu_state.imem[cpu_state.p];
+        cpu_state.imem[cpu_state.p] = tmp;
+        cpu_state.cycles += 3;
         break;
     }
-    cpu_state.cycles += 3;
     cpu_state.pc += 1;
 }
 
@@ -546,27 +561,26 @@ void sim_fil(void)
     uint8_t instruction = read_mem(cpu_state.pc);
     switch (instruction)
     {
-    case 0x1e:      // "film"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+    case 0x1e:      // "film"  A -> (P)..(P+I)
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "film - %d\r\n", cpu_state.d);
         cpu_state.cycles += 5 + cpu_state.d;
         do
         {
-            cpu_state.scratchpad.raw.mem[cpu_state.p] =
-                                                    cpu_state.scratchpad.regs.a;
+            cpu_state.imem[cpu_state.p] = cpu_state.imem[IRAM_REG_A];
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.d -= 1;
         }
         while (cpu_state.d != 0xff);
         break;
-    case 0x1f:      // "fild"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+    case 0x1f:      // "fild"  A -> (DP)..(DP+I)
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "fild - %d\r\n", cpu_state.d);
         cpu_state.cycles += 4 + 3 * cpu_state.d;
         do
         {
-            write_mem(cpu_state.dp, cpu_state.scratchpad.regs.a);
+            write_mem(cpu_state.dp, cpu_state.imem[IRAM_REG_A]);
             cpu_state.dp += 1;
             cpu_state.d -= 1;
         }
@@ -579,137 +593,82 @@ void sim_fil(void)
     cpu_state.pc += 1;
 }
 
+static void reg_incdec(unsigned int reg_num, int addsub)
+{
+    int16_t tmp = cpu_state.imem[reg_num] + addsub;
+    cpu_state.imem[reg_num] = tmp;
+    cpu_state.q = reg_num;
+    cpu_state.flags.carry = (tmp & 0x0100) >> 8;
+    cpu_state.flags.zero = (cpu_state.imem[reg_num] == 0);
+    cpu_state.cycles += 2;
+}
+
 void sim_incdec(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
     switch (instruction)
     {
     case 0x40:          // "inci"
-        cpu_state.scratchpad.regs.i += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.i == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.i == 0);
-        cpu_state.q = regnum(i);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_I, 1);
         break;
     case 0x41:          // "deci"
-        cpu_state.scratchpad.regs.i -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.i == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.i == 0);
-        cpu_state.q = regnum(i);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_I, -1);
         break;
     case 0x42:          // "inca"
-        cpu_state.scratchpad.regs.a += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.a == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
-        cpu_state.q = regnum(a);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_A, 1);
         break;
     case 0x43:          // "deca"
-        cpu_state.scratchpad.regs.a -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.a == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
-        cpu_state.q = regnum(a);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_A, -1);
         break;
     case 0x48:          // "inck"
-        cpu_state.scratchpad.regs.k += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.k == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.k == 0);
-        cpu_state.q = regnum(k);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_K, 1);
         break;
     case 0x49:          // "deck"
-        cpu_state.scratchpad.regs.k -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.k == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.k == 0);
-        cpu_state.q = regnum(k);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_K, -1);
         break;
     case 0x4a:          // "incm"
-        cpu_state.scratchpad.regs.m += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.m == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.m == 0);
-        cpu_state.q = regnum(m);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_M, 1);
         break;
     case 0x4b:          // "decm"
-        cpu_state.scratchpad.regs.m -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.m == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.m == 0);
-        cpu_state.q = regnum(m);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_M, -1);
         break;
     case 0x50:          // "incp"
         cpu_state.p += 1;
         cpu_state.p &= 0x7F;
-        cpu_state.cycles += 2;
         break;
     case 0x51:          // "decp"
         cpu_state.p -= 1;
         cpu_state.p &= 0x7F;
-        cpu_state.cycles += 2;
         break;
     case 0xc0:          // "incj"
-        cpu_state.scratchpad.regs.j += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.j == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.j == 0);
-        cpu_state.q = regnum(j);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_J, 1);
         break;
     case 0xc1:          // "decj"
-        cpu_state.scratchpad.regs.j -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.j == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.j == 0);
-        cpu_state.q = regnum(j);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_J, -1);
         break;
     case 0xc2:          // "incb"
-        cpu_state.scratchpad.regs.b += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.b == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.b == 0);
-        cpu_state.q = regnum(b);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_B, 1);
         break;
     case 0xc3:          // "decb"
-        cpu_state.scratchpad.regs.b -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.b == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.b == 0);
-        cpu_state.q = regnum(b);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_B, -1);
         break;
     case 0xc8:          // "incl"
-        cpu_state.scratchpad.regs.l += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.l == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.l == 0);
-        cpu_state.q = regnum(l);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_L, 1);
         break;
     case 0xc9:          // "decl"
-        cpu_state.scratchpad.regs.l -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.l == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.l == 0);
-        cpu_state.q = regnum(l);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_L, -1);
         break;
     case 0xca:          // "incn"
-        cpu_state.scratchpad.regs.n += 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.n == 0);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.n == 0);
-        cpu_state.q = regnum(n);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_N, 1);
         break;
     case 0xcb:          // "decn"
-        cpu_state.scratchpad.regs.n -= 1;
-        cpu_state.flags.carry = (cpu_state.scratchpad.regs.n == 0xFF);
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.n == 0);
-        cpu_state.q = regnum(n);
-        cpu_state.cycles += 4;
+        reg_incdec(IRAM_REG_N, -1);
         break;
     default:
         sim_not_implemented();
         break;
     }
+    cpu_state.cycles += 2;
     cpu_state.pc += 1;
 }
 
@@ -721,7 +680,7 @@ void sim_io(void)
     case 0x4c:      // "ina"
         pt.ina();
         // TODO: Check.
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 2;
         break;
     case 0x5d:      // "outa"
@@ -734,7 +693,7 @@ void sim_io(void)
         break;
     case 0xcc:      // "inb"
         pt.inb();
-        cpu_state.flags.zero = (cpu_state.scratchpad.regs.a == 0);
+        cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 2;
         break;
     case 0xdd:      // "outb"
@@ -883,32 +842,32 @@ void sim_jp(void)
 void sim_lr(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
-    uint8_t tmp;
     switch (instruction)
     {
     case 0x00:      // "lii"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.i = read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_I] = read_mem(cpu_state.pc);
         cpu_state.cycles += 4;
         break;
     case 0x01:      // "lij"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.j = read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_J] = read_mem(cpu_state.pc);
         cpu_state.cycles += 4;
         break;
     case 0x02:      // "lia"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.pc);
         cpu_state.cycles += 4;
         break;
     case 0x03:      // "lib"
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.b = read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_B] = read_mem(cpu_state.pc);
         cpu_state.cycles += 4;
         break;
     case 0x10:      // "lidp"
-        cpu_state.pc += 2;
-        cpu_state.dp = read_mem(cpu_state.pc - 1) << 8;
+        cpu_state.pc += 1;
+        cpu_state.dp = read_mem(cpu_state.pc) << 8;
+        cpu_state.pc += 1;
         cpu_state.dp |= read_mem(cpu_state.pc);
         cpu_state.cycles += 8;
         break;
@@ -929,43 +888,52 @@ void sim_lr(void)
         cpu_state.cycles += 4;
         break;
     case 0x20:      // "ldp"
-        cpu_state.scratchpad.regs.a = cpu_state.p;
+        cpu_state.imem[IRAM_REG_A] = cpu_state.p;
         cpu_state.cycles += 2;
         break;
     case 0x21:      // "ldq"
-        cpu_state.scratchpad.regs.a = cpu_state.q;
-        cpu_state.cycles += 4;
+        cpu_state.imem[IRAM_REG_A] = cpu_state.q;
+        cpu_state.cycles += 2;
         break;
     case 0x22:      // "ldr"
-        cpu_state.scratchpad.regs.a = cpu_state.r;
-        cpu_state.cycles += 4;
+        cpu_state.imem[IRAM_REG_A] = cpu_state.r;
+        cpu_state.cycles += 2;
         break;
     case 0x23:      // "clra"
-        cpu_state.scratchpad.regs.a = 0;
+        // This instruction does not exist in the SC61860 machine language
+        //  manual and is never used in the disassembly of the ROM.
+        cpu_state.imem[IRAM_REG_A] = 0;
         cpu_state.cycles += 4;
         break;
-    case 0x54:      // "mvmp"
+    case 0x54:      // "readm"
+        // This instruction does not exist in the SC61860 machine language
+        //  manual and is never used in the disassembly of the ROM.
+        __break__
+        g_print("Untested instruction: READM\r\n");
         cpu_state.pc += 1;
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.pc);
+        cpu_state.imem[cpu_state.p] = read_mem(cpu_state.pc);
         cpu_state.cycles += 3;
         break;
     case 0x56:      // "read"
+        // This instruction does not exist in the SC61860 machine language
+        //  manual and is never used in the disassembly of the ROM.
+        __break__
+        g_print("Untested instruction: READ\r\n");
         cpu_state.pc += 1;
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.pc);
+        cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.pc);
         cpu_state.cycles += 3;
         break;
     case 0x57:      // "ldd"
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.dp);
+        cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.dp);
         cpu_state.cycles += 3;
         break;
     case 0x58:      // "swp"
-        tmp = (cpu_state.scratchpad.regs.a >> 4) & 0x0F;
-        cpu_state.scratchpad.regs.a = cpu_state.scratchpad.regs.a << 4;
-        cpu_state.scratchpad.regs.a |= tmp;
+        cpu_state.imem[IRAM_REG_A] = (cpu_state.imem[IRAM_REG_A] << 4) |
+                                     (cpu_state.imem[IRAM_REG_A] >> 4);
         cpu_state.cycles += 2;
         break;
     case 0x59:      // "ldm"
-        cpu_state.scratchpad.regs.a = cpu_state.scratchpad.raw.mem[cpu_state.p];
+        cpu_state.imem[IRAM_REG_A] = cpu_state.imem[cpu_state.p];
         cpu_state.cycles += 2;
         break;
     default:
@@ -977,24 +945,29 @@ void sim_lr(void)
 
 void sim_loop(void)
 {
-    cpu_state.scratchpad.raw.mem[cpu_state.r] -= 1;
-    cpu_state.flags.carry = (cpu_state.scratchpad.raw.mem[cpu_state.r] == 0xFF);
+    __break__
+    g_print("Untested instruction: LOOP\r\n");
+    cpu_state.imem[cpu_state.r] -= 1;
+    cpu_state.flags.carry = (cpu_state.imem[cpu_state.r] == 0xFF);
+    cpu_state.pc += 1;
     if (cpu_state.flags.carry == 0)
     {
-        cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
+        cpu_state.pc -= read_mem(cpu_state.pc) - 1;
         cpu_state.cycles += 10;
     }
     else
     {
         cpu_state.r += 1;
-        cpu_state.pc += 2;
+        cpu_state.pc += 1;
         cpu_state.cycles += 7;
     }
 }
 
 void sim_leave(void)
 {
-    cpu_state.scratchpad.raw.mem[cpu_state.r] = 0;
+    __break__
+    g_print("Untested instruction: LEAVE\r\n");
+    cpu_state.imem[cpu_state.r] = 0;
     cpu_state.pc += 1;
     cpu_state.cycles += 2;
 }
@@ -1012,13 +985,12 @@ void sim_mv(void)
     switch (instruction)
     {
     case 0x08:      // "mvw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "mvw - %d\r\n", cpu_state.d);
         cpu_state.cycles += 5 + 2 * cpu_state.d;
         do
         {
-            cpu_state.scratchpad.raw.mem[cpu_state.p] =
-                    cpu_state.scratchpad.raw.mem[cpu_state.q];
+            cpu_state.imem[cpu_state.p] = cpu_state.imem[cpu_state.q];
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.q += 1;
@@ -1028,15 +1000,14 @@ void sim_mv(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x09:      // "exw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "exw - %d\r\n", cpu_state.d);
         cpu_state.cycles += 6 + 3 * cpu_state.d;
         do
         {
-            uint8_t tmp = cpu_state.scratchpad.raw.mem[cpu_state.p];
-            cpu_state.scratchpad.raw.mem[cpu_state.p] =
-                                      cpu_state.scratchpad.raw.mem[cpu_state.q];
-            cpu_state.scratchpad.raw.mem[cpu_state.q] = tmp;
+            uint8_t tmp = cpu_state.imem[cpu_state.p];
+            cpu_state.imem[cpu_state.p] = cpu_state.imem[cpu_state.q];
+            cpu_state.imem[cpu_state.q] = tmp;
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.q += 1;
@@ -1046,13 +1017,12 @@ void sim_mv(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x0a:      // "mvb"
-        cpu_state.d = cpu_state.scratchpad.regs.j;
+        cpu_state.d = cpu_state.imem[IRAM_REG_J];
         fprintf(fp_memaccess, "mvb - %d\r\n", cpu_state.d);
         cpu_state.cycles += 5 + 2 * cpu_state.d;
         do
         {
-            cpu_state.scratchpad.raw.mem[cpu_state.p] =
-                                      cpu_state.scratchpad.raw.mem[cpu_state.q];
+            cpu_state.imem[cpu_state.p] = cpu_state.imem[cpu_state.q];
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.q += 1;
@@ -1061,16 +1031,15 @@ void sim_mv(void)
         }
         while (cpu_state.d != 0xff);
         break;
-    case 0x0b:      // "exb"
-        cpu_state.d = cpu_state.scratchpad.regs.j;
+    case 0x0b:      // "exb"  (P)..(P+J)<->(Q)..(Q+J),
+        cpu_state.d = cpu_state.imem[IRAM_REG_J];
         fprintf(fp_memaccess, "exb - %d\r\n", cpu_state.d);
         cpu_state.cycles += 6 + 3 * cpu_state.d;
         do
         {
-            uint8_t tmp = cpu_state.scratchpad.raw.mem[cpu_state.p];
-            cpu_state.scratchpad.raw.mem[cpu_state.p] =
-                    cpu_state.scratchpad.raw.mem[cpu_state.q];
-            cpu_state.scratchpad.raw.mem[cpu_state.q] = tmp;
+            uint8_t tmp = cpu_state.imem[cpu_state.p];
+            cpu_state.imem[cpu_state.p] = cpu_state.imem[cpu_state.q];
+            cpu_state.imem[cpu_state.q] = tmp;
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.q += 1;
@@ -1079,13 +1048,13 @@ void sim_mv(void)
         }
         while (cpu_state.d != 0xff);
         break;
-    case 0x18:      // "mvwb"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
-        fprintf(fp_memaccess, "mvwb - %d\r\n", cpu_state.d);
+    case 0x18:      // "mvwd"
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
+        fprintf(fp_memaccess, "mvwd - %d\r\n", cpu_state.d);
         cpu_state.cycles += 5 + 4 * cpu_state.d;
         do
         {
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.dp);
+            cpu_state.imem[cpu_state.p] = read_mem(cpu_state.dp);
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.dp += 1;
@@ -1094,13 +1063,13 @@ void sim_mv(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x19:      // "exwd"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         fprintf(fp_memaccess, "exwd - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 6 * cpu_state.d;
         do
         {
-            uint8_t tmp = cpu_state.scratchpad.raw.mem[cpu_state.p];
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.dp);
+            uint8_t tmp = cpu_state.imem[cpu_state.p];
+            cpu_state.imem[cpu_state.p] = read_mem(cpu_state.dp);
             write_mem(cpu_state.dp, tmp);
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
@@ -1109,13 +1078,13 @@ void sim_mv(void)
         }
         while (cpu_state.d != 0xff);
         break;
-    case 0x1a:      // "mvbd"
-        cpu_state.d = cpu_state.scratchpad.regs.j;
+    case 0x1a:      // "mvbd"  (DP)..(DP+J)->(P)..(P+J)
+        cpu_state.d = cpu_state.imem[IRAM_REG_J];
         fprintf(fp_memaccess, "mvbd - %d\r\n", cpu_state.d);
         cpu_state.cycles += 5 + 4 * cpu_state.d;
         do
         {
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.dp);
+            cpu_state.imem[cpu_state.p] = read_mem(cpu_state.dp);
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.dp += 1;
@@ -1123,14 +1092,14 @@ void sim_mv(void)
         }
         while (cpu_state.d != 0xff);
         break;
-    case 0x1b:      // "exbd"
-        cpu_state.d = cpu_state.scratchpad.regs.j;
+    case 0x1b:      // "exbd"  (P)..(P+J)<->(DP)..(DP+J)
+        cpu_state.d = cpu_state.imem[IRAM_REG_J];
         fprintf(fp_memaccess, "exbd - %d\r\n", cpu_state.d);
         cpu_state.cycles += 7 + 6 * cpu_state.d;
         do
         {
-            uint8_t tmp = cpu_state.scratchpad.raw.mem[cpu_state.p];
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.dp);
+            uint8_t tmp = cpu_state.imem[cpu_state.p];
+            cpu_state.imem[cpu_state.p] = read_mem(cpu_state.dp);
             write_mem(cpu_state.dp, tmp);
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
@@ -1140,11 +1109,11 @@ void sim_mv(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x53:      // "mvdm"
-        write_mem(cpu_state.dp, cpu_state.scratchpad.raw.mem[cpu_state.p]);
+        write_mem(cpu_state.dp, cpu_state.imem[cpu_state.p]);
         cpu_state.cycles += 3;
         break;
     case 0x55:      // "mvmd"
-        cpu_state.scratchpad.raw.mem[cpu_state.p] = read_mem(cpu_state.dp);
+        cpu_state.imem[cpu_state.p] = read_mem(cpu_state.dp);
         cpu_state.cycles += 3;
         break;
     default:
@@ -1174,8 +1143,8 @@ void sim_nop(void)
 
 void sim_rtn(void)
 {
-    cpu_state.pc = cpu_state.scratchpad.raw.mem[cpu_state.r + 1] << 8;
-    cpu_state.pc |= cpu_state.scratchpad.raw.mem[cpu_state.r];
+    cpu_state.pc = cpu_state.imem[cpu_state.r + 1] << 8;
+    cpu_state.pc |= cpu_state.imem[cpu_state.r];
     cpu_state.r += 2;
     cpu_state.cycles += 4;
 }
@@ -1187,13 +1156,13 @@ void sim_shift(void)
     switch (instruction)
     {
     case 0x1c:          // "srw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         cpu_state.cycles += 5 + cpu_state.d;
         tmp = 0;
         do
         {
-            tmp = (tmp << 8) | cpu_state.scratchpad.raw.mem[cpu_state.p];
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp >> 4;
+            tmp = (tmp << 8) | cpu_state.imem[cpu_state.p];
+            cpu_state.imem[cpu_state.p] = tmp >> 4;
             cpu_state.p += 1;
             cpu_state.p &= 0x7F;
             cpu_state.d -= 1;
@@ -1201,13 +1170,13 @@ void sim_shift(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x1d:          // "slw"
-        cpu_state.d = cpu_state.scratchpad.regs.i;
+        cpu_state.d = cpu_state.imem[IRAM_REG_I];
         cpu_state.cycles += 5 + cpu_state.d;
         tmp = 0;
         do
         {
-            tmp = (tmp >> 8) | (cpu_state.scratchpad.raw.mem[cpu_state.p] << 8);
-            cpu_state.scratchpad.raw.mem[cpu_state.p] = tmp >> 4;
+            tmp = (tmp >> 8) | (cpu_state.imem[cpu_state.p] << 8);
+            cpu_state.imem[cpu_state.p] = tmp >> 4;
             cpu_state.p -= 1;
             cpu_state.p &= 0x7F;
             cpu_state.d -= 1;
@@ -1215,17 +1184,15 @@ void sim_shift(void)
         while (cpu_state.d != 0xff);
         break;
     case 0x5a:          // "sl"
-        tmp = cpu_state.scratchpad.regs.a;
-        tmp = (tmp << 1) | cpu_state.flags.carry;
-        cpu_state.scratchpad.regs.a = tmp;
-        cpu_state.flags.carry = ((tmp & ~0xFF) != 0);
+        tmp = cpu_state.flags.carry;
+        cpu_state.flags.carry = cpu_state.imem[IRAM_REG_A] >> 7;
+        cpu_state.imem[IRAM_REG_A] = (cpu_state.imem[IRAM_REG_A] << 1) | tmp;
         cpu_state.cycles += 2;
         break;
     case 0xd2:          // "sr"
-        tmp = cpu_state.scratchpad.regs.a << 8;
-        tmp = (tmp >> 1) | (cpu_state.flags.carry << 15);
-        cpu_state.scratchpad.regs.a = tmp >> 8;
-        cpu_state.flags.carry = ((tmp & 0xFF) != 0);
+        tmp = cpu_state.flags.carry << 7;
+        cpu_state.flags.carry = cpu_state.imem[IRAM_REG_A] & 0x01;
+        cpu_state.imem[IRAM_REG_A] = (cpu_state.imem[IRAM_REG_A] >> 1) | tmp;
         cpu_state.cycles += 2;
         break;
     default:
@@ -1243,11 +1210,11 @@ void sim_stack(void)
     case 0x34:          // "push"
         cpu_state.r -= 1;
         cpu_state.r &= 0x7F;
-        cpu_state.scratchpad.raw.mem[cpu_state.r] = cpu_state.scratchpad.regs.a;
+        cpu_state.imem[cpu_state.r] = cpu_state.imem[IRAM_REG_A];
         cpu_state.cycles += 3;
         break;
     case 0x5b:          // "pop"
-        cpu_state.scratchpad.regs.a = cpu_state.scratchpad.raw.mem[cpu_state.r];
+        cpu_state.imem[IRAM_REG_A] = cpu_state.imem[cpu_state.r];
         cpu_state.r += 1;
         cpu_state.r &= 0x7F;
         cpu_state.cycles += 2;
@@ -1265,16 +1232,16 @@ void sim_store(void)
     switch (instruction)
     {
     case 0x30:          // "stp"
-        cpu_state.p = cpu_state.scratchpad.regs.a & 0x7F;
+        cpu_state.p = cpu_state.imem[IRAM_REG_A] & 0x7F;
         break;
     case 0x31:          // "stq"
-        cpu_state.q = cpu_state.scratchpad.regs.a & 0x7F;
+        cpu_state.q = cpu_state.imem[IRAM_REG_A] & 0x7F;
         break;
     case 0x32:          // "str"
-        cpu_state.r = cpu_state.scratchpad.regs.a & 0x7F;
+        cpu_state.r = cpu_state.imem[IRAM_REG_A] & 0x7F;
         break;
     case 0x52:          // "std"
-        write_mem(cpu_state.dp, cpu_state.scratchpad.regs.a);
+        write_mem(cpu_state.dp, cpu_state.imem[IRAM_REG_A]);
         break;
     default:
         sim_not_implemented();
@@ -1290,12 +1257,12 @@ void sim_table(void)
     uint16_t pc;
     switch (instruction)
     {
-    case 0x69:          // "dtj"
+    case 0x69:          // "ptj"
         cpu_state.pc += 1;
         int i;
         for (i = 0; i < cpu_state.table_items; i++)
         {
-            if (cpu_state.scratchpad.regs.a == read_mem(cpu_state.pc))
+            if (cpu_state.imem[IRAM_REG_A] == read_mem(cpu_state.pc))
             {
                 // We have found a match.
                 pc = read_mem(cpu_state.pc + 1) << 8;
@@ -1315,19 +1282,18 @@ void sim_table(void)
             cpu_state.pc = pc;
             cpu_state.cycles += 2;        // TODO: Check this value.
         }
-        break;
-    case 0x7A:          // "ptj"
+        return;
+    case 0x7A:          // "dtj"
         cpu_state.pc += 1;
         cpu_state.table_items = read_mem(cpu_state.pc);
 
         // We'll put the return address in the stack right away.
         cpu_state.r -= 2;
-        cpu_state.scratchpad.raw.mem[cpu_state.r + 1] =
-                                                     read_mem(cpu_state.pc + 1);
-        cpu_state.scratchpad.raw.mem[cpu_state.r] = read_mem(cpu_state.pc + 2);
+        cpu_state.imem[cpu_state.r + 1] = read_mem(cpu_state.pc + 1);
+        cpu_state.imem[cpu_state.r] = read_mem(cpu_state.pc + 2);
         cpu_state.pc += 3;
         cpu_state.cycles += 3;
-        return;
+        break;
     default:
         sim_not_implemented();
         break;
@@ -1367,13 +1333,23 @@ void sim_wait(void)
         cpu_state.cycles += 6 + read_mem(cpu_state.pc);
         break;
     case 0x4f:      // "waiti"
-        cpu_state.cycles += 5 + 4 * cpu_state.scratchpad.regs.i;
+        cpu_state.cycles += 5 + 4 * cpu_state.imem[IRAM_REG_I];
         break;
     default:
         sim_not_implemented();
         break;
     }
     cpu_state.pc += 1;
+}
+
+static void reg_xy(int reg1, int reg2, int addsub)
+{
+    cpu_state.dp = ((cpu_state.imem[reg1] << 8) +
+                                                cpu_state.imem[reg2]) + addsub;
+    cpu_state.imem[reg1] = cpu_state.dp >> 8;
+    cpu_state.imem[reg2] = cpu_state.dp;
+    cpu_state.q = reg1;
+    cpu_state.cycles += 6;
 }
 
 void sim_xy(void)
@@ -1382,56 +1358,36 @@ void sim_xy(void)
     switch (instruction)
     {
     case 0x04:      // "ix"
-        cpu_state.scratchpad.regs.xreg.x += 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.xreg.x;
-        cpu_state.q = regnum(xreg.b.xh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_XH, IRAM_REG_XL, 1);
         break;
     case 0x05:      // "dx"
-        cpu_state.scratchpad.regs.xreg.x -= 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.xreg.x;
-        cpu_state.q = regnum(xreg.b.xh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_XH, IRAM_REG_XL, -1);
         break;
     case 0x06:      // "iy"
-        cpu_state.scratchpad.regs.yreg.y += 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.yreg.y;
-        cpu_state.q = regnum(yreg.b.yh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_YH, IRAM_REG_YL, 1);
         break;
     case 0x07:      // "dy"
-        cpu_state.scratchpad.regs.yreg.y -= 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.yreg.y;
-        cpu_state.q = regnum(yreg.b.yh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_YH, IRAM_REG_YL, -1);
         break;
     case 0x24:      // "ixl"
-        cpu_state.scratchpad.regs.xreg.x += 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.xreg.x;
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.dp);
-        cpu_state.q = regnum(xreg.b.xh);
-        cpu_state.cycles += 7;
+        reg_xy(IRAM_REG_XH, IRAM_REG_XL, 1);
+        cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.dp);
+        cpu_state.cycles += 1;
         break;
     case 0x25:      // "dxl"
-        cpu_state.scratchpad.regs.xreg.x -= 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.xreg.x;
-        cpu_state.scratchpad.regs.a = read_mem(cpu_state.dp);
-        cpu_state.q = regnum(xreg.b.xh);
-        cpu_state.cycles += 7;
+        reg_xy(IRAM_REG_XH, IRAM_REG_XL, -1);
+        cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.dp);
+        cpu_state.cycles += 1;
         break;
     case 0x26:      // "iys"
-        cpu_state.scratchpad.regs.yreg.y += 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.yreg.y;
-        write_mem(cpu_state.dp, cpu_state.scratchpad.regs.a);
-        cpu_state.q = regnum(yreg.b.yh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_YH, IRAM_REG_YL, 1);
+        write_mem(cpu_state.dp, cpu_state.imem[IRAM_REG_A]);
+        cpu_state.cycles += 1;
         break;
     case 0x27:      // "dys"
-        cpu_state.scratchpad.regs.yreg.y -= 1;
-        cpu_state.dp = cpu_state.scratchpad.regs.yreg.y;
-        write_mem(cpu_state.dp, cpu_state.scratchpad.regs.a);
-        cpu_state.q = regnum(yreg.b.yh);
-        cpu_state.cycles += 6;
+        reg_xy(IRAM_REG_YH, IRAM_REG_YL, -1);
+        write_mem(cpu_state.dp, cpu_state.imem[IRAM_REG_A]);
+        cpu_state.cycles += 1;
         break;
     default:
         sim_not_implemented();
@@ -1439,9 +1395,6 @@ void sim_xy(void)
     }
     cpu_state.pc += 1;
 }
-
-static int32_t ptj_count_tmp = -1;
-static int32_t ptj_count = -1;
 
 const sc61860_instr_t sc61860_instr[] =
 {
@@ -1468,7 +1421,7 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_NOOPERAND + (0x5 << 8) + 1, 0xFF, 0x14, "adb", sim_arith},
     {SC61860_FORMAT_NOOPERAND + (0x5 << 8) + 1, 0xFF, 0x15, "sbb", sim_arith},
     {SC61860_FORMAT_CASE + (0x3 << 8) + 3, 0xFF, 0x16, ".case", sim_case},
-    {SC61860_FORMAT_DEFAULT + (0x3 << 8) + 3, 0xFF, 0x17, ".default", sim_default},
+    {SC61860_FORMAT_DEFAULT + (0x3 << 8) + 2, 0xFF, 0x17, ".default", sim_default},
     {SC61860_FORMAT_NOOPERAND + (0x45 << 8) + 1, 0xFF, 0x18, "mvwd", sim_mv},
     {SC61860_FORMAT_NOOPERAND + (0x67 << 8) + 1, 0xFF, 0x19, "exwd", sim_mv},
     {SC61860_FORMAT_NOOPERAND + (0x45 << 8) + 1, 0xFF, 0x1a, "mvbd", sim_mv},
@@ -1540,7 +1493,7 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x65, "oria", sim_bool},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x66, "tsia", sim_bool},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x67, "cpia", sim_cp},
-    {SC61860_FORMAT_DTJ + (0 << 8) + 1, 0xFF, 0x69, "dtj", sim_table},
+    {SC61860_FORMAT_PTJ + (9 << 8) + 1, 0xFF, 0x69, "ptj", sim_table},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x6b, "test", sim_test},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x70, "adim", sim_arith},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x71, "sbim", sim_arith},
@@ -1548,7 +1501,7 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x75, "sbia", sim_arith},
     {SC61860_FORMAT_ADDRESS16 + (8 << 8) + 3, 0xFF, 0x78, "call", sim_cal},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x79, "jp", sim_jp},
-    {SC61860_FORMAT_PTJ + (9 << 8) + 4, 0xFF, 0x7a, "ptj", sim_table},
+    {SC61860_FORMAT_DTJ + (0 << 8) + 4, 0xFF, 0x7A, "dtj", sim_table},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7c, "jpnz", sim_jp},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7d, "jpnc", sim_jp},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7e, "jpz", sim_jp},
@@ -1613,6 +1566,54 @@ static size_t print_instruction(uint16_t address,
                 sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p), "$%02X", operand0);
+        if ((instruction == 0x12) || (instruction == 0x13))
+        {
+            if (operand0 < 10)
+            {
+                print_shift(p, COMMENT_COLUMN);
+                sprintf(p + strlen(p), "; %s", scratchpad_regs[operand0]);
+            }
+            else
+            {
+                switch (operand0)
+                {
+                case 0x20:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; XReg");
+                    break;
+                case 0x28:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; YReg");
+                    break;
+                case 0x30:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; ZReg");
+                    break;
+                case 0x38:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; WReg");
+                    break;
+                case 0x5C:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; PortA");
+                    break;
+                case 0x5D:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; PortB");
+                    break;
+                case 0x5E:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; PortF");
+                    break;
+                case 0x5F:
+                    print_shift(p, COMMENT_COLUMN);
+                    sprintf(p + strlen(p), "; PortC");
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
         break;
     case SC61860_FORMAT_NOOPERAND:
         sprintf(p,
@@ -1652,6 +1653,35 @@ static size_t print_instruction(uint16_t address,
                 sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         sprintf(p + strlen(p), "$%02X", operand0);
+        if (operand0 < 10)
+        {
+            print_shift(p, COMMENT_COLUMN);
+            sprintf(p + strlen(p), "; %s", scratchpad_regs[operand0]);
+        }
+        else
+        {
+            switch (operand0)
+            {
+            case 0x20:
+                print_shift(p, COMMENT_COLUMN);
+                sprintf(p + strlen(p), "; XReg");
+                break;
+            case 0x28:
+                print_shift(p, COMMENT_COLUMN);
+                sprintf(p + strlen(p), "; YReg");
+                break;
+            case 0x30:
+                print_shift(p, COMMENT_COLUMN);
+                sprintf(p + strlen(p), "; ZReg");
+                break;
+            case 0x38:
+                print_shift(p, COMMENT_COLUMN);
+                sprintf(p + strlen(p), "; WReg");
+                break;
+            default:
+                break;
+            }
+        }
         break;
     case SC61860_FORMAT_ADDRESS13:
         operand0 = instruction & 0x1F;
@@ -1672,8 +1702,9 @@ static size_t print_instruction(uint16_t address,
         {
             if (target_address == address_descriptors[imm].address)
             {
+                print_shift(p, COMMENT_COLUMN);
                 sprintf(p + strlen(p),
-                        "        ; %s",
+                        "; %s",
                         address_descriptors[imm].label);
                 break;
             }
@@ -1701,29 +1732,23 @@ static size_t print_instruction(uint16_t address,
         sprintf(p + strlen(p), "$%04X", address - operand0 + 1);
         break;
     case SC61860_FORMAT_PTJ:
-        operand0 = pt.read_memory(address + 1);
-        ptj_count_tmp = operand0;
-        sprintf(p, "%02X %02X ", instruction, operand0);
-        operand0 = pt.read_memory(address + 2);
-        operand1 = pt.read_memory(address + 3);
-        sprintf(p + strlen(p),
-                "%02X %02X  %s",
-                operand0,
-                operand1,
+        sprintf(p,
+                "%02X           %s",
+                instruction,
                 sc61860_instr[index].opcode);
-        print_shift(p, OPERAND_COLUMN);
-        operand0 = pt.read_memory(address + 1);
-        sprintf(p + strlen(p), "$%02X, ", operand0);
-        operand0 = pt.read_memory(address + 2);
-        operand1 = pt.read_memory(address + 3);
-        sprintf(p + strlen(p), "$%04X", operand0 * 256 + operand1);
+        cpu_state.this_item = cpu_state.table_items;
         break;
     case SC61860_FORMAT_DTJ:
         sprintf(p,
                 "%02X           %s",
                 instruction,
                 sc61860_instr[index].opcode);
-        ptj_count = ptj_count_tmp;
+        print_shift(p, OPERAND_COLUMN);
+        operand0 = pt.read_memory(address + 1);
+        int addr = (pt.read_memory(address + 2) << 8) |
+                                               pt.read_memory(address + 3);
+        sprintf(p + strlen(p), "$%02X, $%04X", operand0, addr);
+        cpu_state.table_items = pt.read_memory(address + 1);
         break;
     case SC61860_FORMAT_CASE:
         sprintf(p,
@@ -1737,7 +1762,6 @@ static size_t print_instruction(uint16_t address,
                 pt.read_memory(address),
                 pt.read_memory(address + 1) * 256 +
                                                    pt.read_memory(address + 2));
-        ptj_count -= 1;
         break;
     case SC61860_FORMAT_DEFAULT:
         sprintf(p,
@@ -1749,7 +1773,6 @@ static size_t print_instruction(uint16_t address,
                 "$%04X",
                 pt.read_memory(address) * 256 +
                                                    pt.read_memory(address + 1));
-        ptj_count -= 1;
         break;
     default:
         break;
@@ -1757,7 +1780,7 @@ static size_t print_instruction(uint16_t address,
     return sc61860_instr[index].attributes & 0xFF;
 }
 
-uint32_t sc61860_disassembler(uint16_t address, uint8_t instruction, char *p)
+uint32_t print_asm_line(uint16_t address, uint8_t instruction, char *p)
 {
     sprintf(p, "%04X: ", address);
     uint32_t i = 0;
@@ -1781,4 +1804,32 @@ uint32_t sc61860_disassembler(uint16_t address, uint8_t instruction, char *p)
     // Unrecognized instruction.
     sprintf(p, "%04X: %02X           ???", address, instruction);
     return 1;
+}
+
+uint32_t sc61860_disassembler(uint16_t address, uint8_t instruction, char *p)
+{
+    sprintf(p, "%04X: ", address);
+    if (cpu_state.this_item > 0)
+    {
+        // If the string pointer is null we are going to return only
+        //  the number of bytes of the instruciton, either 2 or 4.
+        if (p != 0)
+        {
+            cpu_state.this_item -= 1;
+            return print_instruction(address, 0x16, 0, p + strlen(p));
+        }
+    }
+
+    if (cpu_state.this_item == 0)
+    {
+        // If the string pointer is null we are going to return only
+        //  the number of bytes of the instruciton, either 2 or 4.
+        if (p != 0)
+        {
+            cpu_state.this_item -= 1;
+            return print_instruction(address, 0x17, 0, p + strlen(p));
+        }
+    }
+
+    return print_asm_line(address, instruction, p);
 }

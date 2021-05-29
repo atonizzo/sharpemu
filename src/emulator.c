@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,21 @@ FILE *fp_memaccess;
 FILE *fp_instr;
 uint32_t diag_level;
 char user_file_name[128];
+long single_step_break;
+long emulated_instructions;
+long save_start, save_end;
+struct __cpu_state cpu_state;
+struct __cpu_state cpu_state_past;
+
+double ms_time_diff(struct timeval x)
+{
+    struct timeval timeval_now;
+    gettimeofday(&timeval_now, NULL);
+    double x_us = (double)x.tv_sec * 1000000 + (double)x.tv_usec;
+    double y_us = (double)timeval_now.tv_sec * 1000000 +
+                                    (double)timeval_now.tv_usec;
+    return ((double)y_us - (double)x_us) / 1000;
+}
 
 static int load_roms(void)
 {
@@ -96,7 +111,6 @@ int read_debug_events(void)
     FILE *fp_events = fopen("events.dbg", "r");
     if (fp_events != NULL)
     {
-        __break__
         char event_descriptor[128];
         char *rc;
         int done = 0;
@@ -105,7 +119,7 @@ int read_debug_events(void)
             rc = fgets(event_descriptor, 127, fp_events);
             if (rc == 0)
                 continue;
-            int k = 0;    
+            int k = 0;
             while (event_descriptor[k] == ' ')
                 k++;
             switch (event_descriptor[k])
@@ -186,7 +200,7 @@ int read_debug_events(void)
                     break;
                 }
                 uint32_t value = (uint32_t)strtol(&next_ptr[1], NULL, 0);
-                cpu_state.scratchpad.raw.mem[address] = value;
+                cpu_state.imem[address] = value;
                 break;
             default:
                 break;
@@ -201,7 +215,6 @@ int read_debug_events(void)
 int setup_emulator(void)
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
-    memset((void *)&cpu_state_past, '\0', sizeof(cpu_state));
     memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
     memset((void *)&mem_view_past, 0, sizeof(mem_view_past));
 
@@ -247,55 +260,63 @@ int setup_emulator(void)
 
     // Provide a default value to the CPU registers before reading the
     //  events file, so that these values can be redefined by the user.
-    cpu_state.scratchpad.regs.i  = DEFAULT_I_VALUE;
-    cpu_state.scratchpad.regs.j  = DEFAULT_J_VALUE;
-    cpu_state.scratchpad.regs.a  = DEFAULT_A_VALUE;
-    cpu_state.scratchpad.regs.b  = DEFAULT_B_VALUE;
-    cpu_state.scratchpad.regs.xreg.x = DEFAULT_X_VALUE;
-    cpu_state.scratchpad.regs.yreg.y = DEFAULT_Y_VALUE;
-    cpu_state.scratchpad.regs.k  = DEFAULT_K_VALUE;
-    cpu_state.scratchpad.regs.l  = DEFAULT_L_VALUE;
-    cpu_state.scratchpad.regs.m  = DEFAULT_M_VALUE;
-    cpu_state.scratchpad.regs.n  = DEFAULT_N_VALUE;
-    cpu_state.r                  = DEFAULT_R_VALUE;
-    cpu_state.p                  = DEFAULT_P_VALUE;
-    cpu_state.q                  = DEFAULT_Q_VALUE;
-    cpu_state.pc                 = DEFAULT_PC_VALUE;
+    cpu_state.imem[IRAM_REG_I] = DEFAULT_I_VALUE;
+    cpu_state.imem[IRAM_REG_J] = DEFAULT_J_VALUE;
+    cpu_state.imem[IRAM_REG_A] = DEFAULT_A_VALUE;
+    cpu_state.imem[IRAM_REG_B] = DEFAULT_B_VALUE;
+    cpu_state.imem[IRAM_REG_XL] = DEFAULT_X_VALUE;
+    cpu_state.imem[IRAM_REG_XH] = DEFAULT_X_VALUE >> 8;
+    cpu_state.imem[IRAM_REG_YL] = DEFAULT_Y_VALUE;
+    cpu_state.imem[IRAM_REG_YH] = DEFAULT_Y_VALUE >> 8;
+    cpu_state.imem[IRAM_REG_K] = DEFAULT_K_VALUE;
+    cpu_state.imem[IRAM_REG_L] = DEFAULT_L_VALUE;
+    cpu_state.imem[IRAM_REG_M] = DEFAULT_M_VALUE;
+    cpu_state.imem[IRAM_REG_N] = DEFAULT_N_VALUE;
+    cpu_state.dp = DEFAULT_DP_VALUE;
+    cpu_state.cdp = pt.read_memory(cpu_state.dp);
+    cpu_state.r = DEFAULT_R_VALUE;
+    cpu_state.p = DEFAULT_P_VALUE;
+    cpu_state.q = DEFAULT_Q_VALUE;
+    cpu_state.pc = DEFAULT_PC_VALUE;
+    cpu_state.mode = CALC_MODE_OFF;
+    cpu_state.cycles = 0;
+    cpu_state.this_item = -1;
+
+    memcpy(&cpu_state_past, &cpu_state, sizeof(cpu_state));
 
     read_debug_events();
 
     gettimeofday(&timeval_start, NULL);
     write_mem(0xF8BA, 0xFF);
     write_mem(0xC6E9, 0xFF);
-    return 0;
-}
+    emulated_instructions = 0;
 
-static void check_timers(void)
-{
-    struct timeval timeval_now;
-    gettimeofday(&timeval_now, NULL);
-    long elapsed_usec = (timeval_now.tv_sec - timeval_start.tv_sec) * 1000000 +
-                                    timeval_now.tv_usec - timeval_start.tv_usec;
-    cpu_state.test.ct1 = (elapsed_usec >= 512000);
-    cpu_state.test.ct2 = (elapsed_usec >= 2000);
+    // Debug.
+    single_step_break = 0;
+    return 0;
 }
 
 void emulate_instruction(void)
 {
-    check_timers();
-    if ((cpu_state.portc & PORTC_BITS_HLT) != 0)
+    // Check if either the 512ms or the 2s counters expired.
+    double ms_diff = ms_time_diff(timeval_start);
+    if (ms_diff >= 512)
+        cpu_state.test.ct1 = 1;
+    if (ms_diff >= 2000)
+        cpu_state.test.ct2 = 1;
+
+    if ((cpu_state.portc & PORTC_CPU_HLT) != 0)
     {
-        // We are not going to execute instructions if the CPU is stopped, we
-        //  will only make sure that the 512ms timer has not elapsed.
+        // We are not going to execute instructions as long as the CPU is
+        //  halted. When the 512ms timer elapses the CPU wakes up.
         if (cpu_state.test.ct1 == 0)
             return;
 
         fprintf(fp_memaccess, "S: %04x CPU is woken up\r\n", cpu_state.pc);
-        cpu_state.scratchpad.raw.mem[PORTC_OFFSET] &= ~PORTC_BITS_HLT;
-        cpu_state.portc = cpu_state.scratchpad.raw.mem[PORTC_OFFSET];
+        cpu_state.imem[PORTC_OFFSET] &= ~PORTC_CPU_HLT;
+        cpu_state.portc = cpu_state.imem[PORTC_OFFSET];
     }
 
-    int i = 0;
     uint8_t instruction = read_mem(cpu_state.pc);
 
     // Disassemble the current line, so we can store it in the
@@ -304,47 +325,59 @@ void emulate_instruction(void)
     if ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE) != 0)
         sc61860_disassembler(cpu_state.pc, instruction, this_line);
 
+    int i = 0;
     while (sc61860_instr[i].attributes != 0)
     {
         if ((instruction & sc61860_instr[i].mask) ==
-                                           sc61860_instr[i].mask_value)
+                                                 sc61860_instr[i].mask_value)
         {
             sc61860_instr[i].simulate();
+            emulated_instructions += 1;
             break;
         }
         i++;
     }
-    if ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE_REGS) != 0)
-    {
-        if (sc61860_instr[i].attributes == 0)
-            sim_not_implemented();
-        while (strlen(this_line) < 80)
-            strcat(this_line, " ");
 
-        // Now add te content of the registers, so they reflect the values they
-        //  obtain after the instruction is executed.
-        sprintf(this_line + strlen(this_line),
-         "I=$%02X J=$%02X A=$%02X B=$%02X X=$%04X "
-         "Y=$%04X K=$%02X L=$%02X DP=$%04X "
-         "p=$%02X q=$%02X "
-         "C=%d Z=%d, PORTA=$%02X, PORTB=$%02X, PORTC=$%02X",
-            cpu_state.scratchpad.regs.i,
-            cpu_state.scratchpad.regs.j,
-            cpu_state.scratchpad.regs.a,
-            cpu_state.scratchpad.regs.b,
-            cpu_state.scratchpad.regs.xreg.x,
-            cpu_state.scratchpad.regs.yreg.y,
-            cpu_state.scratchpad.regs.k,
-            cpu_state.scratchpad.regs.l,
-            cpu_state.dp,
-            cpu_state.p,
-            cpu_state.q,
-            cpu_state.flags.carry,
-            cpu_state.flags.zero,
-            cpu_state.porta,
-            cpu_state.portb,
-            cpu_state.portc);
+    if (save_start >= save_end)
+        return;
+
+    if ((emulated_instructions >= save_start) &&
+                                           (emulated_instructions < save_end))
+
+    {
+        if ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE_REGS) != 0)
+        {
+            if (sc61860_instr[i].attributes == 0)
+                sim_not_implemented();
+            while (strlen(this_line) < 65)
+                strcat(this_line, " ");
+
+            // Now add te content of the registers, so they reflect the values
+            //  they obtain after the instruction is executed.
+            sprintf(this_line + strlen(this_line),
+                    "I=%02X J=%02X A=%02X B=%02X X=%04X "
+                    "Y=%04X K=%02X L=%02X DP=%04X "
+                    "p=%02X q=%02X "
+                    "C=%d Z=%d, PORTA=%02X, PORTB=%02X, PORTC=%02X",
+                    cpu_state.imem[IRAM_REG_I],
+                    cpu_state.imem[IRAM_REG_J],
+                    cpu_state.imem[IRAM_REG_A],
+                    cpu_state.imem[IRAM_REG_B],
+               (cpu_state.imem[IRAM_REG_XH] << 8) + cpu_state.imem[IRAM_REG_XL],
+               (cpu_state.imem[IRAM_REG_YH] << 8) + cpu_state.imem[IRAM_REG_YL],
+                    cpu_state.imem[IRAM_REG_K],
+                    cpu_state.imem[IRAM_REG_L],
+                    cpu_state.dp,
+                    cpu_state.p,
+                    cpu_state.q,
+                    cpu_state.flags.carry,
+                    cpu_state.flags.zero,
+                    cpu_state.porta,
+                    cpu_state.portb,
+                    cpu_state.portc);
+        }
+        if (((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE) != 0) ||
+                        ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE_REGS) != 0))
+            fprintf(fp_instr, "%s\r\n", this_line);
     }
-    if ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE) != 0)
-        fprintf(fp_instr, "%s\r\n", this_line);
 }

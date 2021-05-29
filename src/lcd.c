@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,11 +28,11 @@
 #include <string.h>
 #include <sc61860_emu.h>
 
-#if defined(pc1245)
+#if defined(MODEL_PC1245)
 #include <pc1245.h>
-#elif defined(pc1251)
+#elif defined(MODEL_PC1251)
 #include <pc1251.h>
-#elif defined(pc1262)
+#elif defined(MODEL_PC1262)
 #include <pc1262.h>
 #else
 #error Calculator not defined.
@@ -40,8 +40,8 @@
 
 // This structure reflects the status of the memory of the LCD. We'll use it
 //  to avoid needless repaints.
-// There are 124 bytes of memory to each SC43536.
-uint8_t lcd_status[LCD_CHARACTER_ROWS][0x7C];
+// There are 192 bytes of memory to each SC43536.
+uint8_t lcd_status[LCD_CHARACTER_ROWS][0xC0];
 
 void lcd_off(void)
 {
@@ -139,7 +139,7 @@ GtkWidget *lcd_build_display(void)
         }
         gtk_widget_show(lcd_char_box);
         gtk_box_pack_start(GTK_BOX(lcd_row_box), lcd_char_box, TRUE, TRUE, 1);
-    }    
+    }
     gtk_widget_show(GTK_WIDGET(lcd_row_box));
     return lcd_row_box;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@ char sharp_char_map[] =
 {
     '.', ' ', '\'', '?', '!', '#', '%', '.',
     '#', '.', '.', ',', ';', ':', '.', '&',
-    '.', '.', '.', '.', '.', '.', '.', '.',
-    '.', '.', '.', '.', '.', '.', '.', '.',
+    '.', ' ', '\'', '?', '!', '#', '%', '.',
+    '#', '.', '.', ',', ';', ':', '.', '&',
     '(', ')', '>', '<', '=', '+', '-', '*',
     '/', '^', '.', '.', '.', '.', '.', '.',
     '0', '1', '2', '3', '4', '5', '6', '7',
@@ -46,37 +46,65 @@ char sharp_char_map[] =
     'X', 'Y', 'Z', '.', '.', '.', '.', '.',
 };
 
-/*static gboolean memory_view_scrollbar_adjust(GtkRange *range,
-                                             gdouble   value,
-                                             gpointer  user_data )
+void on_memory_view_spinbutton_value_changed (GtkSpinButton *spin_button,
+                                              gpointer       user_data)
 {
-    g_print("adjust\r\n");
-}*/
-
-static gboolean memory_view_spinbutton_change(GtkRange      *range,
-                                             GtkScrollType  scroll,
-                                             gdouble        value,
-                                             gpointer       user_data )
-{
-    g_print("change\r\n");
-    return 0;
+/*    __break__
+    g_print("on_memory_view_spinbutton_value_changed\r\n");
+    GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
+    gint val = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));
+    if (val == 65535)
+    {
+        mem_view_start_address = 65536 - 256;
+        gtk_spin_button_set_value(GTK_SPIN_BUTTON(object),
+                                  mem_view_start_address);
+    }
+    else
+        mem_view_start_address = val;
+    print_mem_view();*/
 }
 
-/*static gboolean memory_view_spinbutton_value(GtkRange        *range,
-                                             GtkScrollType  step,
-                                             gpointer       user_data )
+gboolean on_memory_view_spinbutton_scroll_event (GtkWidget *widget,
+                                                 GdkEvent  *event,
+                                                 gpointer   user_data)
 {
-    g_print("move\r\n");
-    return 0;
-}*/
-
-static gboolean memory_view_spinbutton_clicked(GtkSpinButton *range,
-                                               gpointer       user_data )
-{
+//    g_print("on_memory_view_spinbutton_scroll_event\r\n");
+    GdkEventScroll *this_event = (GdkEventScroll*)event;
     GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
     mem_view_start_address = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));
+    if (this_event->direction == GDK_SCROLL_UP)
+        mem_view_start_address += 0x100;
+    else
+        mem_view_start_address -= 0x100;
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON(object), mem_view_start_address);
     print_mem_view();
-    return 0;
+    return TRUE;
+}
+
+/*gboolean on_data_view_box_scroll_event (GtkWidget *widget,
+                                        GdkEvent  *event,
+                                        gpointer   user_data)
+{
+    g_print("on_memory_view_spinbutton_scroll_event\r\n");
+    GdkEventScroll *this_event = (GdkEventScroll*)event;
+    GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
+    mem_view_start_address = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));
+    if (this_event->direction == GDK_SCROLL_UP)
+        mem_view_start_address += 0x100;
+    else
+        mem_view_start_address -= 0x100;
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON(object), mem_view_start_address);
+    print_mem_view();
+    return TRUE;
+}*/
+
+void on_memory_view_hide_clicked (GtkButton *button, gpointer user_data)
+{
+    GObject *obj = gtk_builder_get_object(builder, "memory_window");
+    gtk_widget_hide(GTK_WIDGET(obj));
+
+    obj = gtk_builder_get_object(builder, "menu_view_memory");
+    gtk_widget_set_sensitive(GTK_WIDGET(obj), TRUE);
 }
 
 void print_mem_view(void)
@@ -160,30 +188,10 @@ void print_mem_view(void)
 
 void memory_view_startup(void)
 {
-    GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
-
-    // Create an adjustment representing an adjustable bounded value
-    GtkAdjustment *adjustment = gtk_adjustment_new(0, 0, 65535, 256, 0, 0);
-    gtk_spin_button_set_adjustment(GTK_SPIN_BUTTON(object), adjustment);
-
-    // Create a spin button that is to be as wide as possible
-    //spin_button = gtk_spin_button_new (adjustment, 1, 0);
-    //  gtk_widget_set_hexpand (spin_button, TRUE);
-
+#if 0
     g_signal_connect(G_OBJECT(object),
                      "change-value",
-                     G_CALLBACK(memory_view_spinbutton_change),
+                     G_CALLBACK(on_memory_view_spinbutton_change_value),
                      NULL);
-    g_signal_connect(G_OBJECT(object),
-                     "value-changed",
-                     G_CALLBACK(memory_view_spinbutton_clicked),
-                     NULL);
-/*    g_signal_connect(G_OBJECT(memory_view_window),
-                     "move-slider",
-                     G_CALLBACK(memory_view_scrollbar_move),
-                     NULL);
-    g_signal_connect(G_OBJECT(memory_view_window),
-                     "adjust-bounds",
-                     G_CALLBACK(memory_view_scrollbar_adjust),
-                     NULL);*/
+#endif
 }

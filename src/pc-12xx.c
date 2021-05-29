@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <sc61860_emu.h>
-
-#include <pc1245.h>
 
 GtkWidget *lcd_label_box;
 GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTER_PER_ROW]

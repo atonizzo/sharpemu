@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -22,7 +22,6 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 
 #ifndef __SC61860_EMU_H__
 #define __SC61860_EMU_H__
@@ -119,12 +118,12 @@ extern uint32_t diag_level;
 #define DIAG_LEVEL_DISASSEMBLE_LINE         (1 << 16)
 #define DIAG_LEVEL_DISASSEMBLE_LINE_REGS    (1 << 17)
 
-// This strudcture holds the start time of the timer used to calculate the
+// This structure holds the start time of the timer used to calculate the
 //  512ms and 2ms values used by the TEST instruction.
 extern struct timeval timeval_start;
 
 // This is the file handle to be used to log memory read/write operations.
-FILE *fp_memaccess;
+extern FILE *fp_memaccess;
 
 // This is the image of the calculator memory. The sc61860 can address up to
 //  16 bits of memory, thus 65536 bytes.
@@ -141,8 +140,6 @@ extern uint8_t mem_view_past[MEM_VIEW_ROWS * 16];
 #define CALC_MODE_PRO               2
 #define CALC_MODE_OFF               3
 
-extern uint8_t calculator_mode;
-
 typedef struct __sc61860_instr
 {
     // 31:24 - Addressing mode
@@ -150,7 +147,7 @@ typedef struct __sc61860_instr
     //         if (15:12) is < 0x0F then the cycles must be increased by
     //            (15:12) * d, where d is the loop counter register.
     //         if (15:12 == 0x0F the count is the instruction operand, as
-    //            in te case of the 'wait' instruction.
+    //            in the case of the 'wait' instruction.
     // 07:00 - Number of bytes for the instruction.
     uint32_t attributes;
     uint8_t  mask;
@@ -167,54 +164,22 @@ struct __bcd_register
 #define regnum(field)    ((unsigned long) \
                     &(((struct __sc61860_iregs *) 0)->field))
 
-struct __sc61860_iregs
-{
-    uint8_t i;
-    uint8_t j;
-    uint8_t a;
-    uint8_t b;
-    union
-    {
-        uint16_t x;
-        struct
-        {
-            uint8_t xl;
-            uint8_t xh;
-        } b;
-    } xreg __attribute__((packed));
-    union
-    {
-        uint16_t y;
-        struct
-        {
-            uint8_t yl;
-            uint8_t yh;
-        } b;
-    } yreg __attribute__((packed));
-    uint8_t k;
-    uint8_t l;
-    uint8_t m;
-    uint8_t n;
-    uint8_t working[4];
-    struct __bcd_register Xreg;
-    struct __bcd_register Yreg;
-    struct __bcd_register Zreg;
-    struct __bcd_register Wreg;
-    uint8_t stack[44];
-    uint8_t ioa;    // I/O port A
-    uint8_t iob;    // I/O port B
-    uint8_t iof;    // I/O port F
-    uint8_t ioc;    // I/O port C
-} __attribute__((packed));
-
-union __sc61860_scratchpad
-{
-    struct __sc61860_iregs regs;
-    struct
-    {
-        uint8_t mem[96];
-    } raw;
-};
+#define IRAM_REG_I                  0x00
+#define IRAM_REG_J                  0x01
+#define IRAM_REG_A                  0x02
+#define IRAM_REG_B                  0x03
+#define IRAM_REG_XL                 0x04
+#define IRAM_REG_XH                 0x05
+#define IRAM_REG_YL                 0x06
+#define IRAM_REG_YH                 0x07
+#define IRAM_REG_K                  0x08
+#define IRAM_REG_L                  0x09
+#define IRAM_REG_M                  0x0A
+#define IRAM_REG_N                  0x0B
+#define IRAM_REG_BCD1               0x10
+#define IRAM_REG_BCD2               0x18
+#define IRAM_REG_BCD3               0x20
+#define IRAM_REG_BCD4               0x28
 
 struct __cpu_state
 {
@@ -235,6 +200,8 @@ struct __cpu_state
     uint8_t  p;
     uint8_t  q;
     uint8_t  r;         // Stack pointer.
+    uint8_t  h;         // SC61860 undocumanted register.
+                        // See https://github.com/utz82/SC61860-Instruction-Set
     uint16_t dp;
     uint16_t pc;
     uint32_t cycles;
@@ -242,9 +209,11 @@ struct __cpu_state
     uint8_t portb;
     uint8_t portf;
     uint8_t portc;
-    uint8_t table_items;
+    int     table_items;
+    int     this_item;
     uint8_t cdp;       // The value of the byte pointed to by DP.
-    union __sc61860_scratchpad scratchpad;
+    uint8_t mode;
+    uint8_t imem[96];
 };
 
 extern struct __cpu_state cpu_state;
@@ -295,7 +264,6 @@ extern struct __disassembly_buffer disassembly_buffer;
 #define DEFAULT_Q_VALUE                 0
 #define DEFAULT_R_VALUE                 0x5C
 #define DEFAULT_DP_VALUE                0
-//#define DEFAULT_PC_VALUE                0xC200
 #define DEFAULT_PC_VALUE                0
 
 #define CLOCK_FREQUENCY_HZ              768000
@@ -305,13 +273,13 @@ extern struct __disassembly_buffer disassembly_buffer;
 #define PORTC_OFFSET                    0x5f
 #define PORTF_OFFSET                    0x5e
 
-#define PORTC_BITS_DISPLAY              (1 << 0)
-#define PORTC_BITS_CNTRST               (1 << 1)
-#define PORTC_BITS_HLT                  (1 << 2)
-#define PORTC_BITS_OFF                  (1 << 3)
-#define PORTC_BITS_BZ1                  (1 << 4)
-#define PORTC_BITS_BZ2                  (1 << 5)
-#define PORTC_BITS_BZ3                  (1 << 6)
+#define PORTC_DISPLAY_ON                (1 << 0)
+#define PORTC_CNTRST                    (1 << 1)
+#define PORTC_CPU_HLT                   (1 << 2)
+#define PORTC_POWER_OFF                 (1 << 3)
+#define PORTC_BZ1                       (1 << 4)
+#define PORTC_BZ2                       (1 << 5)
+#define PORTC_BZ3                       (1 << 6)
 
 typedef struct __memory_descriptor
 {
@@ -361,11 +329,15 @@ struct __breakpoint_event
 
 extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
 
+// Maximum number of instructions to store in the 'instructions.txt' file.
+// Use 0 for unlimited.
+extern long save_start, save_end;
+
 int set_breakpoint(uint16_t, uint16_t);
 int clear_breakpoint(uint16_t);
 int check_breakpoint(uint16_t);
 
-const sc61860_instr_t sc61860_instr[136];
+extern const sc61860_instr_t sc61860_instr[136];
 
 // Instruction simulation.
 void sim_arith(void);
@@ -399,6 +371,7 @@ void sim_test(void);
 void sim_wait(void);
 void sim_xy(void);
 
+uint32_t print_asm_line(uint16_t, uint8_t, char *);
 uint32_t sc61860_disassembler(uint16_t, uint8_t, char *);
 void emulate_instruction(void);
 void sim_not_implemented(void);
@@ -416,13 +389,6 @@ extern uint16_t mem_view_start_address;
 void print_mem_view(void);
 int read_debug_events(void);
 
-struct
-{
-    uint16_t  id;
-    uint8_t   kbd;
-    uint8_t   count;
-} keyboard_count;
-
 // GTK+
 extern char user_file_name[128];
 extern GtkBuilder *builder;
@@ -431,8 +397,12 @@ int setup_emulator(void);
 extern GtkBuilder *builder;
 gboolean change_cancel_callback(GtkWidget *, gpointer);
 gboolean change_ok_callback(GtkWidget *, gpointer);
-gboolean reg_i_key_press_callback(GtkWidget *, GdkEventButton *, gpointer);
+gboolean reg_i_key_press_callback(GtkWidget *, GdkEvent *, gpointer);
 gboolean reg_pc_key_press_callback(GtkWidget *, GdkEventButton *, gpointer);
+void on_menu_help_about_activate(GtkMenuItem *, gpointer);
+void on_menu_help_about_activate_item(GtkMenuItem *menuItem, gpointer user_data);
+void on_dlg_about_response(GtkDialog *, gint, gpointer);
+double time_diff(struct timeval, struct timeval);
 
 static inline uint8_t read_mem(uint16_t address)
 {
@@ -447,5 +417,6 @@ static inline void write_mem(uint16_t address, uint8_t data)
 // Debug.
 extern int store_instructions;
 void dump_memory(uint16_t, uint16_t);
+extern long single_step_break;
 
 #endif

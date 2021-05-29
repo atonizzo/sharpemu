@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -86,6 +86,7 @@ static int32_t compare_crc(FILE *fp, uint8_t crc_calculated)
 
 int32_t parse_hex(FILE *fp)
 {
+    int pc_set = -1;
     int32_t error_code, i;
     int32_t ch = read_char(fp);
     if (ch < 0)
@@ -134,6 +135,11 @@ int32_t parse_hex(FILE *fp)
             error_code = compare_crc(fp, crc_calculated);
             if (error_code < 0)
                 return -1;
+            if (pc_set == -1)
+            {
+                cpu_state.pc = address;
+                pc_set = 1;
+            }
             break;
         case 1:
             // Let's see if this is the last record.

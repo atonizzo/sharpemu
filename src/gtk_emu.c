@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -25,11 +25,11 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <gtk/gtk.h>
 #include <sc61860_emu.h>
 
 GtkBuilder *builder;
-uint8_t calculator_mode;
 
 void abort_on_g_log(const gchar *log_domain,
                     GLogLevelFlags log_level,
@@ -132,7 +132,7 @@ void load_hex_file(char *f)
     display_core_info();
 }
 
-static gboolean view_memory_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_menu_view_memory_activate(GtkWidget *widget, gpointer user_data)
 {
     // LCD window instantiation.
     GObject *obj = gtk_builder_get_object(builder, "memory_window");
@@ -143,7 +143,7 @@ static gboolean view_memory_callback(GtkWidget *widget, gpointer user_data )
     return TRUE;
 }
 
-static gboolean view_lcd_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_menu_view_lcd_activate(GtkWidget *widget, gpointer user_data)
 {
     // LCD window instantiation.
     GObject *obj = gtk_builder_get_object(builder, "lcd_window");
@@ -154,14 +154,18 @@ static gboolean view_lcd_callback(GtkWidget *widget, gpointer user_data )
     return TRUE;
 }
 
-static gboolean debug_step_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_buttonbar_step_clicked(GtkWidget *widget, gpointer user_data)
 {
+    // Start internal timer upon reset.
+    if (cpu_state.pc == 0)
+        gettimeofday(&timeval_start, NULL);
+
     emulate_instruction();
     display_core_info();
     return TRUE;
 }
 
-static gboolean debug_stop_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_buttonbar_stop_clicked(GtkWidget *widget, gpointer user_data)
 {
     g_idle_remove_by_data((gpointer)0xDEADBEEF);
     post_run();
@@ -191,12 +195,17 @@ static gboolean thread_run(gpointer arg)
         g_idle_remove_by_data((gpointer)0xDEADBEEF);
         post_run();
         display_core_info();
+        write_status_bar("Stopped");
     }
     return TRUE;
 }
 
-static gboolean debug_next_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_buttonbar_next_clicked(GtkWidget *widget, gpointer user_data )
 {
+    // Start internal timer upon reset.
+    if (cpu_state.pc == 0)
+        gettimeofday(&timeval_start, NULL);
+
     // http://blog.borovsak.si/2009/06/multi-threaded-gtk-applications.html
 
     uint8_t instruction = pt.read_memory(cpu_state.pc);
@@ -232,25 +241,27 @@ static gboolean debug_next_callback(GtkWidget *widget, gpointer user_data )
     return TRUE;
 }
 
-static gboolean debug_run_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_buttonbar_run_clicked(GtkWidget *widget, gpointer user_data)
 {
+    // Start internal timer upon reset.
+    if (cpu_state.pc == 0)
+        gettimeofday(&timeval_start, NULL);
+
     pre_run();
     g_idle_add(thread_run, (gpointer)0xDEADBEEF);
     return TRUE;
 }
 
-static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
+static void on_menu_mode_activate(GtkMenuItem *menuItem, gpointer user_data)
 {
-    calculator_mode = (int8_t)(long int)user_data;
-    GObject *mode_label = gtk_builder_get_object(builder, "label_mode");
-    GObject *this_widget;
-    switch (calculator_mode)
+    long mode = (long)user_data;
+    if (mode == CALC_MODE_OFF)
     {
-    case CALC_MODE_OFF:
         // The buttons that execute assembly instructions must be disabled until
         //  the calculator mode is changed to one of the operative ones.
         // Disable the button and menu that perform the "Step" function.
-        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
+        GObject *this_widget = gtk_builder_get_object(builder,
+                                                      "buttonbar_step");
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
         this_widget = gtk_builder_get_object(builder, "buttonbar_next");
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
@@ -266,124 +277,83 @@ static gboolean mode_callback(GtkWidget *widget, gpointer user_data )
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
         this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: OFF");
-
-        // Menus.
-        this_widget = gtk_builder_get_object(builder, "menu_mode_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_pro");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_rsv");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-
-        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: OFF");
-        return TRUE;
-    case CALC_MODE_RUN:
-        // The calculator mode is changed to one of the operative ones.
-        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-
-        this_widget = gtk_builder_get_object(builder, "menu_mode_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_pro");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_rsv");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: RUN");
-        break;
-    case CALC_MODE_PRO:
-        // The calculator mode is changed to one of the operative ones.
-        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-
-        this_widget = gtk_builder_get_object(builder, "menu_mode_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_pro");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_rsv");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: PRO");
-        break;
-    case CALC_MODE_RSV:
-        // The calculator mode is changed to one of the operative ones.
-        this_widget = gtk_builder_get_object(builder, "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-
-        this_widget = gtk_builder_get_object(builder, "menu_mode_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_pro");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        this_widget = gtk_builder_get_object(builder, "menu_mode_rsv");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        gtk_label_set_text(GTK_LABEL(mode_label), "MODE: RSV");
-        break;
     }
-    return TRUE;
+    else
+    {
+        if (cpu_state.mode == CALC_MODE_OFF)
+        {
+            // We are coming out of the OFF state. Enable the debug buttons.
+            // The calculator mode is changed to one of the operative ones.
+            GObject *this_widget = gtk_builder_get_object(builder,
+                                                          "buttonbar_step");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "buttonbar_next");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "buttonbar_run");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "menu_debug_step");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "menu_debug_next");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "menu_debug_run");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+            this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
+            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
+        }
+    }
+
+    GObject *mode_label = gtk_builder_get_object(builder, "mode_combobox");
+    cpu_state.mode = mode;
+    gtk_combo_box_set_active (GTK_COMBO_BOX(mode_label), cpu_state.mode);
 }
 
-static gboolean debug_reset_callback(GtkWidget *widget, gpointer user_data )
+void on_menu_mode_off_activate(GtkMenuItem *menuItem, gpointer user_data)
+{
+    on_menu_mode_activate(NULL, (gpointer)CALC_MODE_OFF);
+}
+
+void on_menu_mode_run_activate(GtkMenuItem *menuItem, gpointer user_data)
+{
+    on_menu_mode_activate(NULL, (gpointer)CALC_MODE_RUN);
+}
+
+void on_menu_mode_pro_activate(GtkMenuItem *menuItem, gpointer user_data)
+{
+    on_menu_mode_activate(NULL, (gpointer)CALC_MODE_PRO);
+}
+
+void on_menu_mode_rsv_activate(GtkMenuItem *menuItem, gpointer user_data)
+{
+    on_menu_mode_activate(NULL, (gpointer)CALC_MODE_RSV);
+}
+
+
+gboolean on_buttonbar_reset_clicked(GtkWidget *widget, gpointer user_data )
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
     memset((void *)&cpu_state_past, '\0', sizeof(cpu_state));
 
-    cpu_state.scratchpad.regs.i = DEFAULT_I_VALUE;
-    cpu_state.scratchpad.regs.j = DEFAULT_J_VALUE;
-    cpu_state.scratchpad.regs.a = DEFAULT_A_VALUE;
-    cpu_state.scratchpad.regs.b = DEFAULT_B_VALUE;
-    cpu_state.scratchpad.regs.xreg.x = DEFAULT_X_VALUE;
-    cpu_state.scratchpad.regs.yreg.y = DEFAULT_Y_VALUE;
-    cpu_state.scratchpad.regs.k = DEFAULT_K_VALUE;
-    cpu_state.scratchpad.regs.l = DEFAULT_L_VALUE;
-    cpu_state.scratchpad.regs.m = DEFAULT_M_VALUE;
-    cpu_state.scratchpad.regs.n = DEFAULT_N_VALUE;
+    cpu_state.imem[IRAM_REG_I] = DEFAULT_I_VALUE;
+    cpu_state.imem[IRAM_REG_J] = DEFAULT_J_VALUE;
+    cpu_state.imem[IRAM_REG_A] = DEFAULT_A_VALUE;
+    cpu_state.imem[IRAM_REG_B] = DEFAULT_B_VALUE;
+    cpu_state.imem[IRAM_REG_XL] = DEFAULT_X_VALUE;
+    cpu_state.imem[IRAM_REG_XH] = DEFAULT_X_VALUE >> 8;
+    cpu_state.imem[IRAM_REG_YL] = DEFAULT_Y_VALUE;
+    cpu_state.imem[IRAM_REG_YH] = DEFAULT_Y_VALUE >> 8;
+    cpu_state.imem[IRAM_REG_K] = DEFAULT_K_VALUE;
+    cpu_state.imem[IRAM_REG_L] = DEFAULT_L_VALUE;
+    cpu_state.imem[IRAM_REG_M] = DEFAULT_M_VALUE;
+    cpu_state.imem[IRAM_REG_N] = DEFAULT_N_VALUE;
     cpu_state.r = DEFAULT_R_VALUE;
     cpu_state.p = DEFAULT_P_VALUE;
     cpu_state.q = DEFAULT_Q_VALUE;
     cpu_state.pc = DEFAULT_PC_VALUE;
     read_debug_events();
     display_core_info();
+    cpu_state.this_item = -1;
     return TRUE;
 }
 
@@ -420,7 +390,7 @@ static gboolean label_callback_toggle_breakpoint(GtkWidget      *widget,
     return TRUE;
 }
 
-static gboolean file_load_hex_callback(GtkWidget *widget, gpointer user_data )
+gboolean on_menu_file_load_hex_activate(GtkWidget *widget, gpointer user_data)
 {
     GObject *parent_window = gtk_builder_get_object(builder, "main_window");
     GtkWidget *dialog = gtk_file_chooser_dialog_new("Open File",
@@ -445,6 +415,29 @@ static gboolean file_load_hex_callback(GtkWidget *widget, gpointer user_data )
     return 0;
 }
 
+// About box.
+void on_menu_help_about_activate(GtkMenuItem *menuItem, gpointer user_data)
+{
+    GObject *dlg_about = gtk_builder_get_object(builder, "dlg_about");
+    gtk_widget_show(GTK_WIDGET(dlg_about));
+}
+
+void on_dlg_about_response(GtkDialog *dialog,
+                           gint response_id,
+                           gpointer user_data)
+{
+    GObject *dlg_about = gtk_builder_get_object(builder, "dlg_about");
+    gtk_widget_hide(GTK_WIDGET(dlg_about));
+}
+
+
+void on_mode_combobox_changed (GtkComboBox *widget, gpointer user_data)
+{
+    GObject *mode_combo_box = gtk_builder_get_object(builder, "mode_combobox");
+    gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(mode_combo_box));
+    on_menu_mode_activate(NULL, (gpointer)(long)active);
+}
+
 static gboolean lcd_key_pressed_event(GtkWidget   *widget,
                                       GdkEventKey *event,
                                       gpointer     user_data)
@@ -463,6 +456,19 @@ static gboolean lcd_key_pressed_event(GtkWidget   *widget,
     return TRUE;
 }
 
+static void print_usage()
+{
+    printf("Usage: pc1251 [options]\r\n");
+    printf("[options]\r\n");
+    printf("-i N        Store up to N emulated instructions in the\r\n"
+           "            \"instructions.txt\" file. Use 0 for unlimited"
+           " store.\r\n");
+    printf("-r          Store the content of the registers in the\r\n"
+           "            \"instructions.txt\" file along with the "
+           "instructions.\r\n");
+    printf("-f filename Load the stated HEX file in memory.\r\n");
+}
+
 int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
@@ -470,8 +476,10 @@ int main(int argc, char *argv[])
     int c;
     diag_level = 0;
     user_file_name[0] = '\0';
-    
-    while ((c = getopt (argc, argv, "f:ir")) != -1)
+    save_start = 0;
+    save_end = 0;
+
+    while ((c = getopt (argc, argv, "f:hi:r")) != -1)
     {
         switch (c)
         {
@@ -484,10 +492,23 @@ int main(int argc, char *argv[])
         case 'f':
             strcpy(user_file_name, optarg);
             break;
+        case 'h':
+            print_usage();
+            exit(1);
+            break;
+        case '?':
+            print_usage();
+            exit(1);
+            break;
         default:
             break;
         }
-      }
+    }
+
+    diag_level |= DIAG_LEVEL_DISASSEMBLE_LINE;
+    diag_level |= DIAG_LEVEL_DISASSEMBLE_LINE_REGS;
+    save_start = 0;
+    save_end = 100000;
 
     int emulator_ok = setup_emulator();
     if (emulator_ok != 0)
@@ -498,7 +519,7 @@ int main(int argc, char *argv[])
 
     // Construct a GtkBuilder instance and load our UI description.
     builder = gtk_builder_new();
-    guint ret = gtk_builder_add_from_file(builder, "./xml/sharpemu.ui", NULL);
+    guint ret = gtk_builder_add_from_file(builder, "xml/sharpemu.ui", NULL);
     if (ret == 0)
     {
         g_print ("Unable to initialize XML file.\n");
@@ -508,170 +529,20 @@ int main(int argc, char *argv[])
     // Connect signal handlers to the constructed widgets.
     GObject *window = gtk_builder_get_object(builder, "main_window");
     g_signal_connect(window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
-
-    // -------------------------------------------------------------------------
-    // Menuitems callbacks.
-    // -------------------------------------------------------------------------
-    // File->Load_Hex
-    GObject *this_object = gtk_builder_get_object(builder,
-                                                  "menu_file_load_hex");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(file_load_hex_callback),
-                     NULL);
-
-    // File->Quit.
-    this_object = gtk_builder_get_object(builder, "menu_file_quit");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(gtk_main_quit),
-                     NULL);
-
-    // View->Memory
-    this_object = gtk_builder_get_object(builder, "menu_view_memory");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(view_memory_callback),
-                     NULL);
-
-    // View->Memory
-    this_object = gtk_builder_get_object(builder, "menu_view_lcd");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(view_lcd_callback),
-                     NULL);
-
-    // Debug->Step
-    this_object = gtk_builder_get_object(builder, "menu_debug_step");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(debug_step_callback),
-                     NULL);
-
-    // Debug->Next
-    this_object = gtk_builder_get_object(builder, "menu_debug_next");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(debug_next_callback),
-                     NULL);
-
-    // Debug->Run
-    this_object = gtk_builder_get_object(builder, "menu_debug_run");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(debug_run_callback),
-                     NULL);
+    gtk_builder_connect_signals(builder, NULL);
 
     // Debug->Stop. This is disable when the emulator is not running.
-    this_object = gtk_builder_get_object(builder, "menu_debug_stop");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(debug_stop_callback),
-                     NULL);
+    GObject *this_object = gtk_builder_get_object(builder, "menu_debug_stop");
     gtk_widget_set_sensitive(GTK_WIDGET(this_object), FALSE);
-
-    // Debug->Reset.
-    this_object = gtk_builder_get_object(builder, "menu_debug_reset");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(debug_reset_callback),
-                     NULL);
-
-    // Mode->Off.
-    this_object = gtk_builder_get_object(builder, "menu_mode_off");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(mode_callback),
-                     (gpointer)CALC_MODE_OFF);
-
-    // Mode->Off.
-    this_object = gtk_builder_get_object(builder, "menu_mode_pro");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(mode_callback),
-                     (gpointer)CALC_MODE_PRO);
-
-    // Mode->Off.
-    this_object = gtk_builder_get_object(builder, "menu_mode_run");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(mode_callback),
-                     (gpointer)CALC_MODE_RUN);
-
-    // Mode->Off.
-    this_object = gtk_builder_get_object(builder, "menu_mode_rsv");
-    g_signal_connect(G_OBJECT(this_object),
-                     "activate",
-                     G_CALLBACK(mode_callback),
-                     (gpointer)CALC_MODE_RSV);
-
-    // -------------------------------------------------------------------------
-    // Buttonbar callbacks.
-    // -------------------------------------------------------------------------
-    this_object = gtk_builder_get_object(builder, "buttonbar_step");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(debug_step_callback),
-                     NULL);
-
-    this_object = gtk_builder_get_object(builder, "buttonbar_next");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(debug_next_callback),
-                     NULL);
-
-    this_object = gtk_builder_get_object(builder, "buttonbar_run");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(debug_run_callback),
-                     NULL);
 
     this_object = gtk_builder_get_object(builder, "buttonbar_stop");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(debug_stop_callback),
-                     NULL);
     gtk_widget_set_sensitive(GTK_WIDGET(this_object), FALSE);
-
-    this_object = gtk_builder_get_object(builder, "buttonbar_reset");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(debug_reset_callback),
-                     NULL);
-
-    this_object = gtk_builder_get_object(builder, "buttonbar_quit");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(gtk_main_quit),
-                     NULL);
 
     // -------------------------------------------------------------------------
     // Label callbacks.
     // -------------------------------------------------------------------------
-    int i;
     char label_name[64];
-    for (i = 0; i < 12; i++)
-    {
-        sprintf(label_name, "label_reg_%s", reg_to_str[i]);
-        this_object = gtk_builder_get_object(builder, label_name);
-        g_signal_connect(G_OBJECT(this_object),
-                         "button_press_event",
-                         G_CALLBACK(reg_i_key_press_callback),
-                         (gpointer)(uint64_t)i);
-    }
-    this_object = gtk_builder_get_object(builder, "label_reg_PC");
-    g_signal_connect(G_OBJECT(this_object),
-                     "button_press_event",
-                     G_CALLBACK(reg_i_key_press_callback),
-                     (gpointer)(uint64_t)16);
-
-    this_object = gtk_builder_get_object(builder, "label_reg_DP");
-    g_signal_connect(G_OBJECT(this_object),
-                     "button_press_event",
-                     G_CALLBACK(reg_i_key_press_callback),
-                     (gpointer)(uint64_t)17);
-
-    for (i = 0; i < DISASSEMBLY_LENGTH; i++)
+    for (int i = 0; i < DISASSEMBLY_LENGTH; i++)
     {
         // These are the labels in the disassembly window. When clicked a
         //  breakpoint at that address is toggled.
@@ -691,23 +562,13 @@ int main(int argc, char *argv[])
     // -------------------------------------------------------------------------
     GObject *obj = gtk_builder_get_object(builder, "reg_value_window");
     gtk_widget_hide(GTK_WIDGET(obj));
-    this_object = gtk_builder_get_object(builder, "change_cancel_button");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(change_cancel_callback),
-                     NULL);
-    this_object = gtk_builder_get_object(builder, "change_OK_button");
-    g_signal_connect(G_OBJECT(this_object),
-                     "clicked",
-                     G_CALLBACK(change_ok_callback),
-                     NULL);
 
     // Setup the target device. The device is assumed to be off when run.
     pt.setup();
 
     // The buttons that execute assembly instructions must be disabled until
     //  the calculator mode is changed to one of the operative ones.
-    mode_callback(NULL, (gpointer)CALC_MODE_OFF);
+    on_menu_mode_off_activate(NULL, NULL);
 
     GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
 

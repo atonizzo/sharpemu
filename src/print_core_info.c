@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, atonizzo@hotmail.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,14 @@ int break_here(int a)
     return 3;
 }
 
-struct __cpu_state cpu_state_past;
-
 char *reg_to_str[] =
 {
     "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L", "M", "N",
+    "A", "B", "F", "C"
+};
+
+char *port_to_str[] =
+{
     "A", "B", "F", "C"
 };
 
@@ -55,8 +58,8 @@ struct __disassembly_buffer disassembly_buffer;
 //  where the program counter currently resides.
 uint32_t pc_line = 0;
 
-int16_t case_number = -1, case_number_tmp;
-int16_t case_number_dis = -1, case_number_dis_tmp = -1;
+//int16_t case_number = -1, case_number_tmp;
+//int16_t case_number_dis = -1, case_number_dis_tmp = -1;
 static uint8_t find_instruction_length(uint16_t pc, int8_t instruction)
 {
     uint32_t i = 0;
@@ -77,13 +80,12 @@ static void print_scratchpad_reg(uint16_t reg)
 {
     char *format;
     char label_name[32];
-    if (cpu_state.scratchpad.raw.mem[reg] !=
-                                    cpu_state_past.scratchpad.raw.mem[reg])
-        format = "<span foreground=\"red\">$\%02X</span>";
+    if (cpu_state.imem[reg] != cpu_state_past.imem[reg])
+        format = "<span foreground=\"red\">\%02X</span>";
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     char *markup = g_markup_printf_escaped(format,
-                                           cpu_state.scratchpad.raw.mem[reg]);
+                                           cpu_state.imem[reg]);
     sprintf(label_name, "label_reg_%s", reg_to_str[reg]);
     GObject *this_label = gtk_builder_get_object(builder, label_name);
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -98,51 +100,49 @@ static void print_bcd_reg(uint16_t reg, char *s)
     char label_text[128];
     char *markup;
     for (i = k; i < k + 8; i++)
-        if (((cpu_state.scratchpad.raw.mem[i] & 0xF0) > 0x90) ||
-            ((cpu_state.scratchpad.raw.mem[i] & 0x0F) > 0x09))
-        {    
+        if (((cpu_state.imem[i] & 0xF0) > 0x90) ||
+            ((cpu_state.imem[i] & 0x0F) > 0x09))
+        {
             markup = g_markup_printf_escaped("NaN");
             GObject *this_label = gtk_builder_get_object(builder, s);
             gtk_label_set_markup(GTK_LABEL(this_label), markup);
             g_free(markup);
             return;
-        }    
+        }
 
     for (i = k; i < k + 8; i++)
-        if (cpu_state.scratchpad.raw.mem[i] !=
-                                        cpu_state_past.scratchpad.raw.mem[i])
+        if (cpu_state.imem[i] != cpu_state_past.imem[i])
             break;
     if (i < 8)
     {
         strcpy(label_text, "<span foreground=\"red\">");
         for (i = k; i < k + 8; i++)
-            cpu_state_past.scratchpad.raw.mem[i] =
-                                                cpu_state.scratchpad.raw.mem[i];
+            cpu_state_past.imem[i] = cpu_state.imem[i];
     }
     else
         strcpy(label_text, "<span foreground=\"black\">");
 
-    if ((cpu_state_past.scratchpad.raw.mem[k + 1] & 0x0F) != 0)
+    if ((cpu_state_past.imem[k + 1] & 0x0F) != 0)
         strcat(label_text, "-");
 
-    int16_t exp = ((cpu_state.scratchpad.raw.mem[k] & 0xF0) >> 4) * 100 +
-                   (cpu_state.scratchpad.raw.mem[k] & 0x0F) * 10 +
-                   ((cpu_state.scratchpad.raw.mem[k+1] & 0xF0) >> 4);
+    int16_t exp = ((cpu_state.imem[k] & 0xF0) >> 4) * 100 +
+                   (cpu_state.imem[k] & 0x0F) * 10 +
+                   ((cpu_state.imem[k+1] & 0xF0) >> 4);
     if (exp > 500)
         exp = -(1000 - exp);
 
     strcat(label_text, "%c.%c%c%c%c%c%c%c%c%cE%d</span>");
     markup = g_markup_printf_escaped(label_text,
-                    ((cpu_state.scratchpad.raw.mem[k + 2] & 0xF0) >> 4) + '0',
-                    (cpu_state.scratchpad.raw.mem[k + 2] & 0x0F) + '0',
-                    ((cpu_state.scratchpad.raw.mem[k + 3] & 0xF0) >> 4) + '0',
-                    (cpu_state.scratchpad.raw.mem[k + 3] & 0x0F) + '0',
-                    ((cpu_state.scratchpad.raw.mem[k + 4] & 0xF0) >> 4) + '0',
-                    (cpu_state.scratchpad.raw.mem[k + 4] & 0x0F) + '0',
-                    ((cpu_state.scratchpad.raw.mem[k + 5] & 0xF0) >> 4) + '0',
-                    (cpu_state.scratchpad.raw.mem[k + 5] & 0x0F) + '0',
-                    ((cpu_state.scratchpad.raw.mem[k + 6] & 0xF0) >> 4) + '0',
-                    (cpu_state.scratchpad.raw.mem[k + 6] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 2] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 2] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 3] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 3] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 4] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 4] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 5] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 5] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 6] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 6] & 0x0F) + '0',
                     exp);
     GObject *this_label = gtk_builder_get_object(builder, s);
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -157,8 +157,10 @@ void display_core_info(void)
     char *format;
     char *markup;
     GObject *this_label;
+    int table_items, this_item;
 
-    // Handle the disassembly buffer.
+    // Here we aim to build a table of the loines to disassemble. For each we
+    //  determine the program counter and the instuction opcode.
     if (disassembly_buffer.line[pc_line + 1].pc == cpu_state.pc)
     {
         // We have good data in the buffer. We move everything up by one
@@ -175,14 +177,14 @@ void display_core_info(void)
                                              disassembly_buffer.line[i].opcode;
             }
 
-            uint8_t previous_instruction = pt.read_memory(
-                           disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc);
+//            uint8_t previous_instruction = pt.read_memory(
+//                           disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc);
             disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc =
                 disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc +
             find_instruction_length(
                         disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc,
                         disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].opcode);
-            if (case_number_dis == -1)
+/*            if (case_number_dis == -1)
             {
                 if (previous_instruction == 0x7A)
                 {
@@ -215,7 +217,7 @@ void display_core_info(void)
                                                                            0x17;
 
                 case_number_dis -= 1;
-            }
+            }*/
         }
     }
     else
@@ -224,15 +226,13 @@ void display_core_info(void)
         //  not the one in the list. Check if the target line is already
         //  anywhere in the buffer.
         for (i = 0; i < DISASSEMBLY_CURSOR_MAX; i++)
-        {
             if (disassembly_buffer.line[i].pc == cpu_state.pc)
                 break;
-        }
 
         if (i == DISASSEMBLY_CURSOR_MAX)
         {
-            case_number_dis = -1;
-            case_number_dis_tmp = -1;
+            table_items = -1;
+            this_item = -1;
 
             // In this case the targer instruction is not already in the
             //  disassembly buffer. We will then fill the buffer with fresh
@@ -241,33 +241,38 @@ void display_core_info(void)
             for (i = 0; i < DISASSEMBLY_LENGTH; i++)
             {
                 disassembly_buffer.line[i].pc = this_pc;
-                if (case_number_dis > 0)
+                if (this_item > 0)
                 {
                     // $16 is an unused opcode for the sc61860. We'll use it to
                     //  emulate the .CASE instruction.
                     disassembly_buffer.line[i].opcode = 0x16;
-                    case_number_dis -= 1;
+                    this_item -= 1;
                     this_pc += 3;
                     continue;
                 }
 
-                if (case_number_dis == 0)
+                if (this_item == 0)
                 {
                     // $17 is an unused opcode for the sc61860. We'll use it to
                     //  emulate the .DEFAULT instruction.
                     disassembly_buffer.line[i].opcode = 0x17;
-                    case_number_dis -= 1;
+                    this_item -= 1;
                     this_pc += 2;
                     continue;
                 }
 
                 uint8_t instruction =
                                   pt.read_memory(disassembly_buffer.line[i].pc);
+
+                // This is the special case of the DTJ/PTJ case.
                 if (instruction == 0x7A)
-                    case_number_dis_tmp = pt.read_memory(
+                    table_items = pt.read_memory(
                                              disassembly_buffer.line[i].pc + 1);
                 if (instruction == 0x69)
-                    case_number_dis = case_number_dis_tmp;
+                {
+                    this_item = table_items;
+                    table_items = -1;
+                }
                 disassembly_buffer.line[i].opcode = instruction;
                 this_pc += find_instruction_length(this_pc, instruction);
             }
@@ -288,9 +293,9 @@ void display_core_info(void)
         char disassembled_line[128];
         char image_id[128];
         disassembled_line[0] = '\0';
-        sc61860_disassembler(disassembly_buffer.line[i].pc,
-                             disassembly_buffer.line[i].opcode,
-                             disassembled_line);
+        print_asm_line(disassembly_buffer.line[i].pc,
+                       disassembly_buffer.line[i].opcode,
+                       disassembled_line);
 
         char *image_name;
         int bp_number = check_breakpoint(disassembly_buffer.line[i].pc);
@@ -310,33 +315,36 @@ void display_core_info(void)
         sprintf(label_text, "%s", disassembled_line);
         while (strlen(label_text) < 50)
             strcat(label_text, " ");
-        format = "<span>%s</span>";
+        if (disassembly_buffer.line[i].pc == cpu_state.pc)
+            format = "<span foreground=\"green\">%s</span>";
+        else
+            format = "<span foreground=\"black\">%s</span>";
         markup = g_markup_printf_escaped(format, label_text);
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
     }
 
     // P
-    sprintf(label_text, "$%02X", cpu_state.p);
-    if (cpu_state.p < 12)
+    sprintf(label_text, "%02X", cpu_state.p);
+    if (cpu_state.p < sizeof(reg_to_str) / sizeof(char *))
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
                 reg_to_str[cpu_state.p]);
-    else            
+    else
         sprintf(label_text + strlen(label_text),
                 " ($%02X)",
-                cpu_state.scratchpad.raw.mem[cpu_state.p]);
+                cpu_state.imem[cpu_state.p]);
     if ((cpu_state.p >= PORTA_OFFSET) && (cpu_state.p <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
-                reg_to_str[cpu_state.p - PORTA_OFFSET + 12]);
+                port_to_str[cpu_state.p - PORTA_OFFSET]);
     if (cpu_state.p != cpu_state_past.p)
     {
         format = "<span foreground=\"red\">\%s</span>";
         cpu_state_past.p = cpu_state.p;
     }
     else
-        format = "<span foreground=\"black\">\%s</span>";
+        format = "<span foreground=\"blue\">\%s</span>";
     markup = g_markup_printf_escaped(format, label_text);
     this_label = gtk_builder_get_object(builder, "label_reg_p");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -344,25 +352,25 @@ void display_core_info(void)
 
     // Q
     sprintf(label_text, "%02X", cpu_state.q);
-    if (cpu_state.q < 12)
+    if (cpu_state.q < sizeof(reg_to_str) / sizeof(char *))
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
                 reg_to_str[cpu_state.q]);
-    else            
+    else
         sprintf(label_text + strlen(label_text),
-                " ($%02X)",
-                cpu_state.scratchpad.raw.mem[cpu_state.q]);
+                " (0x%02X)",
+                cpu_state.imem[cpu_state.q]);
     if ((cpu_state.q >= PORTA_OFFSET) && (cpu_state.q <= PORTC_OFFSET))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
-                reg_to_str[cpu_state.q - PORTA_OFFSET + 12]);
+                port_to_str[cpu_state.q - PORTA_OFFSET]);
     if (cpu_state.q != cpu_state_past.q)
     {
         format = "<span foreground=\"red\">\%s</span>";
         cpu_state_past.q = cpu_state.q;
     }
     else
-        format = "<span foreground=\"black\">\%s</span>";
+        format = "<span foreground=\"violet\">\%s</span>";
     markup = g_markup_printf_escaped(format, label_text);
     this_label = gtk_builder_get_object(builder, "label_reg_q");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -374,7 +382,7 @@ void display_core_info(void)
 
     // PC
     format = "<span foreground=\"black\">\%s</span>";
-    sprintf(label_text, "$%04X", cpu_state.pc);
+    sprintf(label_text, "%04X", cpu_state.pc);
     markup = g_markup_printf_escaped(format, label_text);
     this_label = gtk_builder_get_object(builder, "label_reg_PC");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -383,11 +391,11 @@ void display_core_info(void)
     // DP
     if (cpu_state.dp != cpu_state_past.dp)
     {
-        format = "<span foreground=\"red\">$\%04X</span>";
+        format = "<span foreground=\"red\">\%04X</span>";
         cpu_state_past.dp = cpu_state.dp;
     }
     else
-        format = "<span foreground=\"black\">$\%04X</span>";
+        format = "<span foreground=\"black\">\%04X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.dp);
     this_label = gtk_builder_get_object(builder, "label_reg_DP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -396,11 +404,11 @@ void display_core_info(void)
     // cDP
     if (read_mem(cpu_state.dp) != cpu_state_past.cdp)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
+        format = "<span foreground=\"red\">\%02X</span>";
         cpu_state_past.cdp = read_mem(cpu_state.dp);
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, read_mem(cpu_state.dp));
     this_label = gtk_builder_get_object(builder, "label_reg_cDP");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -409,17 +417,18 @@ void display_core_info(void)
     // r
     if (cpu_state.r != cpu_state_past.r)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
+        format = "<span foreground=\"red\">\%02X</span>";
         cpu_state_past.r = cpu_state.r;
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.r);
     this_label = gtk_builder_get_object(builder, "label_reg_r");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 
     // Zero flag
+    cpu_state.flags.zero &= 0x01;
     if (cpu_state.flags.zero != cpu_state_past.flags.zero)
     {
         format = "<span foreground=\"red\">%d</span>";
@@ -433,6 +442,7 @@ void display_core_info(void)
     g_free(markup);
 
     // Carry flag
+    cpu_state.flags.carry &= 0x01;
     if (cpu_state.flags.carry != cpu_state_past.flags.carry)
     {
         format = "<span foreground=\"red\">\%d</span>";
@@ -448,11 +458,11 @@ void display_core_info(void)
     // IOport A
     if (cpu_state.porta != cpu_state_past.porta)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
-         cpu_state_past.porta = cpu_state.porta;
+        format = "<span foreground=\"red\">\%02X</span>";
+        cpu_state_past.porta = cpu_state.porta;
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.porta);
     this_label = gtk_builder_get_object(builder, "label_ioport_a");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -461,11 +471,11 @@ void display_core_info(void)
     // IOport B
     if (cpu_state.portb != cpu_state_past.portb)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
-         cpu_state_past.portb = cpu_state.portb;
+        format = "<span foreground=\"red\">\%02X</span>";
+        cpu_state_past.portb = cpu_state.portb;
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portb);
     this_label = gtk_builder_get_object(builder, "label_ioport_b");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -474,11 +484,11 @@ void display_core_info(void)
     // IOport C
     if (cpu_state.portc != cpu_state_past.portc)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
-         cpu_state_past.portc = cpu_state.portc;
+        format = "<span foreground=\"red\">\%02X</span>";
+        cpu_state_past.portc = cpu_state.portc;
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portc);
     this_label = gtk_builder_get_object(builder, "label_ioport_c");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -487,11 +497,11 @@ void display_core_info(void)
     // IOport F
     if (cpu_state.portf != cpu_state_past.portf)
     {
-        format = "<span foreground=\"red\">$\%02X</span>";
-         cpu_state_past.portf = cpu_state.portf;
+        format = "<span foreground=\"red\">\%02X</span>";
+        cpu_state_past.portf = cpu_state.portf;
     }
     else
-        format = "<span foreground=\"black\">$\%02X</span>";
+        format = "<span foreground=\"black\">\%02X</span>";
     markup = g_markup_printf_escaped(format, cpu_state.portf);
     this_label = gtk_builder_get_object(builder, "label_ioport_f");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -502,7 +512,7 @@ void display_core_info(void)
     print_bcd_reg(2, "label_reg_ZReg");
     print_bcd_reg(3, "label_reg_WReg");
 
-    for (i = 0; i < sizeof(cpu_state.scratchpad); i++)
+    for (i = 0; i < sizeof(cpu_state.imem); i++)
     {
         sprintf(label_name, "label_scratchpad_%d", i);
         this_label = gtk_builder_get_object(builder, label_name);
@@ -510,23 +520,38 @@ void display_core_info(void)
         {
             format = "<span foreground=\"green\">\%02X</span>";
             markup = g_markup_printf_escaped(format,
-                                             cpu_state.scratchpad.raw.mem[i]);
+                                             cpu_state.imem[i]);
             gtk_label_set_markup(GTK_LABEL(this_label), markup);
             g_free(markup);
             continue;
         }
 
-        if (cpu_state.scratchpad.raw.mem[i] !=
-                                        cpu_state_past.scratchpad.raw.mem[i])
+        if (i == cpu_state.p)
+        {
+            format = "<span foreground=\"blue\">\%02X</span>";
+            markup = g_markup_printf_escaped(format, cpu_state.imem[i]);
+            gtk_label_set_markup(GTK_LABEL(this_label), markup);
+            g_free(markup);
+            continue;
+        }
+
+        if (i == cpu_state.q)
+        {
+            format = "<span foreground=\"violet\">\%02X</span>";
+            markup = g_markup_printf_escaped(format, cpu_state.imem[i]);
+            gtk_label_set_markup(GTK_LABEL(this_label), markup);
+            g_free(markup);
+            continue;
+        }
+
+        if (cpu_state.imem[i] != cpu_state_past.imem[i])
         {
             format = "<span foreground=\"red\">\%02X</span>";
-            cpu_state_past.scratchpad.raw.mem[i] =
-                                                cpu_state.scratchpad.raw.mem[i];
+            cpu_state_past.imem[i] = cpu_state.imem[i];
         }
         else
             format = "<span foreground=\"black\">\%02X</span>";
-        markup = g_markup_printf_escaped(format,
-                                         cpu_state.scratchpad.raw.mem[i]);
+        markup = g_markup_printf_escaped(format, cpu_state.imem[i]);
         gtk_label_set_markup(GTK_LABEL(this_label), markup);
         g_free(markup);
     }

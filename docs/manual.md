@@ -1,9 +1,34 @@
+# Build
+
+```> make pc1245```
+
+or
+
+```> make pc1251```
+
+will create an executable of the only supported calculators.
+
+#Breakpoint File
+The user can define a file named `events.dbg` where breakpoints can be set so that execution is stopped when the breakpoint is hit. The syntax for this file is the following:
+##Memory Breakpoint
+The syntax is ```P:addr``` or ```p:addr```. ```P:addr``` sets a permanent breakpoint at a given address. ```p:addr``` sets a breakpoint that is automatically removed the first time that it is hit. For example:
+
+`P:0xABCD`
+
+sets a permanent breakpoint at address 0xABCD.
+
+##Instruction Breakpoint
+The syntax is ```I:encoding``` or ```i:encoding```. ```I:addr``` sets a permanent breakpoint whenver an in. ```p:addr``` sets a breakpoint that is automatically removed the first time that it is hit. For example:
+
+`I:0x5B`
+
+sets a temporary breakpoint that is hit when the POP instruction (encoding of 0x5B) is hit and is then removed.
 # Display Handling
 The display RAM is used as a temporary storage during arithmetic operations. To prevent the display from diplaying garbage during operations the display should be turned off and while it is OFF no update should be done. Unfortunately I have not been able to find any datasheet for the LCD driver and so, with my limited understanding of how it works, the current code still displays garbage during calculations although it then settles on good data at the end.
 # Construction of the display During Startup
 Currently the only supported device is the PC1251. The display is built dynamically, and in the case of the PC1251 it is only one line of 24 characters. Other machines that can be emulated in the future have different display sizes and effort has been expended in making sure that the way the LCD display is built for the PC1251 can be extended to machines that have larger or smaller diplays. That said, there will likely been a need to revisit this as soon as a different LCD size is emulated.
 # Disassembly of OS
-During the writing of the mulator I had the need to disassemble pieces of the kernel and BASIC ROM. Two files, cpu-1251.lst and bas-1251.lst are the disassembly of these areas which, in a few places, I commented is the purpose of the code was clear to me.
+During the writing of the emulator I had the need to disassemble pieces of the PC-1251 kernel and BASIC ROM. Two files, ```cpu-1251.lst``` and ```bas-1251.lst``` are the disassembly of these areas which, in a few places, I commented where the purpose of the code was clear to me.
 # events.dbg
 During initialization the emulator tries to open a file in read mode called events.dbg. In this file the user can place, one line per command, a number of commands rwlated to breakpoints and watchpoints. When the emulator hits one of these breakpoints the execution is stopped and the user can analyze the resulting data.
 

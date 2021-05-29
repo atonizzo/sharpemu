@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017, atonizzo@lycos.com
+// Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ GtkWidget *lcd_build_display(void);
 
 extern GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
                             [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
-extern uint8_t lcd_status[LCD_CHARACTER_ROWS][0x7C];
+extern uint8_t lcd_status[LCD_CHARACTER_ROWS][0xC0];
 
 extern uint16_t sc43536_base_address[];
 
