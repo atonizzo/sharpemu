@@ -1,59 +1,69 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sc61860_emu.h>
 
-#if defined(MODEL_PC1245)
-#include <pc1245.h>
-#elif defined(MODEL_PC1251)
-#include <pc1251.h>
-#elif defined(MODEL_PC1262)
-#include <pc1262.h>
+#include <sc61860_emu.h>
+#if defined(MODEL_PC1245) || defined(MODEL_PC1250) || defined(MODEL_PC1251) ||\
+                                                         defined(MODEL_PC1255)
+#include <pc12xx.h>
 #else
-#error Calculator not defined.
+#include <pc126x.h>
 #endif
+
+
 
 // This structure reflects the status of the memory of the LCD. We'll use it
 //  to avoid needless repaints.
 // There are 192 bytes of memory to each SC43536.
-uint8_t lcd_status[LCD_CHARACTER_ROWS][0xC0];
+uint8_t lcd_status[LCD_ROWS_PER_DISPLAY][0xC0];
 
 void lcd_off(void)
 {
     int i, j, k, l;
 
     // Turn pixels off.
-    for (i = 0; i < LCD_CHARACTER_ROWS; i++)
+    for (i = 0; i < LCD_ROWS_PER_DISPLAY; i++)
         for (j = 0; j < LCD_CHARACTERS_PER_ROW; j++)
-            for (k = 0; k < LCD_COLUMNS_PER_CHARACTER; k++)
-                for (l = 0; l < LCD_PIXELS_PER_COLUMN; l++)
+            for (k = 0; k < LCD_CHARACTER_WIDTH; k++)
+                for (l = 0; l < LCD_CHARACTER_HEIGHT; l++)
                     gtk_image_set_from_file(GTK_IMAGE(lcd_display[i][j][k][l]),
                                         "./pixmaps/lcd_pixel_off.jpg");
+}
+
+gboolean on_lcd_window_key_event(GtkWidget   *widget,
+                                 GdkEventKey *event,
+                                 gpointer     user_data)
+{
+    switch (event->type)
+    {
+    case GDK_KEY_PRESS:
+        pt.keypress(event->keyval);
+        break;
+    case GDK_KEY_RELEASE:
+        pt.keyrelease(event->keyval);
+        break;
+    default:
+        break;
+    }
+    return TRUE;
 }
 
 static GtkWidget *lcd_create_spacer(void)
@@ -62,7 +72,7 @@ static GtkWidget *lcd_create_spacer(void)
 
     // Create a new vbox to hold a single column of pixels.
     GtkWidget *lcd_spacer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    for (i = 0; i < LCD_PIXELS_PER_COLUMN; i++)
+    for (i = 0; i < LCD_CHARACTER_HEIGHT; i++)
     {
         GtkWidget *this_image =
                   gtk_image_new_from_file("./pixmaps/digit_separator.jpg");
@@ -86,7 +96,7 @@ static GtkWidget *lcd_create_column(unsigned int row,
 
     // Create a new vbox to hold a single column of pixels.
     GtkWidget *lcd_column_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    for (i = 0; i < LCD_PIXELS_PER_COLUMN; i++)
+    for (i = 0; i < LCD_CHARACTER_HEIGHT; i++)
     {
         GtkWidget *this_image =
                          gtk_image_new_from_file("./pixmaps/lcd_pixel_off.jpg");
@@ -110,14 +120,14 @@ GtkWidget *lcd_build_display(void)
     // Create a new vbox to hold the individual rows of characters.
     GtkWidget *lcd_row_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     g_assert(lcd_row_box != NULL);
-    for (i = 0; i < LCD_CHARACTER_ROWS; i++)
+    for (i = 0; i < LCD_ROWS_PER_DISPLAY; i++)
     {
         // Create a new hbox to hold the LCD characters.
         GtkWidget *lcd_char_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         g_assert(lcd_char_box != NULL);
         for (j = 0; j < LCD_CHARACTERS_PER_ROW; j++)
         {
-            for (k = 0; k < LCD_COLUMNS_PER_CHARACTER; k++)
+            for (k = 0; k < LCD_CHARACTER_WIDTH; k++)
             {
                 GtkWidget *this_column = lcd_create_column(i, j, k);
                 gtk_box_pack_start(GTK_BOX(lcd_char_box),

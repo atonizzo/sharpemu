@@ -1,27 +1,20 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <stdint.h>
 #include <string.h>
@@ -31,8 +24,8 @@
 
 #define HEX_COLUMN                                   6
 #define INSTRUCTION_COLUMN                           14
-#define OPERAND_COLUMN                               21
-#define COMMENT_COLUMN                               28
+#define OPERAND_COLUMN                               24
+#define COMMENT_COLUMN                               32
 
 #define SC61860_FORMAT_TERM                         (0 << 24)
 #define SC61860_FORMAT_IMMEDIATE8                   (1 << 24)
@@ -48,7 +41,7 @@
 #define SC61860_FORMAT_CASE                         (11 << 24)
 #define SC61860_FORMAT_DEFAULT                      (12 << 24)
 
-char *scratchpad_regs[] =
+const char *regs_to_str[] =
 {
     "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L"
 };
@@ -147,7 +140,6 @@ void sim_arith(void)
         cpu_state.cycles += 4;
         break;
     case 0x71:          // "sbim"       [P] - n -> [P]
-        __break__
         g_print("Untested instruction: SBIM\r\n");
         cpu_state.pc += 1;
         tmp0 = cpu_state.imem[cpu_state.p] - read_mem(cpu_state.pc);
@@ -173,7 +165,6 @@ void sim_arith(void)
         cpu_state.cycles += 3;
         break;
     case 0xc4:          // "adcm"       [P] + A + C -> [P]
-        __break__
         g_print("Untested instruction: ADCM\r\n");
         tmp0 = cpu_state.imem[cpu_state.p] + cpu_state.imem[IRAM_REG_A];
         tmp0 += cpu_state.flags.carry;
@@ -183,7 +174,6 @@ void sim_arith(void)
         cpu_state.cycles += 3;
         break;
     case 0xc5:          // "sbcm"       [P] - A - C -> [P]
-        __break__
         g_print("Untested instruction: SBCM\r\n");
         tmp0 = cpu_state.imem[cpu_state.p] - cpu_state.imem[IRAM_REG_A];
         tmp0 -= cpu_state.flags.carry;
@@ -393,7 +383,6 @@ void sim_bool(void)
     case 0xc6:        // "tsma"
         // This instruction does not exist in the SC61860 machine language
         //  manual and is never used in the disassembly of the ROM.
-        __break__
         g_print("Untested instruction: TSMA\r\n");
         cpu_state.flags.zero = ((cpu_state.imem[cpu_state.p] &
                                              cpu_state.imem[IRAM_REG_A]) == 0);
@@ -678,8 +667,7 @@ void sim_io(void)
     switch (instruction)
     {
     case 0x4c:      // "ina"
-        pt.ina();
-        // TODO: Check.
+        cpu_state.imem[IRAM_REG_A] = pt.ina();
         cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 2;
         break;
@@ -692,7 +680,7 @@ void sim_io(void)
         cpu_state.cycles += 3;
         break;
     case 0xcc:      // "inb"
-        pt.inb();
+        cpu_state.imem[IRAM_REG_A] = pt.inb();
         cpu_state.flags.zero = (cpu_state.imem[IRAM_REG_A] == 0);
         cpu_state.cycles += 2;
         break;
@@ -908,7 +896,6 @@ void sim_lr(void)
     case 0x54:      // "readm"
         // This instruction does not exist in the SC61860 machine language
         //  manual and is never used in the disassembly of the ROM.
-        __break__
         g_print("Untested instruction: READM\r\n");
         cpu_state.pc += 1;
         cpu_state.imem[cpu_state.p] = read_mem(cpu_state.pc);
@@ -917,7 +904,6 @@ void sim_lr(void)
     case 0x56:      // "read"
         // This instruction does not exist in the SC61860 machine language
         //  manual and is never used in the disassembly of the ROM.
-        __break__
         g_print("Untested instruction: READ\r\n");
         cpu_state.pc += 1;
         cpu_state.imem[IRAM_REG_A] = read_mem(cpu_state.pc);
@@ -945,7 +931,6 @@ void sim_lr(void)
 
 void sim_loop(void)
 {
-    __break__
     g_print("Untested instruction: LOOP\r\n");
     cpu_state.imem[cpu_state.r] -= 1;
     cpu_state.flags.carry = (cpu_state.imem[cpu_state.r] == 0xFF);
@@ -965,7 +950,6 @@ void sim_loop(void)
 
 void sim_leave(void)
 {
-    __break__
     g_print("Untested instruction: LEAVE\r\n");
     cpu_state.imem[cpu_state.r] = 0;
     cpu_state.pc += 1;
@@ -1398,6 +1382,8 @@ void sim_xy(void)
 
 const sc61860_instr_t sc61860_instr[] =
 {
+    {SC61860_FORMAT_CASE + (0x3 << 8) + 3, 0xFF, 0x16, ".case", sim_case},
+    {SC61860_FORMAT_DEFAULT + (0x3 << 8) + 2, 0xFF, 0x17, ".default", sim_default},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x00, "lii", sim_lr},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x01, "lij", sim_lr},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x02, "lia", sim_lr},
@@ -1420,8 +1406,6 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x13, "liq", sim_lr},
     {SC61860_FORMAT_NOOPERAND + (0x5 << 8) + 1, 0xFF, 0x14, "adb", sim_arith},
     {SC61860_FORMAT_NOOPERAND + (0x5 << 8) + 1, 0xFF, 0x15, "sbb", sim_arith},
-    {SC61860_FORMAT_CASE + (0x3 << 8) + 3, 0xFF, 0x16, ".case", sim_case},
-    {SC61860_FORMAT_DEFAULT + (0x3 << 8) + 2, 0xFF, 0x17, ".default", sim_default},
     {SC61860_FORMAT_NOOPERAND + (0x45 << 8) + 1, 0xFF, 0x18, "mvwd", sim_mv},
     {SC61860_FORMAT_NOOPERAND + (0x67 << 8) + 1, 0xFF, 0x19, "exwd", sim_mv},
     {SC61860_FORMAT_NOOPERAND + (0x45 << 8) + 1, 0xFF, 0x1a, "mvbd", sim_mv},
@@ -1493,7 +1477,7 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x65, "oria", sim_bool},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x66, "tsia", sim_bool},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x67, "cpia", sim_cp},
-    {SC61860_FORMAT_PTJ + (9 << 8) + 1, 0xFF, 0x69, "ptj", sim_table},
+    {SC61860_FORMAT_PTJ + (9 << 8) + 1, 0xFF, 0x69, "dtj", sim_table},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x6b, "test", sim_test},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x70, "adim", sim_arith},
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x71, "sbim", sim_arith},
@@ -1501,7 +1485,7 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_IMMEDIATE8 + (4 << 8) + 2, 0xFF, 0x75, "sbia", sim_arith},
     {SC61860_FORMAT_ADDRESS16 + (8 << 8) + 3, 0xFF, 0x78, "call", sim_cal},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x79, "jp", sim_jp},
-    {SC61860_FORMAT_DTJ + (0 << 8) + 4, 0xFF, 0x7A, "dtj", sim_table},
+    {SC61860_FORMAT_DTJ + (0 << 8) + 4, 0xFF, 0x7A, "ptj", sim_table},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7c, "jpnz", sim_jp},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7d, "jpnc", sim_jp},
     {SC61860_FORMAT_ADDRESS16 + (6 << 8) + 3, 0xFF, 0x7e, "jpz", sim_jp},
@@ -1536,20 +1520,17 @@ const sc61860_instr_t sc61860_instr[] =
     {SC61860_FORMAT_TERM, 0, 0, "", sim_not_implemented},
 };
 
-static void print_shift(char* p, int32_t len)
+static void print_shift(GString *p, int32_t len)
 {
-    int32_t character_count = strlen(p);
-    while (character_count++ < len)
-        strcat(p, " ");
-    // Print an extra blank so there is at least one buffer blank.
-    strcat(p, " ");
+    while (p->len < len)
+        g_string_append_c(p, ' ');
+    g_string_append_c(p, ' ');
 }
-
 
 static size_t print_instruction(uint16_t address,
                                 uint8_t instruction,
                                 uint32_t index,
-                                char *p)
+                                GString *p)
 {
     uint8_t operand0, operand1;
     uint16_t target_address;
@@ -1559,19 +1540,19 @@ static size_t print_instruction(uint16_t address,
     {
     case SC61860_FORMAT_IMMEDIATE8:
         operand0 = pt.read_memory(address + 1);
-        sprintf(p,
-                "%02X %02X        %s",
-                instruction,
-                operand0,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X %02X       %s",
+                               instruction,
+                               operand0,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%02X", operand0);
+        g_string_append_printf(p, "0x%02X", operand0);
         if ((instruction == 0x12) || (instruction == 0x13))
         {
             if (operand0 < 10)
             {
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p), "; %s", scratchpad_regs[operand0]);
+                g_string_append_printf(p, "; %s", regs_to_str[operand0]);
             }
             else
             {
@@ -1579,84 +1560,101 @@ static size_t print_instruction(uint16_t address,
                 {
                 case 0x20:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; XReg");
+                    g_string_append_printf(p, "; XReg");
                     break;
                 case 0x28:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; YReg");
+                    g_string_append_printf(p, "; YReg");
                     break;
                 case 0x30:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; ZReg");
+                    g_string_append_printf(p, "; ZReg");
                     break;
                 case 0x38:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; WReg");
+                    g_string_append_printf(p, "; WReg");
                     break;
                 case 0x5C:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; PortA");
+                    g_string_append_printf(p, "; PortA");
                     break;
                 case 0x5D:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; PortB");
+                    g_string_append_printf(p, "; PortB");
                     break;
                 case 0x5E:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; PortF");
+                    g_string_append_printf(p, "; PortF");
                     break;
                 case 0x5F:
                     print_shift(p, COMMENT_COLUMN);
-                    sprintf(p + strlen(p), "; PortC");
+                    g_string_append_printf(p, "; PortC");
                     break;
                 default:
                     break;
                 }
             }
         }
+        if ((instruction == 0x6b) || (instruction == 0x13))
+        {
+            switch (operand0)
+            {
+            case 0x01:
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p, "; 0.5 s counter");
+                break;
+            case 0x02:
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p, "; 2 s counter");
+                break;
+            case 0x08:
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p, "; Kon status");
+                break;
+            case 0x40:
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p, "; RST");
+                break;
+            case 0x80:
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p, "; Xin Status");
+                break;
+            default:
+                break;
+            }
+        }
         break;
     case SC61860_FORMAT_NOOPERAND:
-        sprintf(p,
-                "%02X           %s",
-                instruction,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X          %s",
+                               instruction,
+                               sc61860_instr[index].opcode);
         break;
     case SC61860_FORMAT_IMMEDIATE16:
-        operand0 = pt.read_memory(address + 1);
-        operand1 = pt.read_memory(address + 2);
-        sprintf(p,
-                "%02X %02X %02X     %s",
-                instruction,
-                operand0,
-                operand1,
-                sc61860_instr[index].opcode);
-        print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%04X", operand0 * 256 + operand1);
-        break;
     case SC61860_FORMAT_ADDRESS16:
         operand0 = pt.read_memory(address + 1);
         operand1 = pt.read_memory(address + 2);
-        sprintf(p,
-                "%02X %02X %02X     %s",
-                instruction,
-                operand0,
-                operand1,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X %02X %02X    %s",
+                               instruction,
+                               operand0,
+                               operand1,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%04X", operand0 * 256 + operand1);
+        g_string_append_printf(p, "$%04X", operand0 * 256 + operand1);
         break;
     case SC61860_FORMAT_IMMEDIATE6:
         operand0 = instruction & 0x3F;
-        sprintf(p,
-                "%02X           %s",
-                instruction,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X          %s",
+                               instruction,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%02X", operand0);
+        g_string_append_printf(p, "$%02X", operand0);
         if (operand0 < 10)
         {
             print_shift(p, COMMENT_COLUMN);
-            sprintf(p + strlen(p), "; %s", scratchpad_regs[operand0]);
+            g_string_append_printf(p, "; %s", regs_to_str[operand0]);
         }
         else
         {
@@ -1664,19 +1662,19 @@ static size_t print_instruction(uint16_t address,
             {
             case 0x20:
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p), "; XReg");
+                g_string_append_printf(p, "; XReg");
                 break;
             case 0x28:
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p), "; YReg");
+                g_string_append_printf(p, "; YReg");
                 break;
             case 0x30:
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p), "; ZReg");
+                g_string_append_printf(p, "; ZReg");
                 break;
             case 0x38:
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p), "; WReg");
+                g_string_append_printf(p, "; WReg");
                 break;
             default:
                 break;
@@ -1686,14 +1684,14 @@ static size_t print_instruction(uint16_t address,
     case SC61860_FORMAT_ADDRESS13:
         operand0 = instruction & 0x1F;
         operand1 = pt.read_memory(address + 1);
-        sprintf(p,
-                "%02X %02X        %s",
-                instruction,
-                operand1,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X %02X       %s",
+                               instruction,
+                               operand1,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         target_address = operand0 * 256 + operand1;
-        sprintf(p + strlen(p), "$%04X", target_address);
+        g_string_append_printf(p, "$%04X", target_address);
 
         // Search the address descriptors to see if we can match this address
         //  to one of the well known ones.
@@ -1703,9 +1701,9 @@ static size_t print_instruction(uint16_t address,
             if (target_address == address_descriptors[imm].address)
             {
                 print_shift(p, COMMENT_COLUMN);
-                sprintf(p + strlen(p),
-                        "; %s",
-                        address_descriptors[imm].label);
+                g_string_append_printf(p,
+                                       "; %s",
+                                       address_descriptors[imm].label);
                 break;
             }
             imm++;
@@ -1713,65 +1711,65 @@ static size_t print_instruction(uint16_t address,
         break;
     case SC61860_FORMAT_RELATIVE_PLUS:
         operand0 = pt.read_memory(address + 1);
-        sprintf(p,
-                "%02X %02X        %s",
-                instruction,
-                operand0,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X %02X       %s",
+                               instruction,
+                               operand0,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%04X", address + operand0 + 1);
+        g_string_append_printf(p, "$%04X", address + operand0 + 1);
         break;
     case SC61860_FORMAT_RELATIVE_MINUS:
         operand0 = pt.read_memory(address + 1);
-        sprintf(p,
-                "%02X %02X        %s",
-                instruction,
-                operand0,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X %02X       %s",
+                               instruction,
+                               operand0,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p), "$%04X", address - operand0 + 1);
+        g_string_append_printf(p, "$%04X", address - operand0 + 1);
         break;
     case SC61860_FORMAT_PTJ:
-        sprintf(p,
-                "%02X           %s",
-                instruction,
-                sc61860_instr[index].opcode);
-        cpu_state.this_item = cpu_state.table_items;
+        g_string_append_printf(p,
+                               "%02X          %s",
+                               instruction,
+                               sc61860_instr[index].opcode);
+        cpu_state.current_item = cpu_state.table_items;
         break;
     case SC61860_FORMAT_DTJ:
-        sprintf(p,
-                "%02X           %s",
-                instruction,
-                sc61860_instr[index].opcode);
+        g_string_append_printf(p,
+                               "%02X           %s",
+                               instruction,
+                               sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         operand0 = pt.read_memory(address + 1);
         int addr = (pt.read_memory(address + 2) << 8) |
                                                pt.read_memory(address + 3);
-        sprintf(p + strlen(p), "$%02X, $%04X", operand0, addr);
+        g_string_append_printf(p, "$%02X, $%04X", operand0, addr);
         cpu_state.table_items = pt.read_memory(address + 1);
         break;
     case SC61860_FORMAT_CASE:
-        sprintf(p,
-                "%02X %02X %02X     .case",
-                pt.read_memory(address),
-                pt.read_memory(address + 1),
-                pt.read_memory(address + 2));
+        g_string_append_printf(p,
+                               "%02X %02X %02X     .case",
+                               pt.read_memory(address),
+                               pt.read_memory(address + 1),
+                               pt.read_memory(address + 2));
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p),
-                "$%02X, $%04X",
-                pt.read_memory(address),
-                pt.read_memory(address + 1) * 256 +
+        g_string_append_printf(p,
+                               "$%02X, $%04X",
+                               pt.read_memory(address),
+                               pt.read_memory(address + 1) * 256 +
                                                    pt.read_memory(address + 2));
         break;
     case SC61860_FORMAT_DEFAULT:
-        sprintf(p,
-                "%02X %02X        .default",
-                pt.read_memory(address),
-                pt.read_memory(address + 1));
+        g_string_append_printf(p,
+                               "%02X %02X        .default",
+                               pt.read_memory(address),
+                               pt.read_memory(address + 1));
         print_shift(p, OPERAND_COLUMN);
-        sprintf(p + strlen(p),
-                "$%04X",
-                pt.read_memory(address) * 256 +
+        g_string_append_printf(p,
+                               "$%04X",
+                               pt.read_memory(address) * 256 +
                                                    pt.read_memory(address + 1));
         break;
     default:
@@ -1780,55 +1778,39 @@ static size_t print_instruction(uint16_t address,
     return sc61860_instr[index].attributes & 0xFF;
 }
 
-uint32_t print_asm_line(uint16_t address, uint8_t instruction, char *p)
+uint32_t print_asm_line(uint16_t address, uint8_t instruction, GString *p)
 {
-    sprintf(p, "%04X: ", address);
+    g_assert(p != NULL);
+    g_string_append_printf(p, "%04X: ", address);
     uint32_t i = 0;
     while (sc61860_instr[i].attributes != 0)
     {
-        if ((instruction & sc61860_instr[i].mask) ==
-                                           sc61860_instr[i].mask_value)
-        {
+        if (((instruction & sc61860_instr[i].mask) ==
+                                      sc61860_instr[i].mask_value) && (p != 0))
             // If the string pointer is null we are going to return only
-            //  the number of bytes of the instruciton, either 2 or 4.
-            if (p != 0)
-            {
-                return print_instruction(address,
-                                         instruction,
-                                         i,
-                                         p + strlen(p));
-            }
-        }
+            //  the number of bytes of the instruciton.
+            return print_instruction(address, instruction, i, p);
         i++;
     }
     // Unrecognized instruction.
-    sprintf(p, "%04X: %02X           ???", address, instruction);
+    g_string_append_printf(p, "%04X: %02X    ???", address, instruction);
     return 1;
 }
 
-uint32_t sc61860_disassembler(uint16_t address, uint8_t instruction, char *p)
+uint32_t sc61860_disassembler(uint16_t address,
+                              uint8_t instruction,
+                              GString *p)
 {
-    sprintf(p, "%04X: ", address);
-    if (cpu_state.this_item > 0)
+    if (cpu_state.current_item > 0)
     {
-        // If the string pointer is null we are going to return only
-        //  the number of bytes of the instruciton, either 2 or 4.
-        if (p != 0)
-        {
-            cpu_state.this_item -= 1;
-            return print_instruction(address, 0x16, 0, p + strlen(p));
-        }
+        cpu_state.current_item -= 1;
+        return print_asm_line(address, 0x16, p);
     }
 
-    if (cpu_state.this_item == 0)
+    if (cpu_state.current_item == 0)
     {
-        // If the string pointer is null we are going to return only
-        //  the number of bytes of the instruciton, either 2 or 4.
-        if (p != 0)
-        {
-            cpu_state.this_item -= 1;
-            return print_instruction(address, 0x17, 0, p + strlen(p));
-        }
+        cpu_state.current_item -= 1;
+        return print_asm_line(address, 0x17, p);
     }
 
     return print_asm_line(address, instruction, p);

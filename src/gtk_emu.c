@@ -1,32 +1,26 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <string.h>
 #include <stdint.h>
 #include <sys/time.h>
 #include <gtk/gtk.h>
+
 #include <sc61860_emu.h>
 
 GtkBuilder *builder;
@@ -173,8 +167,6 @@ gboolean on_buttonbar_stop_clicked(GtkWidget *widget, gpointer user_data)
     return TRUE;
 }
 
-extern uint32_t button_pressed;
-
 static gboolean thread_run(gpointer arg)
 {
     emulate_instruction();
@@ -257,7 +249,7 @@ static void on_menu_mode_activate(GtkMenuItem *menuItem, gpointer user_data)
     long mode = (long)user_data;
     if (mode == CALC_MODE_OFF)
     {
-        // The buttons that execute assembly instructions must be disabled until
+/*        // The buttons that execute assembly instructions must be disabled until
         //  the calculator mode is changed to one of the operative ones.
         // Disable the button and menu that perform the "Step" function.
         GObject *this_widget = gtk_builder_get_object(builder,
@@ -276,7 +268,7 @@ static void on_menu_mode_activate(GtkMenuItem *menuItem, gpointer user_data)
         this_widget = gtk_builder_get_object(builder, "menu_debug_run");
         gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
         this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
+        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);*/
     }
     else
     {
@@ -353,7 +345,8 @@ gboolean on_buttonbar_reset_clicked(GtkWidget *widget, gpointer user_data )
     cpu_state.pc = DEFAULT_PC_VALUE;
     read_debug_events();
     display_core_info();
-    cpu_state.this_item = -1;
+    cpu_state.table_items = -1;
+    cpu_state.current_item = -1;
     return TRUE;
 }
 
@@ -361,7 +354,7 @@ static gboolean label_callback_toggle_breakpoint(GtkWidget      *widget,
                                                  GdkEventButton *event,
                                                  gpointer        user_data)
 {
-    if (event->type != GDK_2BUTTON_PRESS)
+/*    if (event->type != GDK_2BUTTON_PRESS)
         return FALSE;
 
     int line = (int64_t)user_data;
@@ -384,9 +377,7 @@ static gboolean label_callback_toggle_breakpoint(GtkWidget      *widget,
     char image_id[64];
     sprintf(image_id, "image_disassembly_line_%d", line);
     GObject *this_object = gtk_builder_get_object(builder, image_id);
-    printf("C");
-    gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);
-    printf("D\r\n");
+    gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);*/
     return TRUE;
 }
 
@@ -436,24 +427,6 @@ void on_mode_combobox_changed (GtkComboBox *widget, gpointer user_data)
     GObject *mode_combo_box = gtk_builder_get_object(builder, "mode_combobox");
     gint active = gtk_combo_box_get_active (GTK_COMBO_BOX(mode_combo_box));
     on_menu_mode_activate(NULL, (gpointer)(long)active);
-}
-
-static gboolean lcd_key_pressed_event(GtkWidget   *widget,
-                                      GdkEventKey *event,
-                                      gpointer     user_data)
-{
-    switch (event->type)
-    {
-    case GDK_KEY_PRESS:
-        pt.keypress(event->keyval);
-        break;
-    case GDK_KEY_RELEASE:
-        pt.keyrelease(event->keyval);
-        break;
-    default:
-        break;
-    }
-    return TRUE;
 }
 
 static void print_usage()
@@ -569,19 +542,6 @@ int main(int argc, char *argv[])
     // The buttons that execute assembly instructions must be disabled until
     //  the calculator mode is changed to one of the operative ones.
     on_menu_mode_off_activate(NULL, NULL);
-
-    GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
-
-    // These are the callback that allows us to capture the key presses that
-    //  occur in the LCD window.
-    g_signal_connect(G_OBJECT(lcd_window),
-                     "key-press-event",
-                     G_CALLBACK(lcd_key_pressed_event),
-                     NULL);
-    g_signal_connect(G_OBJECT(lcd_window),
-                     "key-release-event",
-                     G_CALLBACK(lcd_key_pressed_event),
-                     NULL);
 
     display_core_info();
 

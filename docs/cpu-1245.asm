@@ -792,110 +792,109 @@
 04B8: 00 06        lii      $06
 04BA: 08           mvw
 04BB: B1           lp       $31
-04BC: 60 0F        anim     $0F
-04BE: 64 F0        ania     $F0
-04C0: 47           orma
-04C1: 37           rtn
-04C2: 91           lp       $11
-04C3: 61 40        orim     $40
-04C5: 2C 04        jrp      $04CA
-04C7: 91           lp       $11
-04C8: 60 BF        anim     $BF
-04CA: 91           lp       $11
-04CB: 62 01        tsim     $01
-04CD: 28 06        jrnzp    $04D4
-04CF: A2           lp       $22
-04D0: 62 F0        tsim     $F0
-04D2: 28 04        jrnzp    $04D7
-04D4: 79 0B 41     jp       $0B41
-04D7: 91           lp       $11
-04D8: 60 7F        anim     $7F
-04DA: A0           lp       $20
-04DB: 62 F0        tsim     $F0
-04DD: 38 06        jrzp     $04E4
-04DF: 91           lp       $11
-04E0: 61 80        orim     $80
-04E2: E3 A3        cal      $03A3
-04E4: E2 14        cal      $0214
-04E6: E0 C8        cal      $00C8
-04E8: A2           lp       $22
-04E9: 71 10        sbim     $10
-04EB: E3 30        cal      $0330
-04ED: E2 5D        cal      $025D
-04EF: E1 F0        cal      $01F0
-04F1: E6 FE        cal      $06FE
-04F3: E1 DA        cal      $01DA
-04F5: E0 A9        cal      $00A9
-04F7: B8           lp       $38
-04F8: 59           ldm
-04F9: 64 0F        ania     $0F
-04FB: A9           lp       $29
-04FC: 60 F0        anim     $F0
-04FE: 47           orma
-04FF: B9           lp       $39
-0500: 59           ldm
-0501: 64 F0        ania     $F0
-0503: AA           lp       $2A
-0504: 60 0F        anim     $0F
-0506: 47           orma
+04BC: 2D BA        jrm      $0403
+04BE: 91           lp       $11
+04BF: 61 40        orim     $40
+04C1: 2C 04        jrp      $04C6
+04C3: 91           lp       $11
+04C4: 60 BF        anim     $BF
+04C6: 91           lp       $11
+04C7: 62 01        tsim     $01
+04C9: 28 06        jrnzp    $04D0
+04CB: A2           lp       $22
+04CC: 62 F0        tsim     $F0
+04CE: 28 04        jrnzp    $04D3
+04D0: 79 0B 41     jp       $0B41
+04D3: 91           lp       $11
+04D4: 60 7F        anim     $7F
+04D6: A0           lp       $20
+04D7: 62 F0        tsim     $F0
+04D9: 38 06        jrzp     $04E0
+04DB: 91           lp       $11
+04DC: 61 80        orim     $80
+04DE: E3 A3        cal      $03A3
+04E0: E2 14        cal      $0214
+04E2: E0 C8        cal      $00C8
+04E4: A2           lp       $22
+04E5: 71 10        sbim     $10
+04E7: E3 30        cal      $0330
+04E9: E2 5D        cal      $025D
+04EB: E1 F0        cal      $01F0
+04ED: E6 FE        cal      $06FE
+04EF: E1 DA        cal      $01DA
+04F1: E0 A9        cal      $00A9
+04F3: B8           lp       $38
+04F4: 59           ldm
+04F5: 64 0F        ania     $0F
+04F7: A9           lp       $29
+04F8: 60 F0        anim     $F0
+04FA: 47           orma
+04FB: B9           lp       $39
+04FC: 59           ldm
+04FD: 64 F0        ania     $F0
+04FF: AA           lp       $2A
+0500: 60 0F        anim     $0F
+0502: 47           orma
+0503: E3 30        cal      $0330
+0505: E2 84        cal      $0284
 0507: E3 30        cal      $0330
-0509: E2 84        cal      $0284
-050B: E3 30        cal      $0330
-050D: E2 EB        cal      $02EB
-050F: 91           lp       $11
-0510: 62 80        tsim     $80
-0512: 38 05        jrzp     $0518
-0514: 60 7F        anim     $7F
-0516: E1 3C        cal      $013C
-0518: 91           lp       $11
-0519: 62 40        tsim     $40
-051B: 38 09        jrzp     $0525
-051D: 60 BF        anim     $BF
-051F: E9 60        cal      $0960
-0521: E2 84        cal      $0284
-0523: E3 A5        cal      $03A5
-0525: 37           rtn
-0526: E9 60        cal      $0960
-0528: E3 6B        cal      $036B
-052A: A0           lp       $20
-052B: 62 F0        tsim     $F0
-052D: 28 27        jrnzp    $0555
-052F: E1 DA        cal      $01DA
-0531: 3A 07        jrcp     $0539
+0509: E2 EB        cal      $02EB
+050B: 91           lp       $11
+050C: 62 80        tsim     $80
+050E: 38 05        jrzp     $0514
+0510: 60 7F        anim     $7F
+0512: E1 3C        cal      $013C
+0514: 91           lp       $11
+0515: 62 40        tsim     $40
+0517: 38 09        jrzp     $0521
+0519: 60 BF        anim     $BF
+051B: E9 60        cal      $0960
+051D: E2 84        cal      $0284
+051F: E3 A5        cal      $03A5
+0521: 37           rtn
+0522: 24           ixl
+0523: 67 11        cpia     $11
+0525: 39 04        jrzm     $0522
+0527: 67 40        cpia     $40
+0529: 37           rtn
+052A: E9 60        cal      $0960
+052C: E3 6B        cal      $036B
+052E: A0           lp       $20
+052F: 62 F0        tsim     $F0
+0531: 28 27        jrnzp    $0559
 0533: E1 DA        cal      $01DA
-0535: 2A 2F        jrncp    $0565
-0537: E1 04        cal      $0104
-0539: E0 C8        cal      $00C8
-053B: A1           lp       $21
-053C: 59           ldm
-053D: 60 F0        anim     $F0
-053F: A0           lp       $20
-0540: 60 F0        anim     $F0
-0542: 64 0F        ania     $0F
-0544: 47           orma
-0545: A2           lp       $22
-0546: 59           ldm
-0547: 60 0F        anim     $0F
-0549: A1           lp       $21
-054A: 60 0F        anim     $0F
-054C: 64 F0        ania     $F0
-054E: 47           orma
-054F: E1 04        cal      $0104
-0551: E0 CF        cal      $00CF
-0553: 2C 09        jrp      $055D
-0555: E2 5D        cal      $025D
-0557: E1 F0        cal      $01F0
-0559: E1 D7        cal      $01D7
-055B: E0 C8        cal      $00C8
-055D: E7 02        cal      $0702
-055F: E2 4F        cal      $024F
-0561: E0 DD        cal      $00DD
-0563: 2C 09        jrp      $056D
-0565: E1 3C        cal      $013C
-0567: A0           lp       $20
-0568: 00 07        lii      $07
-056A: 02 00        lia      $00
-056C: 1E           film
+0535: 3A 07        jrcp     $053D
+0537: E1 DA        cal      $01DA
+0539: 2A 2F        jrncp    $0569
+053B: E1 04        cal      $0104
+053D: E0 C8        cal      $00C8
+053F: A1           lp       $21
+0540: 59           ldm
+0541: 60 F0        anim     $F0
+0543: A0           lp       $20
+0544: 60 F0        anim     $F0
+0546: 64 0F        ania     $0F
+0548: 47           orma
+0549: A2           lp       $22
+054A: 59           ldm
+054B: 60 0F        anim     $0F
+054D: A1           lp       $21
+054E: 60 0F        anim     $0F
+0550: 64 F0        ania     $F0
+0552: 47           orma
+0553: E1 04        cal      $0104
+0555: E0 CF        cal      $00CF
+0557: 2C 09        jrp      $0561
+0559: E2 5D        cal      $025D
+055B: E1 F0        cal      $01F0
+055D: E1 D7        cal      $01D7
+055F: E0 C8        cal      $00C8
+0561: E7 02        cal      $0702
+0563: E2 4F        cal      $024F
+0565: E0 DD        cal      $00DD
+0567: 2C 05        jrp      $056D
+0569: E1 3C        cal      $013C
+056B: F2 BD        cal      $12BD
 056D: 91           lp       $11
 056E: 62 01        tsim     $01
 0570: 38 05        jrzp     $0576
@@ -1633,11 +1632,11 @@
 09F7: 90           lp       $10
 09F8: 61 04        orim     $04
 09FA: EA 19        cal      $0A19
-09FC: E4 C7        cal      $04C7
+09FC: E4 C3        cal      $04C3
 09FE: EA 28        cal      $0A28
 0A00: E2 84        cal      $0284
 0A02: E3 6B        cal      $036B
-0A04: E5 2A        cal      $052A
+0A04: E5 2E        cal      $052E
 0A06: 90           lp       $10
 0A07: 62 04        tsim     $04
 0A09: 38 08        jrzp     $0A12
@@ -1912,13 +1911,13 @@
 0BBD: E5 77        cal      $0577
 0BBF: 2D 2D        jrm      $0B93
 0BC1: EA E1        cal      $0AE1
-0BC3: E5 26        cal      $0526
+0BC3: E5 2A        cal      $052A
 0BC5: 2D 33        jrm      $0B93
 0BC7: EA E1        cal      $0AE1
-0BC9: E4 C2        cal      $04C2
+0BC9: E4 BE        cal      $04BE
 0BCB: 2D 39        jrm      $0B93
 0BCD: EA E1        cal      $0AE1
-0BCF: E4 C7        cal      $04C7
+0BCF: E4 C3        cal      $04C3
 0BD1: 2D 3F        jrm      $0B93
 0BD3: EC 20        cal      $0C20
 0BD5: 2A F6        jrncp    $0CCC
@@ -3087,8 +3086,7 @@
 12F6: 05           dx
 12F7: FC D2        cal      $1CD2
 12F9: 24           ixl
-12FA: FA FC        cal      $1AFC
-12FC: 37           rtn
+12FA: 79 1A FC     jp       $1AFC
 12FD: FC D7        cal      $1CD7
 12FF: 61 04        orim     $04
 1301: 24           ixl
@@ -3234,7 +3232,7 @@
 13F5: F6 BA        cal      $16BA
 13F7: 3A 15        jrcp     $140D
 13F9: FC B0        cal      $1CB0
-13FB: 39 1F        jrzm     $13DD
+13FB: FF 19        cal      $1F19
 13FD: FC B7        cal      $1CB7
 13FF: 3A 0E        jrcp     $140E
 1401: 05           dx
@@ -3256,147 +3254,144 @@
 141D: 2B 13        jrncm    $140B
 141F: 37           rtn
 1420: F6 BA        cal      $16BA
-1422: 3A DF        jrcp     $1502
+1422: 3A E0        jrcp     $1503
 1424: FC D7        cal      $1CD7
 1426: 61 20        orim     $20
 1428: FC B0        cal      $1CB0
-142A: 38 E2        jrzp     $150D
-142C: FC B7        cal      $1CB7
-142E: 2A 0A        jrncp    $1439
-1430: FA CF        cal      $1ACF
-1432: FB 9E        cal      $1B9E
-1434: FA CF        cal      $1ACF
-1436: 2B 0F        jrncm    $1428
-1438: 37           rtn
-1439: 57           ldd
-143A: 67 1B        cpia     $1B
-143C: 38 37        jrzp     $1474
-143E: 67 30        cpia     $30
-1440: 28 05        jrnzp    $1446
-1442: FC C2        cal      $1CC2
-1444: 2C BD        jrp      $1502
-1446: 93           lp       $13
-1447: 60 A9        anim     $A9
-1449: 61 28        orim     $28
-144B: FC C2        cal      $1CC2
-144D: 66 80        tsia     $80
-144F: 38 04        jrzp     $1454
-1451: 93           lp       $13
-1452: 61 04        orim     $04
-1454: 34           push
-1455: 64 7F        ania     $7F
-1457: 67 51        cpia     $51
-1459: 5B           pop
-145A: FA CF        cal      $1ACF
-145C: 28 09        jrnzp    $1466
-145E: 93           lp       $13
-145F: 61 02        orim     $02
-1461: F8 EE        cal      $18EE
-1463: FA CF        cal      $1ACF
-1465: 37           rtn
-1466: 8A           lp       $0A
-1467: DB           exam
-1468: FA D4        cal      $1AD4
-146A: 3B 08        jrcm     $1463
-146C: 10 C6 D0     lidp     $C6D0
-146F: 1B           exbd
-1470: F9 C1        cal      $19C1
-1472: 2D 10        jrm      $1463
-1474: 02 01        lia      $01
-1476: 88           lp       $08
-1477: DB           exam
-1478: 86           lp       $06
-1479: 63 00        cpim     $00
-147B: 38 8B        jrzp     $1507
-147D: 48           inck
-147E: 07           dy
-147F: 57           ldd
-1480: 67 1B        cpia     $1B
-1482: 39 0B        jrzm     $1478
-1484: 88           lp       $08
-1485: 10 C6 F2     lidp     $C6F2
-1488: 53           mvdm
-1489: 67 30        cpia     $30
-148B: 28 2A        jrnzp    $14B6
-148D: 86           lp       $06
-148E: 63 00        cpim     $00
-1490: 38 76        jrzp     $1507
-1492: 07           dy
-1493: 57           ldd
-1494: FC C2        cal      $1CC2
-1496: 67 8C        cpia     $8C
-1498: FA CF        cal      $1ACF
-149A: 3A 68        jrcp     $1503
-149C: 67 8F        cpia     $8F
-149E: 2A 7B        jrncp    $151A
-14A0: 7A 02 14 AD  dtj      $02, $14AD
-14A4: 69           ptj
-14A5: 8C 0D D3     .case    $8C, $0DD3
-14A8: 8D 0E 5D     .case    $8D, $0E5D
-14AB: 0E 09        .default $0E09
-14AD: 02 01        lia      $01
-14AF: 10 C6 F2     lidp     $C6F2
-14B2: 52           std
-14B3: FA CF        cal      $1ACF
-14B5: 37           rtn
-14B6: 8A           lp       $0A
-14B7: DB           exam
-14B8: 59           ldm
-14B9: 64 7F        ania     $7F
-14BB: 67 51        cpia     $51
-14BD: 3A 49        jrcp     $1507
-14BF: 67 6B        cpia     $6B
-14C1: 2A 45        jrncp    $1507
-14C3: FC C2        cal      $1CC2
-14C5: 88           lp       $08
-14C6: 63 03        cpim     $03
-14C8: 2A 41        jrncp    $150A
-14CA: FA D4        cal      $1AD4
-14CC: 3A 35        jrcp     $1502
-14CE: 10 C6 D0     lidp     $C6D0
-14D1: 53           mvdm
-14D2: 10 C6 F5     lidp     $C6F5
-14D5: 57           ldd
-14D6: 67 40        cpia     $40
-14D8: 38 2E        jrzp     $1507
-14DA: 75 08        sbia     $08
-14DC: 10 C6 F5     lidp     $C6F5
-14DF: 52           std
-14E0: 03 F8        lib      $F8
-14E2: F1 F5        cal      $11F5
-14E4: 06           iy
-14E5: A0           lp       $20
-14E6: 00 07        lii      $07
-14E8: 18           mvwd
-14E9: FA D4        cal      $1AD4
-14EB: 3A 16        jrcp     $1502
-14ED: 10 C6 D1     lidp     $C6D1
-14F0: 53           mvdm
-14F1: 93           lp       $13
-14F2: 60 AB        anim     $AB
-14F4: 61 20        orim     $20
-14F6: 8A           lp       $0A
-14F7: 62 80        tsim     $80
-14F9: 38 04        jrzp     $14FE
-14FB: 93           lp       $13
-14FC: 61 04        orim     $04
-14FE: FA CF        cal      $1ACF
-1500: 2D 91        jrm      $1470
-1502: 37           rtn
-1503: FB C4        cal      $1BC4
-1505: 2D 59        jrm      $14AD
-1507: F7 05        cal      $1705
-1509: 37           rtn
-150A: F7 0F        cal      $170F
-150C: 37           rtn
-150D: FC A7        cal      $1CA7
-150F: 29 09        jrnzm    $1507
-1511: 97           lp       $17
-1512: 62 80        tsim     $80
-1514: 39 0E        jrzm     $1507
-1516: 93           lp       $13
-1517: 61 01        orim     $01
-1519: 37           rtn
+142A: 7E 1F 26     jpz      $1F26
+142D: FC B7        cal      $1CB7
+142F: 2A 0A        jrncp    $143A
+1431: FA CF        cal      $1ACF
+1433: FB 9E        cal      $1B9E
+1435: FA CF        cal      $1ACF
+1437: 2B 10        jrncm    $1428
+1439: 37           rtn
+143A: 57           ldd
+143B: 67 1B        cpia     $1B
+143D: 38 37        jrzp     $1475
+143F: 67 30        cpia     $30
+1441: 28 05        jrnzp    $1447
+1443: FC C2        cal      $1CC2
+1445: 2C BD        jrp      $1503
+1447: 93           lp       $13
+1448: 60 A9        anim     $A9
+144A: 61 28        orim     $28
+144C: FC C2        cal      $1CC2
+144E: 66 80        tsia     $80
+1450: 38 04        jrzp     $1455
+1452: 93           lp       $13
+1453: 61 04        orim     $04
+1455: 34           push
+1456: 64 7F        ania     $7F
+1458: 67 51        cpia     $51
+145A: 5B           pop
+145B: FA CF        cal      $1ACF
+145D: 28 09        jrnzp    $1467
+145F: 93           lp       $13
+1460: 61 02        orim     $02
+1462: F8 EE        cal      $18EE
+1464: FA CF        cal      $1ACF
+1466: 37           rtn
+1467: 8A           lp       $0A
+1468: DB           exam
+1469: FA D4        cal      $1AD4
+146B: 3B 08        jrcm     $1464
+146D: 10 C6 D0     lidp     $C6D0
+1470: 1B           exbd
+1471: F9 C1        cal      $19C1
+1473: 2D 10        jrm      $1464
+1475: 02 01        lia      $01
+1477: 88           lp       $08
+1478: DB           exam
+1479: 86           lp       $06
+147A: 63 00        cpim     $00
+147C: 38 8E        jrzp     $150B
+147E: 48           inck
+147F: 07           dy
+1480: 57           ldd
+1481: 67 1B        cpia     $1B
+1483: 39 0B        jrzm     $1479
+1485: 88           lp       $08
+1486: 10 C6 F2     lidp     $C6F2
+1489: 53           mvdm
+148A: 67 30        cpia     $30
+148C: 28 2A        jrnzp    $14B7
+148E: 86           lp       $06
+148F: 63 00        cpim     $00
+1491: 39 AD        jrzm     $13E5
+1493: 07           dy
+1494: 57           ldd
+1495: FC C2        cal      $1CC2
+1497: 67 8C        cpia     $8C
+1499: FA CF        cal      $1ACF
+149B: 3A 68        jrcp     $1504
+149D: 67 8F        cpia     $8F
+149F: 2A 7A        jrncp    $151A
+14A1: 7A 02 14 AE  dtj      $02, $14AE
+14A5: 69           ptj
+14A6: 8C 0D D3     .case    $8C, $0DD3
+14A9: 8D 0E 5D     .case    $8D, $0E5D
+14AC: 0E 09        .default $0E09
+14AE: 02 01        lia      $01
+14B0: 10 C6 F2     lidp     $C6F2
+14B3: 52           std
+14B4: FA CF        cal      $1ACF
+14B6: 37           rtn
+14B7: 8A           lp       $0A
+14B8: DB           exam
+14B9: 59           ldm
+14BA: 64 7F        ania     $7F
+14BC: 67 51        cpia     $51
+14BE: 3B DA        jrcm     $13E5
+14C0: 67 6B        cpia     $6B
+14C2: 2B DE        jrncm    $13E5
+14C4: FC C2        cal      $1CC2
+14C6: 88           lp       $08
+14C7: 63 03        cpim     $03
+14C9: 2A 3E        jrncp    $1508
+14CB: FA D4        cal      $1AD4
+14CD: 3A 35        jrcp     $1503
+14CF: 10 C6 D0     lidp     $C6D0
+14D2: 53           mvdm
+14D3: 10 C6 F5     lidp     $C6F5
+14D6: 57           ldd
+14D7: 67 40        cpia     $40
+14D9: 39 F5        jrzm     $13E5
+14DB: 75 08        sbia     $08
+14DD: 10 C6 F5     lidp     $C6F5
+14E0: 52           std
+14E1: 03 F8        lib      $F8
+14E3: F1 F5        cal      $11F5
+14E5: 06           iy
+14E6: A0           lp       $20
+14E7: 00 07        lii      $07
+14E9: 18           mvwd
+14EA: FA D4        cal      $1AD4
+14EC: 3A 16        jrcp     $1503
+14EE: 10 C6 D1     lidp     $C6D1
+14F1: 53           mvdm
+14F2: 93           lp       $13
+14F3: 60 AB        anim     $AB
+14F5: 61 20        orim     $20
+14F7: 8A           lp       $0A
+14F8: 62 80        tsim     $80
+14FA: 38 04        jrzp     $14FF
+14FC: 93           lp       $13
+14FD: 61 04        orim     $04
+14FF: FA CF        cal      $1ACF
+1501: 2D 91        jrm      $1471
+1503: 37           rtn
+1504: FB C4        cal      $1BC4
+1506: 2D 59        jrm      $14AE
+1508: F7 0F        cal      $170F
+150A: 37           rtn
+150B: 97           lp       $17
+150C: 62 80        tsim     $80
+150E: 7E 13 DD     jpz      $13DD
+1511: 10 C6 F5     lidp     $C6F5
+1514: 57           ldd
+1515: 67 48        cpia     $48
+1517: 79 13 DF     jp       $13DF
 151A: F7 27        cal      $1727
 151C: 37           rtn
 151D: F6 B4        cal      $16B4
@@ -3557,8 +3552,8 @@
 1615: 63 00        cpim     $00
 1617: 38 73        jrzp     $168B
 1619: F2 C4        cal      $12C4
-161B: 24           ixl
-161C: 67 40        cpia     $40
+161B: E5 22        cal      $0522
+161D: 4D           nopw
 161E: 3A 59        jrcp     $1678
 1620: 67 4B        cpia     $4B
 1622: 2A 4D        jrncp    $1670
@@ -3570,8 +3565,8 @@
 162C: 58           swp
 162D: 64 F0        ania     $F0
 162F: 47           orma
-1630: 24           ixl
-1631: 67 40        cpia     $40
+1630: E5 22        cal      $0522
+1632: 4D           nopw
 1633: 3A 05        jrcp     $1639
 1635: 67 4B        cpia     $4B
 1637: 3B 14        jrcm     $1624
@@ -4267,53 +4262,52 @@
 1A4F: 97           lp       $17
 1A50: 61 80        orim     $80
 1A52: F2 05        cal      $1205
-1A54: 3A 34        jrcp     $1A89
+1A54: 3A 37        jrcp     $1A8C
 1A56: FA D4        cal      $1AD4
-1A58: 3A 30        jrcp     $1A89
-1A5A: 10 C6 D1     lidp     $C6D1
+1A58: 3A 33        jrcp     $1A8C
+1A5A: 10 C6 D0     lidp     $C6D0
 1A5D: 53           mvdm
-1A5E: 24           ixl
-1A5F: 67 1B        cpia     $1B
-1A61: 28 2A        jrnzp    $1A8C
-1A63: 97           lp       $17
-1A64: 61 80        orim     $80
-1A66: F2 05        cal      $1205
-1A68: 3A 20        jrcp     $1A89
-1A6A: FA D4        cal      $1AD4
-1A6C: 3A 1C        jrcp     $1A89
-1A6E: 10 C6 D0     lidp     $C6D0
-1A71: 53           mvdm
-1A72: 24           ixl
-1A73: 67 31        cpia     $31
-1A75: 28 0E        jrnzp    $1A84
-1A77: FA CF        cal      $1ACF
-1A79: 5B           pop
-1A7A: 93           lp       $13
-1A7B: DB           exam
+1A5E: 10 C6 F5     lidp     $C6F5
+1A61: 57           ldd
+1A62: 67 40        cpia     $40
+1A64: 38 2A        jrzp     $1A8F
+1A66: 10 F8 40     lidp     $F840
+1A69: A0           lp       $20
+1A6A: 00 07        lii      $07
+1A6C: 18           mvwd
+1A6D: FA D4        cal      $1AD4
+1A6F: 3A 1C        jrcp     $1A8C
+1A71: 10 C6 D1     lidp     $C6D1
+1A74: 53           mvdm
+1A75: 24           ixl
+1A76: 67 31        cpia     $31
+1A78: 28 0E        jrnzp    $1A87
+1A7A: FA CF        cal      $1ACF
 1A7C: 5B           pop
-1A7D: 8A           lp       $0A
+1A7D: 93           lp       $13
 1A7E: DB           exam
-1A7F: F9 C1        cal      $19C1
-1A81: FA CF        cal      $1ACF
-1A83: 37           rtn
-1A84: 5B           pop
-1A85: 5B           pop
-1A86: F7 05        cal      $1705
-1A88: 37           rtn
-1A89: 5B           pop
-1A8A: 5B           pop
+1A7F: 5B           pop
+1A80: 8A           lp       $0A
+1A81: DB           exam
+1A82: F9 C1        cal      $19C1
+1A84: FA CF        cal      $1ACF
+1A86: 37           rtn
+1A87: 5B           pop
+1A88: 5B           pop
+1A89: F7 05        cal      $1705
 1A8B: 37           rtn
-1A8C: 67 31        cpia     $31
-1A8E: 29 0B        jrnzm    $1A84
-1A90: 10 C6 D1     lidp     $C6D1
-1A93: 57           ldd
-1A94: DA           exab
-1A95: 02 00        lia      $00
-1A97: 52           std
-1A98: DA           exab
-1A99: 11 D0        lidl     $D0
-1A9B: 52           std
-1A9C: 2D 26        jrm      $1A77
+1A8C: 5B           pop
+1A8D: 5B           pop
+1A8E: 37           rtn
+1A8F: 24           ixl
+1A90: 67 31        cpia     $31
+1A92: 29 0C        jrnzm    $1A87
+1A94: 10 C6 D1     lidp     $C6D1
+1A97: 02 00        lia      $00
+1A99: 52           std
+1A9A: 2D 21        jrm      $1A7A
+1A9C: 4D           nopw
+1A9D: 4D           nopw
 1A9E: 90           lp       $10
 1A9F: 13 02        liq      $02
 1AA1: 0A           mvb
@@ -4961,20 +4955,21 @@
 1F12: F1 62        cal      $1162
 1F14: D4 E1        anid     $E1
 1F16: 79 1D 23     jp       $1D23
-1F19: 11 69        lidl     $69
-1F1B: 63 11        cpim     $11
-1F1D: 1F           fild
-1F1E: 11 64        lidl     $64
-1F20: 5F           outf
-1F21: 11 00        lidl     $00
-1F23: 00 00        lii      $00
-1F25: 00 00        lii      $00
-1F27: 00 00        lii      $00
-1F29: 00 00        lii      $00
-1F2B: 00 00        lii      $00
-1F2D: 00 00        lii      $00
-1F2F: 00 00        lii      $00
-1F31: 00 C2        lii      $C2
+1F19: 29 27        jrnzm    $1EF3
+1F1B: 5B           pop
+1F1C: 5B           pop
+1F1D: 97           lp       $17
+1F1E: 62 80        tsim     $80
+1F20: 7E 13 DD     jpz      $13DD
+1F23: 79 14 01     jp       $1401
+1F26: 97           lp       $17
+1F27: 62 80        tsim     $80
+1F29: 7C 13 DD     jpnz     $13DD
+1F2C: F7 05        cal      $1705
+1F2E: 37           rtn
+1F2F: 64 51        ania     $51
+1F31: 5B           pop
+1F32: C2           incb
 1F33: 2A 08        jrncp    $1F3C
 1F35: D1           rc
 1F36: 5A           sl
@@ -5114,5 +5109,4 @@
 1FFB: B0           lp       $30
 1FFC: 19           exwd
 1FFD: 37           rtn
-1FFE: C8           incl
-1FFF: 00 00        lii      $00
+1FFE: 00 03        lii      $03

@@ -27,7 +27,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 402A: 115562625F62              .string " ERROR"
 ; The following words point inside the BASIC token table (starting at 0x412B)
 ; to the first BASIC command that starts with a given letter. BASIC commands
-; starting with the letter 'A' begin at 0x4162, BASIC commands starting with
+; starting with the letter 'A' begin at 0x412B, BASIC commands starting with
 ; the letter 'B' start at 0x415E etc. The BASIC interpreter will search this
 ; table against the command input by the user that is sitting in the input
 ; buffer.
@@ -63,7 +63,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4066: 43D2                      .dw     $43D2       ; .string "VAL"
 4068: 4281                      .dw     $4281       ; .string "LEN"
 406A: 0000                      .dw     $0000       ;
-406C: 4134                      .dw     $4134       ; .string AND"
+406C: 4134                      .dw     $4134       ; .string "AND"
 406E: 0000                      .dw     $0000       ;
 4070: 0000                      .dw     $0000       ;
 4072: 0000                      .dw     $0000       ;
@@ -168,7 +168,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4130: DC                        .dw     $DC
 4131: 5126                      .dw     $5126
 4133: A3                        .dw     $A3
-4134: 515E54                    .string AND"
+4134: 515E54                    .string "AND"
 4137: 81                        .dw     $81
 4138: 1312                      .dw     $1312
 413A: A3                        .dw     $A3
@@ -414,7 +414,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4311: DA                        .db     $DA
 4315: 62655E                    .string "RUN"
 4318: B0                        .db     $B0
-4319: 597A                      .dw     $B059
+4319: 597A                      .dw     $597A
 431B: C6                        .db     $C6
 431C: 62556465625E              .string "RETURN"
 4322: DE                        .db     $DE
@@ -447,7 +447,6 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 435E: 62555D                    .string "REM"
 4361: D3                        .db     $D3
 4362: 5A71                      .dw     $5A71
-4362: 5A71                      .dw     $5A71
 4364: A3                        .db     $A3
 4365: 625F5D                    .string "ROM"
 4368: 9E                        .db     $9E
@@ -459,7 +458,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4373: A3                        .db     $A3
 4374: 636162                    .string "SQRT"
 4377: 87                        .db     $87
-4378: 1312                      .db     $1312
+4378: 1312                      .dw     $1312
 4377: 87                        .db     $87
 437B: 63595E                    .string "SIN"
 437E: A0                        .db     $A0
@@ -835,11 +834,11 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4678: 78 55 F8                  CALL    $55F8
 467B: 10 F8 3C                  LIDP    $F83C
 467E: D4 00                     ANID    $00     ; Clear labels.
-4680: D5 0C                     ORID    $0C     ; Turn on DEG.
-4682: 113D                      LIDL    $3D
-4684: D400                      ANID    $00
-4686: 113E                      LIDL    $3E
-4688: D400                      ANID    $00
+4680: D5 0C                     ORID    $0C     ; Turn on DE+G.
+4682: 113D                      LIDL    $3D     ;
+4684: D400                      ANID    $00     ; Turn off BUSY+SHIFT+RAD+E
+4686: 113E                      LIDL    $3E     ;
+4688: D400                      ANID    $00     ;
 468A: D502                      ORID    $02     ; Turn on the RUN label.
 468C: 787FA7    LBL468C:        CALL    MDL7FA7
 468F: 7846E4                    CALL    MDL46E4
@@ -1367,14 +1366,14 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4A30: F16A      LBL4A30:        CAL   $116A         ; DP <- $C6DA
 4A32: D602                      TSID  $02
 4A34: 2908                      JRNZM LBL4A2D
-4A36: 7A054A4C                  DTJ     $05,LBL4A4C
+4A36: 7A054A4C                  DTJ   $05,LBL4A4C
 4A3A: 69                        PTJ
-4A3B: 004E65                    CASE    $00, LBL4E65
-4A3E: 054DCB                    CASE    $05, LBL4DCB
-4A41: 064E1D                    CASE    $06, LBL4E1D
-4A44: 074E35                    CASE    $07, MDL4E35
-4A47: 0B4DB6                    CASE    $0B, LBL4DB6
-4A4A: 4B98                        JR LBL4B98
+4A3B: 004E65                    CASE  $00, LBL4E65
+4A3E: 054DCB                    CASE  $05, LBL4DCB
+4A41: 064E1D                    CASE  $06, LBL4E1D
+4A44: 074E35                    CASE  $07, MDL4E35
+4A47: 0B4DB6                    CASE  $0B, LBL4DB6
+4A4A: 4B98                      JR    LBL4B98
 4A4C: 2D20      LBL4A4C:        JRM   LBL4A2D
 4A4E: 10F83D    MDL4A4E:        LIDP  $F83D
 4A51: D4F7                      ANID  $F7
@@ -1952,7 +1951,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4E63: 52                        STD
 4E64: 37                        RTN
 4E65: F1E5      LBL4E65:        CAL   lcd_off
-4E67: 784E5E                    CALL  MDL4E5E
+4E67: 784E5E                    CALL  MDL4E5E   ; ($C7FF) = 0
 4E6A: 95                        LP    $15
 4E6B: 6210                      TSIM  $10
 4E6D: 380E                      JRZP  LBL4E7C
@@ -1985,19 +1984,18 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 4E9D: 2C04                      JRP   LBL4EA2
 4E9F: 78688E    LBL4E9F:        CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 4EA2: F177      LBL4EA2:        CAL   copy_x2y
-4EA4: 7860B8                    CALL  MDL60B8       ; Tokenizes the BASIC command
-                                                    ;  at $C7B0
-4EA7: 0200                      LIA   $00           ; Fill with 0 the area starting
-4EA9: 86                        LP    $06           ;  at the address in Y all the
-4EAA: 63FF      LBL4EAA:        CPIM  $FF           ;  way to Yl = 0xFF.
+4EA4: 7860B8                    CALL  MDL60B8
+4EA7: 0200                      LIA   $00
+4EA9: 86                        LP    $06
+4EAA: 63FF      LBL4EAA:        CPIM  $FF
 4EAC: 3804                      JRZP  LBL4EB1
 4EAE: 26                        IYS
 4EAF: 2D06                      JRM   LBL4EAA
-4EB1: F19A      LBL4EB1:        CAL   kbd_bufx      ; X <- $C7B0 - 1 (rambuf)
-4EB3: F15E                      CAL   $115E         ; DP <- $F83E
+4EB1: F19A      LBL4EB1:        CAL   kbd_bufx
+4EB3: F15E                      CAL   $115E
 4EB5: D601                      TSID  $01
-4EB7: 7E5076                    JPZ   LBL5076       ; Jump taken if not in PRO mode.
-4EBA: F16A                      CAL   $116A         ; DP <- $C6DA
+4EB7: 7E5076                    JPZ   LBL5076
+4EBA: F16A                      CAL   $116A
 4EBC: D620                      TSID  $20
 4EBE: 38E3                      JRZP  LBL4FA2
 4EC0: D601                      TSID  $01
@@ -2393,6 +2391,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 513B: 37                        RTN
 513C: 7080      LBL513C:        ADIM  $80
 513E: 2D16                      JRM   LBL5129
+; Entry point for the 'BEEP' BASIC command.
 5140: F205                      CAL   $1205
 5142: 3A2E                      JRCP  LBL5171
 5144: F16E                      CAL   $116E
@@ -2591,11 +2590,12 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5277: 2D75                      JRM   LBL5203
 5279: 0208      LBL5279:        LIA   $08
 527B: 2D07                      JRM   LBL5275
-527D: 10F83C                    LIDP  $F83C
-5280: D50C                      ORID  $0C
-5282: 113D                      LIDL  $3D
-5284: D4FB                      ANID  $FB
-5286: 37                        RTN
+; Entry point for the 'DEGREE' BASIC command.
+527D: 10F83C                    LIDP  $F83C     ;
+5280: D50C                      ORID  $0C       ; Turn on DE and G.
+5282: 113D                      LIDL  $3D       ;
+5284: D4FB                      ANID  $FB       ; Turn off RAD.
+5286: 37                        RTN             ;
 5287: 95                        LP    $15
 5288: 60EF                      ANIM  $EF
 528A: 96                        LP    $16
@@ -2737,13 +2737,14 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5379: 113D                      LIDL  $3D
 537B: D504                      ORID  $04
 537D: 37                        RTN
+; Entry point for the 'INPUT' BASIC command.
 537E: 24        MDL537E:        IXL
-537F: 6715                      CPIA  $15
+537F: 6715                      CPIA  $15           ; '#'
 5381: 386B                      JRZP  LBL53ED
 5383: 96                        LP    $16
 5384: 6202                      TSIM  $02
 5386: 286A                      JRNZP LBL53F1
-5388: 6712                      CPIA  $12
+5388: 6712                      CPIA  $12           ; '"'
 538A: 78688E                    CALL  MDL688E       ; Clear 80 bytes starting at 0xC7B0
 538D: 05                        DX
 538E: 2884                      JRNZP LBL5413
@@ -2873,13 +2874,12 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5468: 6300                      CPIM  $00
 546A: 3908                      JRZM  LBL5463
 546C: 2D3E                      JRM   LBL542F
-
-; Entry point for the LIST BASIC command.
+; Entry point for the 'LIST' BASIC command.
 546E: F15E                      CAL   $115E     ; DP <- $F83E
 5470: D601                      TSID  $01       ; See if in PRO mode.
-5472: 2804                      JRNZP LBL5477
+5472: 2804                      JRNZP LBL5477   ;
 5474: F727                      CAL   $1727     ; Not in PRO. Flag error 9.
-5476: 37                        RTN
+5476: 37                        RTN             ;
 5477: 10C6D9    LBL5477:        LIDP  $C6D9
 547A: D508                      ORID  $08
 547C: D620                      TSID  $20
@@ -3492,9 +3492,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ; Entry point for the RADIAN command.
 588C: 10F83C                    LIDP  $F83C     ; Turn off the G in the GRAD
 588F: D4F3                      ANID  $F3       ;  sign.
-5891: 113D                      LIDL  $3D
+5891: 113D                      LIDL  $3D       ;
 5893: D504                      ORID  $04       ; Turn on the RAD sign.
-5895: 37                        RTN
+5895: 37                        RTN             ;
 5896: 95                        LP    $15
 5897: 6120                      ORIM  $20
 5899: 37                        RTN
@@ -3625,14 +3625,15 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5974: 2D2D                      JRM   LBL5948
 5976: 0288      LBL5976:        LIA   $88
 5978: 2D73                      JRM   LBL5906
-597A: F15E                      CAL   $115E
-597C: D602                      TSID  $02
-597E: 2804                      JRNZP LBL5983
-5980: F727                      CAL   $1727
-5982: 37                        RTN
-5983: 24        LBL5983:        IXL
-5984: 6700                      CPIA  $00
-5986: 05                        DX
+; Entry point for the 'RUN' BASIC command.
+597A: F15E                      CAL   $115E     ; DP <- 0xF83E
+597C: D602                      TSID  $02       ; Test for "RUN" turned on.
+597E: 2804                      JRNZP LBL5983   ;
+5980: F727                      CAL   $1727     ; Error 9.
+5982: 37                        RTN             ;
+5983: 24        LBL5983:        IXL             ;
+5984: 6700                      CPIA  $00       ; Does RUN have an argument?
+5986: 05                        DX              ;
 5987: 3838      LBL5987:        JRZP  LBL59C0
 5989: F205                      CAL   $1205
 598B: 3A33                      JRCP  LBL59BF
@@ -3662,7 +3663,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 59BC: FACF      LBL59BC:        CAL   $1ACF
 59BE: D1                        RC
 59BF: 37        LBL59BF:        RTN
-59C0: FACF      LBL59C0:        CAL   $1ACF
+59C0: FACF      LBL59C0:        CAL   $1ACF     ; X <-> ($1C, $1D)
 59C2: F189                      CAL   $1189
 59C4: 24                        IXL
 59C5: 67FF                      CPIA  $FF
@@ -4743,18 +4744,19 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6090: D0                        SC
 6091: 2D49                      JRM   LBL6049
 ; Load the pointer to the character ROM for a character in scratchpad RAM
-;  pointed to by the K register.
-6093: 88        MDL6093:        LP    $08           ; Load the pointer to the character to
-6094: 59                        LDM
-6095: 8A                        LP    $0A
-6096: C7                        CPMA
+;  pointed to by the K register. The string terminating character is held into
+; the M register.
+6093: 88        MDL6093:        LP    $08           ; Load the pointer to the first
+6094: 59                        LDM                 ;  character to print, which is
+6095: 8A                        LP    $0A           ;  pointed to by the K register
+6096: C7                        CPMA                ; Compare with end-of-string
 6097: 2806                      JRNZP LBL609E
 6099: 86                        LP    $06
 609A: 10C6E9                    LIDP  $C6E9
 609D: 53                        MVDM
 609E: 30        LBL609E:        STP                 ; Store pointer in P.
 609F: 59                        LDM                 ; Load the next character to print
-60A0: FFBC                      CAL   $1FBC         ; Return the correct X pointer.
+60A0: FFBC                      CAL   $1FBC         ; Return the character pointer -1 in X.
 60A2: 37                        RTN
 60A3: 84        MDL60A3:        LP    $04
 60A4: 10C6CB                    LIDP  $C6CB
@@ -4775,54 +4777,54 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 60B8: 786AD3    MDL60B8:        CALL  MDL6AD3
 60BB: 93                        LP    $13
 60BC: 60FC                      ANIM  $FC
-60BE: 04                        IX                  ;
-60BF: 10C6F1                    LIDP  $C6F1         ; Store the content of Xl
-60C2: 84                        LP    $04           ;  @ $C6F1.
-60C3: 53                        MVDM                ;
-60C4: 05                        DX                  ;
-60C5: 24        LBL60C5:        IXL                 ; Fetch the next token character.
-60C6: 93                        LP    $13           ;
-60C7: 6700                      CPIA  $00           ; Is it 'ENTER'?
-60C9: 38F7                      JRZP  LBL61C1       ;
-60CB: 6712                      CPIA  $12           ; Is it '"'?
-60CD: 38E1                      JRZP  LBL61AF       ;
-60CF: 6201                      TSIM  $01           ;
-60D1: 28D7                      JRNZP LBL61A9       ;
-60D3: 6202                      TSIM  $02           ;
-60D5: 28D3                      JRNZP LBL61A9       ;
-60D7: 6751                      CPIA  $51           ; Compare with 'A'.
-60D9: 3AB8                      JRCP  LBL6192       ; Jump if below.
-60DB: 676B                      CPIA  $6B           ; Compare with 'Z' + 1
-60DD: 2AB4                      JRNCP LBL6192       ; Jump if ch > 'Z'
-60DF: 8E                        LP    $0E           ; Save a copy of the X register.
-60E0: 1304                      LIQ   $04           ;
-60E2: 0A                        MVB                 ; ($0F, $0E) <- (Xh, Xl)
-60E3: 8A                        LP    $0A           ; Copy the character in the
-60E4: DB                        EXAM                ; M register.
-60E5: 59                        LDM                 ;
-60E6: F195                      CAL   $1195         ; [$0C, $0D] <-> X
-60E8: 7551                      SBIA  'A'           ; Subtract 'A' offset (0x51).
-60EA: 5A                        SL                  ; Double to use it as offset
-                                                    ; into a table if 16 bits pointers.
-60EB: 34                        PUSH                ;
+60BE: 04                        IX              ;
+60BF: 10C6F1                    LIDP  $C6F1     ; Store the address of the start
+60C2: 84                        LP    $04       ;  of the next token in $C6F1.
+60C3: 53                        MVDM            ;
+60C4: 05                        DX              ;
+60C5: 24        LBL60C5:        IXL             ; Fetch the next token character.
+60C6: 93                        LP    $13       ;
+60C7: 6700                      CPIA  $00       ; Is it 'ENTER'?
+60C9: 38F7                      JRZP  LBL61C1   ;
+60CB: 6712                      CPIA  $12       ; Is it '"'?
+60CD: 38E1                      JRZP  LBL61AF   ;
+60CF: 6201                      TSIM  $01       ;
+60D1: 28D7                      JRNZP LBL61A9   ;
+60D3: 6202                      TSIM  $02       ;
+60D5: 28D3                      JRNZP LBL61A9   ;
+60D7: 6751                      CPIA  $51       ; Compare with 'A'.
+60D9: 3AB8                      JRCP  LBL6192   ; Jump if below.
+60DB: 676B                      CPIA  $6B       ; Compare with 'Z' + 1
+60DD: 2AB4                      JRNCP LBL6192   ; Jump if ch > 'Z'
+60DF: 8E                        LP    $0E       ; Save a copy of the X register.
+60E0: 1304                      LIQ   $04       ;
+60E2: 0A                        MVB             ; ($0F, $0E) <- (Xh, Xl)
+60E3: 8A                        LP    $0A       ; Copy the character in the
+60E4: DB                        EXAM            ; M register.
+60E5: 59                        LDM             ;
+60E6: F195                      CAL   $1195     ; [$0C, $0D] <-> X
+60E8: 7551                      SBIA  'A'       ; Subtract 'A' offset (0x51).
+60EA: 5A                        SL              ; Double to use it as offset
+                                                ; into a table if 16 bits pointers.
+60EB: 34                        PUSH            ;
 60EC: 95                        LP    $15
 60ED: 6280                      TSIM  $80
 60EF: 38DF                      JRZP  LBL61CF
 60F1: 10C6D6                    LIDP  $C6D6
 60F4: 57                        LDD
-60F5: 85        LBL60F5:        LP    $05           ; High byte of BASIC token table in Xh.
-60F6: DB                        EXAM                ;
-60F7: 022F                      LIA   $2F           ; LOW  byte of BASIC token table in Xl.
-60F9: 84                        LP    $04           ;
-60FA: DB                        EXAM                ;
-60FB: 5B                        POP                 ; Offset into token table.
-60FC: 44                        ADM                 ; Add offset to start of table.
-60FD: 24                        IXL                 ; Read
-60FE: 6700                      CPIA  $00           ; Does any command exist stating with
-                                                    ;  this character?
+60F5: 85        LBL60F5:        LP    $05       ; High byte of BASIC token table in Xh.
+60F6: DB                        EXAM            ;
+60F7: 022F                      LIA   $2F       ; LOW  byte of BASIC token table in Xl.
+60F9: 84                        LP    $04       ;
+60FA: DB                        EXAM            ;
+60FB: 5B                        POP             ; Offset into token table.
+60FC: 44                        ADM             ; Add offset to start of table.
+60FD: 24                        IXL             ; Read
+60FE: 6700                      CPIA  $00       ; Does any command exist stating with
+                                                ;  this character?
 6100: 383A                      JRZP  LBL613B
 6102: 7861F1                    CALL  MDL61F1
-6105: F195      LBL6105:        CAL   $1195         ; Get BASIC ROM pointer in X.
+6105: F195      LBL6105:        CAL   $1195     ; Get BASIC ROM pointer in X.
 6107: 24        LBL6107:        IXL
 6108: 674A                      CPIA  $4A
 610A: 3873                      JRZP  LBL617E
@@ -5863,7 +5865,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 682F: 3805                      JRZP  LBL6835   ; Jump if end of string.
 6831: DA                        EXAB            ; Store the data in A.
 6832: DB                        EXAM            ; Move the data in the scratchpad.
-6833: 2D21                      JRM   LBL6813
+6833: 2D21                      JRM   LBL6813   ;
 6835: 024F      LBL6835:        LIA   $4F       ; Fill the rest of the buffer with $4F. What is $4F?
 6837: DB                        EXAM            ; Store it at the end of the string.
 6838: 50                        INCP            ; Increment write pointer.
@@ -5936,9 +5938,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6895: 1F                        FILD
 6896: 37                        RTN
 6897: F1F5      MDL6897:        CAL   load_y
-6899: 0200      MDL6899:        LIA   $00
-689B: 03C7                      LIB   $C7
-689D: F1F1                      CAL   $11F1
+6899: 0200      MDL6899:        LIA   $00       ;
+689B: 03C7                      LIB   $C7       ;
+689D: F1F1                      CAL   $11F1     ; X <- [B, A] - 1
 689F: 78634A                    CALL  MDL634A
 68A2: 37                        RTN
 68A3: F200      MDL68A3:        CAL   $1200
@@ -6764,7 +6766,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6DE6: F144                      CAL   $1144
 6DE8: D1                        RC
 6DE9: 37                        RTN
-6DEA: F151      LBL6DEA:        CAL   $1151
+6DEA: F151      LBL6DEA:        CAL   $1151         ; ($C6B6, $C6B5) <- X
 6DEC: F166                      CAL   $1166         ; DP <- $C6B7
 6DEE: D620                      TSID  $20
 6DF0: 2815                      JRNZP LBL6E06
@@ -7647,8 +7649,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 740A: 390E                      JRZM  LBL73FD
 740C: 41                        DECI
 740D: 2B06                      JRNCM LBL7408
-740F: CE                  DB      $CE
-7410: CE                  DB      $CE
+740F: CE                        NOPT
+7410: CE                        NOPT
 7411: 50        LBL7411:        INCP
 7412: 0012                      LII   $12
 7414: 4D                        NOPW

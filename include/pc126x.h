@@ -16,28 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 // 02110-1301, USA.
 
-#ifndef __PC12XX_H__
-#define __PC12XX_H__
+#ifndef __PC126X_H__
+#define __PC126X_H__
 
-
-#if defined(MODEL_PC1245)
-#define LCD_ROWS_PER_DISPLAY            1
-#define LCD_CHARACTERS_PER_ROW          16
-#elif defined(MODEL_PC1250)
-#define LCD_ROWS_PER_DISPLAY            1
-#define LCD_CHARACTERS_PER_ROW          24
-#elif defined(MODEL_PC1251)
-#define LCD_ROWS_PER_DISPLAY            1
-#define LCD_CHARACTERS_PER_ROW          24
-#elif defined(MODEL_PC1255)
-#define LCD_ROWS_PER_DISPLAY            1
-#define LCD_CHARACTERS_PER_ROW          24
-#elif defined(MODEL_PC1262)
 #define LCD_ROWS_PER_DISPLAY            2
 #define LCD_CHARACTERS_PER_ROW          24
-#else
-    #error Model not defined
-#endif
 
 #define LCD_LABEL_DEF                   0
 #define LCD_LABEL_PRO                   1
@@ -49,8 +32,6 @@
 #define LCD_LABEL_BUSY                  7
 #define LCD_LABEL_SHIFT                 9
 #define LCD_LABEL_E                     14
-
-extern label_layout_t lcd_labels[15];
 
 // We are going to name these indexes from IA1 through IA7 and from IB1 to IB3
 //  to be consistent to the naming convention in the manual
@@ -73,6 +54,16 @@ extern label_layout_t lcd_labels[15];
 #define KEYBOARD_PORT_BIT_A7           (1 << 6)
 #define KEYBOARD_PORT_BIT_A8           (1 << 7)
 
+struct
+{
+    uint16_t  id;
+    uint8_t   kbd;
+    uint8_t   count;
+} keyboard_count;
+
+
 #include <lcd.h>
 
+extern label_layout_t lcd_labels[15];
+extern label_descriptor_t label_descriptor[];
 #endif

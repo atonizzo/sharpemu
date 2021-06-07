@@ -1,79 +1,63 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 #include <sys/time.h>
-#include <sc61860_emu.h>
 
-#include <pc12xx.h>
-#include <pc1251.h>
+#include <sc61860_emu.h>
+#include <pc126x.h>
 
 GtkWidget *lcd_label_box;
-GtkWidget *lcd_display[LCD_CHARACTER_ROWS][LCD_CHARACTERS_PER_ROW]
-                            [LCD_COLUMNS_PER_CHARACTER][LCD_PIXELS_PER_COLUMN];
-int brk_pressed;
-
-uint16_t sc43536_base_address[] = {SC43536_BASE_ADDRESS};
-
+GtkWidget *lcd_display[LCD_ROWS_PER_DISPLAY][LCD_CHARACTERS_PER_ROW]
+                                [LCD_CHARACTER_WIDTH][LCD_CHARACTER_HEIGHT];
 address_descriptor_t address_descriptors[] =
 {
-    {0x009F, "Xreg = 0"},               {0x00A9, "Yreg = 0"},
-    {0x00AF, "Zreg = 0"},               {0x0159, "YReg += XReg"},
-    {0x012F, "YReg = 1.0"},             {0x020F, "XReg = WReg"},
-    {0x01FF, "WReg = XReg"},            {0x0238, "YReg = XReg"},
-    {0x023D, "(0x30 .. 0x37) <- (0x28 .. 0x2F)"},
-    {0x02CD, "XReg += YReg"},           {0x02CA, "YReg += XReg"},
-    {0x02DB, "YReg -= XReg"},           {0x02E2, "XReg -= YReg"},
-    {0x0D2F, "X <- (0x26, 0x25) - 1"},  {0x0D37, "X <- (0x2E, 0x2D) - 1"},
-    {0x0DAA, "(0x22 .. 0x24) <- (0x2A .. 0x2C)"},
-    {0x1118, "($C6B6, $C6B5) <- X"},    {0x1125, "X <- ($C6B6, $C6B5)"},
-    {0x115E, "DP <- $F83E"},            {0x1162, "DP <- $F8BE"},
-    {0x1166, "DP <- $C6B7"},            {0x116A, "DP <- $C6DA"},
-    {0x1172, "X <- Y"},                 {0x118F, "X <- ($C6E2, $C6E1)"},
-    {0x1177, "Y <- X"},                 {0x1195, "[$0C, $0D] <-> X"},
-    {0x119A, "X <- $C7B0 - 1 (rambuf)"},
-    {0x11AF, "Show screen"},
-    {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
-    {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
-    {0x11F1, "X <- [B, A] - 1"},        {0x11F5, "Y <- [B, A] - 1"},
-    {0x11F9, "Y <- 0xC7B0 (kbdbuf)"},   {0x1200, "[$1C, $1D] <- X"},
-    {0x12BD, "XReg = 0"},
-    {0x1F44, "scan_kbd"},               {0x1ACF, "X <-> ($1C, $1D)"},
-    {0x172B, "[B, A] <<= 1"},           {0x1731, "[B, A] >>= 1"},
-    {0x1899, "X <- ($1D, $1C)"},
-    {0x18C5, "print_prompt"},           {0x1FB1, "wr_portc"},
-    {0x18DB, "Y <- (B, A)"},            {0x1FB6, "memcpy"},
-    {0x400C, "write_lcd"},
-    {0x688E, "Clear 80 bytes of input buffer."},
+    {0x0222, "Y <- [B, A] - 1"},       {0x0225, "X <- [B, A] - 1"},
+    {0x022A, "X <- 0x67AF"},           {0x0232, "X <- 0x664F"},
+    {0x0238, "X <- 0x207F"},           {0x023E, "Y <- 0x67AF"},
+    {0x0437, "Turn ON display."},      {0x043B, "Turn OFF display."},
     {0, 0}
 };
 
-// This arrary represents the PC-1251 keyboard matrix. Each bit of each byte
+label_descriptor_t label_descriptor[] =
+{
+    {0xF83C, {{0, "DEF"},  {0, "P"},     {0, "G"},       {0, "DE"},
+              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
+    {0xF83D, {{0, "BUSY"}, {0, "SHIFT"}, {0, "RAD"},     {0, "E"},
+              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
+    {0xF83E, {{0, "PRO"},  {0, "RUN"},   {0, "RESERVE"}, {0, "E"},
+              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
+    {0,      {{0, 0},      {0, 0},       {0, 0},         {0, 0},
+              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
+};
+
+label_layout_t lcd_labels[15] =
+{
+    {0, "DEF"}, {0, "PRO"},   {0, "RUN"}, {0, "RESERVE"},
+    {0, "DE"},  {0, "GRAD"},  {0, "P"},   {0, "BUSY"},
+    {0, 0},     {0, "SHIFT"}, {0, 0},     {0, 0},
+    {0, 0},     {0, 0},       {0, "E"}
+};
+
+// This array represents the PC-1251 keyboard matrix. Each bit of each byte
 //  represents a wire intersections in the matrix but because the way the
 //  keyboard is scanned not all bits are valid.
 // For example, the key 'O' is found at the intersection of the 2rd bit of
@@ -92,31 +76,11 @@ uint8_t porta_kbd_past[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-label_layout_t lcd_labels[15] =
-{
-    {0, "DEF"}, {0, "PRO"},   {0, "RUN"}, {0, "RESERVE"},
-    {0, "DE"},  {0, "GRAD"},  {0, "P"},   {0, "BUSY"},
-    {0, 0},     {0, "SHIFT"}, {0, 0},     {0, 0},
-    {0, 0},     {0, 0},       {0, "E"}
-};
-
-label_descriptor_t label_descriptor[] =
-{
-    {0xF83C, {{0, "DEF"},  {0, "P"},     {0, "G"},       {0, "DE"},
-              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
-    {0xF83D, {{0, "BUSY"}, {0, "SHIFT"}, {0, "RAD"},     {0, "E"},
-              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
-    {0xF83E, {{0, "PRO"},  {0, "RUN"},   {0, "RESERVE"}, {0, "E"},
-              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
-    {0,      {{0, 0},      {0, 0},       {0, 0},         {0, 0},
-              {0, 0},      {0, 0},       {0, 0},         {0, 0}}},
-};
-
-static void lcd_service(uint16_t address, uint8_t data)
+static void lcd_service(int display, uint16_t address, uint8_t data)
 {
 //    if ((cpu_state.portc & 0x01) == 0)
 //        return;
-    char *format = "<span foreground=\"%s\">DEF</span>";
+/*    char *format = "<span foreground=\"%s\">DEF</span>";
     char *markup;
     GtkWidget *this_label;
     if (address == 0xF83C)
@@ -275,10 +239,65 @@ static void lcd_service(uint16_t address, uint8_t data)
             }
         }
         lcd_status[0][address - 0xF800] = data;
+    }*/
+
+    if (display == 0)
+    {
+        if (((address >= 0x2000) && (address < 0x203C)) ||
+                                ((address >= 0x2040) && (address < 0x207C)))
+        {
+            uint16_t column_number;
+            if (address < 0x203C)
+                column_number = address - 0x2000;
+            else
+                column_number = 0x207B - address + 60;
+            int i;
+            char *file_name;
+            for (i = 0; i < 7; i++)
+            {
+                if ((data & 1) == 0)
+                    file_name = "./pixmaps/lcd_pixel_off.jpg";
+                else
+                    file_name = "./pixmaps/lcd_pixel_on.jpg";
+                data >>= 1;
+                gtk_image_set_from_file(GTK_IMAGE(
+                       lcd_display[0][column_number / 5][column_number % 5][i]),
+                                        file_name);
+            }
+        }
+        lcd_status[0][address - 0xF800] = data;
+        return;
+    }
+
+    if (display == 1)
+    {
+        if (((address >= 0x3000) && (address < 0x303C)) ||
+                                ((address >= 0x3040) && (address < 0x307C)))
+        {
+            uint16_t column_number;
+            if (address < 0x303C)
+                column_number = address - 0x3000;
+            else
+                column_number = 0x307B - address + 60;
+            int i;
+            char *file_name;
+            for (i = 0; i < 7; i++)
+            {
+                if ((data & 1) == 0)
+                    file_name = "./pixmaps/lcd_pixel_off.jpg";
+                else
+                    file_name = "./pixmaps/lcd_pixel_on.jpg";
+                data >>= 1;
+                gtk_image_set_from_file(GTK_IMAGE(
+                       lcd_display[1][column_number / 5][column_number % 5][i]),
+                                        file_name);
+            }
+        }
+        lcd_status[1][address - 0x3000] = data;
     }
 }
 
-static int32_t pc_1251_setup(void)
+static int32_t pc1262_setup(void)
 {
     int i, j;
     memset(porta_kbd, '\0', sizeof(porta_kbd));
@@ -319,38 +338,46 @@ static int32_t pc_1251_setup(void)
 
     GObject *lcd_window = gtk_builder_get_object(builder, "lcd_window");
     gtk_window_set_resizable(GTK_WINDOW(lcd_window), FALSE);
+    gtk_window_set_title (GTK_WINDOW(lcd_window), pt.model_name);
+
     gtk_widget_show(GTK_WIDGET(lcd_window));
     memset(lcd_status, '\0', sizeof(lcd_status));
     lcd_off();
-    brk_pressed = 0;
+    cpu_state.test.kon = 1;
 
     // Debug.
 //    porta_kbd[KEYBOARD_PORT_INDEX_B3] = KEYBOARD_PORT_BIT_A2; // 0x38 - '8'
-//    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A4; // 'P'
+    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A4; // 'P'
     return 0;
 }
 
-static uint8_t pc_1251_read_memory(uint16_t address)
+static uint8_t pc1262_read_memory(uint16_t address)
 {
+    // We return the real value of the internal ROM so the debugger can
+    //  display the correct disassembly.
     return memory_image[address];
 }
 
-static void pc_1251_write_memory(uint16_t address, uint8_t value)
+static void pc1262_write_memory(uint16_t address, uint8_t value)
 {
-    // RAM memory.
-    // More RAM can be arbitrarily added by decreasing the first of these two
-    //  numbers. The MEM command will reflect the increase.
-    if ((address >= 0xB000) && address < 0xB800)
-        address += 0x800;
-    if ((address >= 0xB800) && (address < 0xC800))
+    // Memory map from the PC-1260 Service Guide.
+    if ((address & 0x8000) == 0x8000)
+        // We are trying to write to ROM space...
+        return;
+
+    // RAM
+    if ((address >= pt.ram_start) && (address <= pt.ram_end))
         memory_image[address] = value;
 
-    // LCD memory.
-    if ((address >= 0xF800) && (address < 0xF900))
-    {
-        memory_image[address] = value;
-        lcd_service(address, value);
-    }
+    // These AND operations automaticaly create the memory imaging for DISP1...
+    if ((address & 0xE800) == 0x2000)
+        // Disp1
+        lcd_service(0, address, value);
+
+    // ... and DISP2.
+    if ((address & 0xE800) == 0x2800)
+        // Disp2
+        lcd_service(1, address, value);
 }
 
 // Port A is used exclusively for the keyboard. We scan which of the 11 bits
@@ -359,54 +386,85 @@ static void pc_1251_write_memory(uint16_t address, uint8_t value)
 //  and only one of these bits is set at any given point in time.
 // If any of them is set, we seek the porta_kbd[] array to see if any key
 //  has been pressed.
-static void pc_1251_ina(void)
+static uint8_t pc1262_ina(void)
 {
+    uint8_t ret_val = 0;
     uint16_t id = ((cpu_state.portb & 0x07) << 7) | cpu_state.porta;
-    cpu_state.imem[IRAM_REG_A] = cpu_state.porta;
     for (int i = 0; i < sizeof(porta_kbd); i++)
         if ((id & (1 << i)) != 0)
-            cpu_state.imem[IRAM_REG_A] |= porta_kbd[i];
+            ret_val |= porta_kbd[i];
+    return ret_val | cpu_state.porta;
+    printf("%04x R: PORTA - %02X\r\n",
+           cpu_state.pc,
+           cpu_state.imem[IRAM_REG_A]);
 }
 
-static void pc_1251_inb(void)
+static uint8_t pc1262_inb(void)
 {
-    cpu_state.imem[IRAM_REG_A] = cpu_state.mode;
+    cpu_state.imem[IRAM_REG_A] = cpu_state.portb | cpu_state.mode;
+    printf("%04x R: PORTB - %02X\r\n",
+           cpu_state.pc,
+           cpu_state.imem[IRAM_REG_A]);
+    uint8_t ret_val = 0;
+    if ((cpu_state.portb & 0x08) != 0)
+    {
+        switch (cpu_state.mode)
+        {
+        case CALC_MODE_RUN:
+            break;
+        case CALC_MODE_RSV:
+            ret_val = 1;
+            break;
+        case CALC_MODE_PRO:
+            ret_val = 2;
+            break;
+        default:
+            ret_val = 4;
+            break;
+        }
+    }
+    return ret_val | cpu_state.portb;
 }
 
-static void pc_1251_outa(void)
+static void pc1262_outa(void)
 {
-    cpu_state.porta = cpu_state.imem[PORTA_OFFSET];
+    printf("%04x W: PORTA - %02X\r\n",
+           cpu_state.pc,
+           cpu_state.imem[IRAM_PORTA]);
+    cpu_state.porta = cpu_state.imem[IRAM_PORTA];
 }
 
-static void pc_1251_outb(void)
+static void pc1262_outb(void)
 {
-    cpu_state.portb = cpu_state.imem[PORTB_OFFSET];
+    printf("%04x W: PORTB - %02X\r\n",
+           cpu_state.pc,
+           cpu_state.imem[IRAM_PORTB]);
+    cpu_state.portb = cpu_state.imem[IRAM_PORTB];
 }
 
-static void pc_1251_outc(void)
+static void pc1262_outc(void)
 {
     fprintf(fp_memaccess,
             "S: %04x W: PORTC - %02X\r\n",
             cpu_state.pc,
-            cpu_state.imem[PORTC_OFFSET]);
+            cpu_state.imem[IRAM_PORTC]);
 
-    if ((cpu_state.imem[PORTC_OFFSET] & PORTC_CPU_HLT) != 0)
-    {
-        fprintf(fp_memaccess, "S: %04x CPU clock is halted.\r\n", cpu_state.pc);
-    }
-
-    if ((cpu_state.imem[PORTC_OFFSET] & PORTC_CNTRST) != 0)
+    if ((cpu_state.imem[IRAM_PORTC] & PORTC_CNTRST) != 0)
     {
         fprintf(fp_memaccess, "S: %04x Counter is reset\r\n", cpu_state.pc);
         gettimeofday(&timeval_start, NULL);
-        cpu_state.imem[PORTC_OFFSET] &= ~PORTC_CNTRST;
+        cpu_state.imem[IRAM_PORTC] &= ~PORTC_CNTRST;
     }
-    cpu_state.portc = cpu_state.imem[PORTC_OFFSET];
+    if ((cpu_state.imem[IRAM_PORTC] & PORTC_CPU_HLT) != 0)
+    {
+        fprintf(fp_memaccess, "S: %04x CPU is halted.\r\n", cpu_state.pc);
+    }
+    cpu_state.portc = cpu_state.imem[IRAM_PORTC];
 }
 
-static void pc_1251_outf(void)
+static void pc1262_outf(void)
 {
-    cpu_state.portf = cpu_state.imem[PORTF_OFFSET];
+    cpu_state.portf = cpu_state.imem[IRAM_PORTF];
 }
 
 static const keyboard_encoding_t key_map[] =
@@ -557,7 +615,7 @@ static const keyboard_encoding_t key_map[] =
     {KEYBOARD_PORT_INDEX_A2, KEYBOARD_PORT_BIT_A5}, // Arrow LEFT.
 };
 
-static void pc_1251_keypress(uint16_t key)
+static void pc1262_keypress(uint16_t key)
 {
     if (key < 0x20)
         return;
@@ -580,7 +638,8 @@ static void pc_1251_keypress(uint16_t key)
         porta_kbd[KEYBOARD_PORT_INDEX_A6] |= KEYBOARD_PORT_BIT_A8;
         break;
     case 0xFF13:                    // Break
-        brk_pressed = 1;
+        if (cpu_state.mode == CALC_MODE_OFF)
+            cpu_state.test.kon = 0;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] |= KEYBOARD_PORT_BIT_A5;
@@ -620,7 +679,7 @@ static void pc_1251_keypress(uint16_t key)
     }
 }
 
-static void pc_1251_keyrelease(uint16_t key)
+static void pc1262_keyrelease(uint16_t key)
 {
     keyboard_count.id = 0;
     keyboard_count.kbd = 0;
@@ -645,7 +704,7 @@ static void pc_1251_keyrelease(uint16_t key)
         porta_kbd[KEYBOARD_PORT_INDEX_A6] &= ~KEYBOARD_PORT_BIT_A8;
         break;
     case 0xFF13:                    // Break
-        brk_pressed = 0;
+        cpu_state.test.kon = 1;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] &= ~KEYBOARD_PORT_BIT_A5;
@@ -687,18 +746,31 @@ static void pc_1251_keyrelease(uint16_t key)
 
 model_file_descriptor_t pt =
 {
-    .model_name = "pc-1251",
-    .irom = { "./rom/cpu-1251.rom", 0},
-    .erom = { "./rom/bas-1251.rom", 0x4000 },
-    .setup = pc_1251_setup,
-    .read_memory = pc_1251_read_memory,
-    .write_memory = pc_1251_write_memory,
-    .ina = pc_1251_ina,
-    .inb = pc_1251_inb,
-    .outa = pc_1251_outa,
-    .outb = pc_1251_outb,
-    .outc = pc_1251_outc,
-    .outf = pc_1251_outf,
-    .keypress = pc_1251_keypress,
-    .keyrelease = pc_1251_keyrelease,
+#if defined(MODEL_PC1260)
+    .model_name = "PC-1260",
+    .irom = { "./rom/cpu-1260.rom", 0},
+    .erom = { "./rom/bas-1260.rom", 0x8000 },
+    .ram_start = 0x5800,
+    .ram_end   = 0x67FF,
+#elif defined(MODEL_PC1250)
+    .model_name = "pc-1262",
+    .irom = { "./rom/cpu-1260.rom", 0},
+    .erom = { "./rom/bas-1260.rom", 0x8000 },
+    .ram_start = 0x4000,
+    .ram_end   = 0x67FF,
+#else
+    #error Model not defined
+#endif
+
+    .setup = pc1262_setup,
+    .read_memory = pc1262_read_memory,
+    .write_memory = pc1262_write_memory,
+    .ina = pc1262_ina,
+    .inb = pc1262_inb,
+    .outa = pc1262_outa,
+    .outb = pc1262_outb,
+    .outc = pc1262_outc,
+    .outf = pc1262_outf,
+    .keypress = pc1262_keypress,
+    .keyrelease = pc1262_keyrelease,
 };

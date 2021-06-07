@@ -1,27 +1,20 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <stdint.h>
 #include <stdio.h>
@@ -57,10 +50,9 @@ double ms_time_diff(struct timeval x)
 
 static int load_roms(void)
 {
-    FILE *fp_rom;
     // We need to load the internal ROM (internal to the sc61860) and
     //  the external one, which usually sits on an external ROM chip.
-    fp_rom = fopen(pt.irom.file_name, "rb");
+    FILE *fp_rom = fopen(pt.irom.file_name, "rb");
     if (fp_rom == NULL)
     {
         printf("Cannot open %s file.\r\n", pt.irom.file_name);
@@ -71,7 +63,7 @@ static int load_roms(void)
     fseek(fp_rom, 0L, SEEK_END);
     uint32_t file_size = ftell(fp_rom);
     rewind(fp_rom);
-    uint16_t mem_address = pt.irom.base_address;
+    uint32_t mem_address = pt.irom.base_address;
 
     do
     {
@@ -215,7 +207,7 @@ int read_debug_events(void)
 int setup_emulator(void)
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
-    memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
+//    memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
     memset((void *)&mem_view_past, 0, sizeof(mem_view_past));
 
     int personality = load_roms();
@@ -280,7 +272,8 @@ int setup_emulator(void)
     cpu_state.pc = DEFAULT_PC_VALUE;
     cpu_state.mode = CALC_MODE_OFF;
     cpu_state.cycles = 0;
-    cpu_state.this_item = -1;
+    cpu_state.table_items = -1;
+    cpu_state.current_item = -1;
 
     memcpy(&cpu_state_past, &cpu_state, sizeof(cpu_state));
 
@@ -305,6 +298,9 @@ void emulate_instruction(void)
     if (ms_diff >= 2000)
         cpu_state.test.ct2 = 1;
 
+
+    if (cpu_state.test.kon != 0)
+        printf("cpu_state.test.kon = 1\r\n");
     if ((cpu_state.portc & PORTC_CPU_HLT) != 0)
     {
         // We are not going to execute instructions as long as the CPU is
@@ -313,17 +309,17 @@ void emulate_instruction(void)
             return;
 
         fprintf(fp_memaccess, "S: %04x CPU is woken up\r\n", cpu_state.pc);
-        cpu_state.imem[PORTC_OFFSET] &= ~PORTC_CPU_HLT;
-        cpu_state.portc = cpu_state.imem[PORTC_OFFSET];
+        cpu_state.imem[IRAM_PORTC] &= ~PORTC_CPU_HLT;
+        cpu_state.portc = cpu_state.imem[IRAM_PORTC];
     }
 
     uint8_t instruction = read_mem(cpu_state.pc);
 
     // Disassemble the current line, so we can store it in the
     //  'instruction.txt' file.
-    char this_line[1024];
+    GString *p = g_string_new(NULL);
     if ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE) != 0)
-        sc61860_disassembler(cpu_state.pc, instruction, this_line);
+        sc61860_disassembler(cpu_state.pc, instruction, p);
 
     int i = 0;
     while (sc61860_instr[i].attributes != 0)
@@ -331,7 +327,7 @@ void emulate_instruction(void)
         if ((instruction & sc61860_instr[i].mask) ==
                                                  sc61860_instr[i].mask_value)
         {
-            sc61860_instr[i].simulate();
+            sc61860_instr[i].emulate();
             emulated_instructions += 1;
             break;
         }
@@ -349,12 +345,12 @@ void emulate_instruction(void)
         {
             if (sc61860_instr[i].attributes == 0)
                 sim_not_implemented();
-            while (strlen(this_line) < 65)
-                strcat(this_line, " ");
+            while (p->len < 65)
+                g_string_append_c(p, ' ');
 
             // Now add te content of the registers, so they reflect the values
             //  they obtain after the instruction is executed.
-            sprintf(this_line + strlen(this_line),
+            g_string_append_printf(p,
                     "I=%02X J=%02X A=%02X B=%02X X=%04X "
                     "Y=%04X K=%02X L=%02X DP=%04X "
                     "p=%02X q=%02X "
@@ -378,6 +374,7 @@ void emulate_instruction(void)
         }
         if (((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE) != 0) ||
                         ((diag_level & DIAG_LEVEL_DISASSEMBLE_LINE_REGS) != 0))
-            fprintf(fp_instr, "%s\r\n", this_line);
+            fprintf(fp_instr, "%s\r\n", p->str);
     }
+    g_string_free(p, TRUE);
 }

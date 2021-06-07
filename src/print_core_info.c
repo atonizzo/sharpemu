@@ -1,27 +1,20 @@
 // Copyright (c) 2016-2021, atonizzo@gmail.com
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright
-//       notice, this list of conditions and the following disclaimer in the
-//       documentation and/or other materials provided with the distribution.
-//     * Neither the name of the <organization> nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
 
 #include <stdint.h>
 #include <stdio.h>
@@ -32,35 +25,68 @@
 #include <gtk/gtk.h>
 #include <sc61860_emu.h>
 
-//http://blog.borovsak.si/
+GSList *disassembly_list = NULL;
+static int table_items = -1;
+static int current_item = -1;
 
 int break_here(int a)
 {
     return 3;
 }
 
-char *reg_to_str[] =
-{
-    "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L", "M", "N",
-    "A", "B", "F", "C"
-};
-
-char *port_to_str[] =
+static const char *port_to_str[] =
 {
     "A", "B", "F", "C"
 };
 
 uint8_t mem_view_past[MEM_VIEW_ROWS * 16];
 
-struct __disassembly_buffer disassembly_buffer;
-
 // This is the index of the item inside disassembly_buffer that holds the line
 //  where the program counter currently resides.
-uint32_t pc_line = 0;
+int pc_line = 0;
 
-//int16_t case_number = -1, case_number_tmp;
-//int16_t case_number_dis = -1, case_number_dis_tmp = -1;
-static uint8_t find_instruction_length(uint16_t pc, int8_t instruction)
+static void print_disasm_line(gpointer data, gpointer user_data)
+{
+    char *format;
+    char label[128];
+    char image_id[128];
+    gint i = g_slist_index(disassembly_list, data);
+    sprintf(label, "label_disassembly_line%d", i);
+    GObject *this_label = gtk_builder_get_object(builder, label);
+
+    gint asmdata = GPOINTER_TO_INT(g_slist_nth_data(disassembly_list, i));
+    uint16_t this_pc = asmdata >> 16;
+    GString *disasm_line = g_string_new(NULL);
+    print_asm_line(this_pc, asmdata, disasm_line);
+
+    char *image_name;
+    int bp_number = check_breakpoint(this_pc);
+    if (this_pc == cpu_state.pc)
+        image_name = "./pixmaps/disasm_pc_icon_16x16.jpg";
+    else
+    {
+        if (bp_number == -1)
+            image_name = "./pixmaps/disasm_no_icon_16x16.jpg";
+        else
+            image_name = "./pixmaps/disasm_breakpoint_icon_16x16.jpg";
+    }
+
+    sprintf(image_id, "image_disassembly_line_%d", i);
+    GObject *this_object = gtk_builder_get_object(builder, image_id);
+    gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);
+    sprintf(label, "%s", disasm_line->str);
+    while (strlen(label) < 50)
+        strcat(label, " ");
+    if (this_pc == cpu_state.pc)
+        format = "<span foreground=\"green\">%s</span>";
+    else
+        format = "<span foreground=\"black\">%s</span>";
+    char *markup = g_markup_printf_escaped(format, label);
+    gtk_label_set_markup(GTK_LABEL(this_label), markup);
+    g_free(markup);
+}
+
+static uint8_t find_instruction_length(int8_t instruction)
 {
     uint32_t i = 0;
     while (sc61860_instr[i].attributes != 0)
@@ -86,7 +112,7 @@ static void print_scratchpad_reg(uint16_t reg)
         format = "<span foreground=\"black\">\%02X</span>";
     char *markup = g_markup_printf_escaped(format,
                                            cpu_state.imem[reg]);
-    sprintf(label_name, "label_reg_%s", reg_to_str[reg]);
+    sprintf(label_name, "label_reg_%s", regs_to_str[reg]);
     GObject *this_label = gtk_builder_get_object(builder, label_name);
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
@@ -149,133 +175,139 @@ static void print_bcd_reg(uint16_t reg, char *s)
     g_free(markup);
 }
 
+static void build_disassembly_list(uint16_t from_address)
+{
+    g_slist_free(disassembly_list);
+    disassembly_list = NULL;
+    for (int i = 0; i < DISASSEMBLY_LENGTH; i++)
+    {
+        // The pesky .CASE and .DEFAULT cases are handled separately
+        //  from any other instruction since they don't have an
+        //  actual opcode.
+        if (current_item > 0)
+        {
+            // $16 is an unused opcode for the sc61860. We'll use
+            //  it to emulate the .CASE instruction.
+            disassembly_list = g_slist_append(disassembly_list,
+                         GINT_TO_POINTER ((from_address << 16) + 0x16));
+            current_item -= 1;
+            from_address += 3;
+            continue;
+        }
+
+        if (current_item == 0)
+        {
+            // $17 is an unused opcode for the sc61860. We'll use
+            //  it to emulate the .DEFAULT instruction.
+            disassembly_list = g_slist_append(disassembly_list,
+                         GINT_TO_POINTER ((from_address << 16) + 0x17));
+            current_item -= 1;
+            from_address += 2;
+            continue;
+        }
+
+        uint8_t instruction = pt.read_memory(from_address);
+
+        // This is the special case of the PTJ/DTJ case.
+        if (instruction == 0x7A)
+            table_items = pt.read_memory(from_address + 1);
+        if (instruction == 0x69)
+        {
+            current_item = table_items;
+            table_items = -1;
+        }
+        disassembly_list = g_slist_append(disassembly_list,
+                  GINT_TO_POINTER ((from_address << 16) + instruction));
+        from_address += find_instruction_length(instruction);
+    }
+}
+
 void display_core_info(void)
 {
-    int i;
     uint16_t this_pc;
     char label_text[128];
     char *format;
     char *markup;
-    GObject *this_label;
-    int table_items, this_item;
 
-    // Here we aim to build a table of the loines to disassemble. For each we
-    //  determine the program counter and the instuction opcode.
-    if (disassembly_buffer.line[pc_line + 1].pc == cpu_state.pc)
+    if (disassembly_list == NULL)
     {
-        // We have good data in the buffer. We move everything up by one
-        //  and insert a new line.
+        // This is the case where we have an empty disassembly buffer,
+        //  likely the result of a reset.
+        build_disassembly_list(cpu_state.pc);
+        pc_line = -1;
+    }
+
+    gint data = GPOINTER_TO_INT(g_slist_nth_data(disassembly_list,
+                                                 pc_line + 1));
+    uint16_t next_pc = data >> 16;
+
+    // Here we aim to build a table of the lines to disassemble. For each we
+    //  determine the program counter and the instruction opcode.
+    if (next_pc == cpu_state.pc)
+    {
+        // If the line at which the cursor is stopped is below
+        //  DISASSEMBLY_CURSOR_MAX we keep the same list and we just move
+        //  one line on.
         if (pc_line < DISASSEMBLY_CURSOR_MAX)
             pc_line++;
         else
         {
-            for (i = 1; i < DISASSEMBLY_LENGTH; i++)
+            // Remove the first element.
+            disassembly_list = g_slist_remove(disassembly_list,
+                                     g_slist_nth_data(disassembly_list, 0));
+            GSList *t = g_slist_last(disassembly_list);
+            gint data = GPOINTER_TO_INT(t->data);
+            uint16_t address = (data >> 16) + find_instruction_length(data);
+            if (current_item > 0)
             {
-                disassembly_buffer.line[i - 1].pc =
-                                             disassembly_buffer.line[i].pc;
-                disassembly_buffer.line[i - 1].opcode =
-                                             disassembly_buffer.line[i].opcode;
-            }
-
-//            uint8_t previous_instruction = pt.read_memory(
-//                           disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc);
-            disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc =
-                disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc +
-            find_instruction_length(
-                        disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc,
-                        disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].opcode);
-/*            if (case_number_dis == -1)
-            {
-                if (previous_instruction == 0x7A)
-                {
-                    case_number_dis_tmp = pt.read_memory(
-                        disassembly_buffer.line[DISASSEMBLY_LENGTH - 2].pc + 1);
-                    disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                pt.read_memory(
-                            disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc);
-                }
-                if (previous_instruction == 0x69)
-                {
-                    case_number_dis = case_number_dis_tmp - 1;
-                    disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                                                           0x16;
-                }
-                else
-                    disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                pt.read_memory(
-                        disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].pc);
+                // $16 is an unused opcode for the sc61860. We'll use it to
+                //  emulate the .CASE instruction.
+                disassembly_list = g_slist_append(disassembly_list,
+                                     GINT_TO_POINTER ((address << 16) + 0x16));
+                current_item -= 1;
             }
             else
             {
-                if (case_number_dis > 0)
+                if (current_item == 0)
+                {
                     // $17 is an unused opcode for the sc61860. We'll use it to
-                    //  emulate the .CASE instruction.
-                    disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                                                           0x16;
+                    //  emulate the .DEFAULT instruction.
+                    disassembly_list = g_slist_append(disassembly_list,
+                                      GINT_TO_POINTER ((address << 16) + 0x17));
+                    current_item -= 1;
+                }
                 else
-                    disassembly_buffer.line[DISASSEMBLY_LENGTH - 1].opcode =
-                                                                           0x17;
-
-                case_number_dis -= 1;
-            }*/
+                {
+                    uint8_t opcode = pt.read_memory(address);
+                    disassembly_list = g_slist_append(disassembly_list,
+                                   GINT_TO_POINTER ((address << 16) + opcode));
+                }
+            }
         }
     }
     else
     {
-        // We have gone through a jump of some sort, so the next instruction is
-        //  not the one in the list. Check if the target line is already
-        //  anywhere in the buffer.
+        // Have gone through a jump of some sort so that the next instruction
+        //  in the list is not where the program counter is.
+        this_pc = cpu_state.pc;
+        int i;
+        // In case of a relative jump of a few bytes forward or backward the
+        //  target instruction might very well be already in the disassembly
+        //  list and so there is no need to rebuild it.
         for (i = 0; i < DISASSEMBLY_CURSOR_MAX; i++)
-            if (disassembly_buffer.line[i].pc == cpu_state.pc)
+        {
+            gint data = GPOINTER_TO_INT(g_slist_nth_data(disassembly_list,
+                                                         i));
+            uint16_t address = data >> 16;
+            if (address == cpu_state.pc)
                 break;
-
+        }
         if (i == DISASSEMBLY_CURSOR_MAX)
         {
-            table_items = -1;
-            this_item = -1;
-
-            // In this case the targer instruction is not already in the
-            //  disassembly buffer. We will then fill the buffer with fresh
-            //  data, starting at the target instruction.
-            this_pc = cpu_state.pc;
-            for (i = 0; i < DISASSEMBLY_LENGTH; i++)
-            {
-                disassembly_buffer.line[i].pc = this_pc;
-                if (this_item > 0)
-                {
-                    // $16 is an unused opcode for the sc61860. We'll use it to
-                    //  emulate the .CASE instruction.
-                    disassembly_buffer.line[i].opcode = 0x16;
-                    this_item -= 1;
-                    this_pc += 3;
-                    continue;
-                }
-
-                if (this_item == 0)
-                {
-                    // $17 is an unused opcode for the sc61860. We'll use it to
-                    //  emulate the .DEFAULT instruction.
-                    disassembly_buffer.line[i].opcode = 0x17;
-                    this_item -= 1;
-                    this_pc += 2;
-                    continue;
-                }
-
-                uint8_t instruction =
-                                  pt.read_memory(disassembly_buffer.line[i].pc);
-
-                // This is the special case of the DTJ/PTJ case.
-                if (instruction == 0x7A)
-                    table_items = pt.read_memory(
-                                             disassembly_buffer.line[i].pc + 1);
-                if (instruction == 0x69)
-                {
-                    this_item = table_items;
-                    table_items = -1;
-                }
-                disassembly_buffer.line[i].opcode = instruction;
-                this_pc += find_instruction_length(this_pc, instruction);
-            }
+            // The target address is not in the current list so its contents
+            //  are stale data and we'll clear them, so we can rebuild it
+            //  with the information starting at the new program counter.
+            build_disassembly_list(this_pc);
             pc_line = 0;
         }
         else
@@ -285,59 +317,22 @@ void display_core_info(void)
     // Print the disassembled lines, adding information if there is a pending
     // breakpoint at that address.
     char label_name[64];
-    for (i = 0; i < DISASSEMBLY_LENGTH; i++)
-    {
-        sprintf(label_name, "label_disassembly_line%d", i);
-        this_label = gtk_builder_get_object(builder, label_name);
-
-        char disassembled_line[128];
-        char image_id[128];
-        disassembled_line[0] = '\0';
-        print_asm_line(disassembly_buffer.line[i].pc,
-                       disassembly_buffer.line[i].opcode,
-                       disassembled_line);
-
-        char *image_name;
-        int bp_number = check_breakpoint(disassembly_buffer.line[i].pc);
-        if (disassembly_buffer.line[i].pc == cpu_state.pc)
-            image_name = "./pixmaps/disasm_pc_icon_16x16.jpg";
-        else
-        {
-            if (bp_number == -1)
-                image_name = "./pixmaps/disasm_no_icon_16x16.jpg";
-            else
-                image_name = "./pixmaps/disasm_breakpoint_icon_16x16.jpg";
-        }
-
-        sprintf(image_id, "image_disassembly_line_%d", i);
-        GObject *this_object = gtk_builder_get_object(builder, image_id);
-        gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);
-        sprintf(label_text, "%s", disassembled_line);
-        while (strlen(label_text) < 50)
-            strcat(label_text, " ");
-        if (disassembly_buffer.line[i].pc == cpu_state.pc)
-            format = "<span foreground=\"green\">%s</span>";
-        else
-            format = "<span foreground=\"black\">%s</span>";
-        markup = g_markup_printf_escaped(format, label_text);
-        gtk_label_set_markup(GTK_LABEL(this_label), markup);
-        g_free(markup);
-    }
+    g_slist_foreach(disassembly_list, print_disasm_line, 0);
 
     // P
     sprintf(label_text, "%02X", cpu_state.p);
-    if (cpu_state.p < sizeof(reg_to_str) / sizeof(char *))
+    if (cpu_state.p < sizeof(regs_to_str) / sizeof(char *))
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
-                reg_to_str[cpu_state.p]);
+                regs_to_str[cpu_state.p]);
     else
         sprintf(label_text + strlen(label_text),
                 " ($%02X)",
                 cpu_state.imem[cpu_state.p]);
-    if ((cpu_state.p >= PORTA_OFFSET) && (cpu_state.p <= PORTC_OFFSET))
+    if ((cpu_state.p >= IRAM_PORTA) && (cpu_state.p <= IRAM_PORTC))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
-                port_to_str[cpu_state.p - PORTA_OFFSET]);
+                port_to_str[cpu_state.p - IRAM_PORTA]);
     if (cpu_state.p != cpu_state_past.p)
     {
         format = "<span foreground=\"red\">\%s</span>";
@@ -346,24 +341,24 @@ void display_core_info(void)
     else
         format = "<span foreground=\"blue\">\%s</span>";
     markup = g_markup_printf_escaped(format, label_text);
-    this_label = gtk_builder_get_object(builder, "label_reg_p");
+    GObject *this_label = gtk_builder_get_object(builder, "label_reg_p");
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
     g_free(markup);
 
     // Q
     sprintf(label_text, "%02X", cpu_state.q);
-    if (cpu_state.q < sizeof(reg_to_str) / sizeof(char *))
+    if (cpu_state.q < sizeof(regs_to_str) / sizeof(char *))
         sprintf(label_text + strlen(label_text),
                 " -> (%s)",
-                reg_to_str[cpu_state.q]);
+                regs_to_str[cpu_state.q]);
     else
         sprintf(label_text + strlen(label_text),
                 " (0x%02X)",
                 cpu_state.imem[cpu_state.q]);
-    if ((cpu_state.q >= PORTA_OFFSET) && (cpu_state.q <= PORTC_OFFSET))
+    if ((cpu_state.q >= IRAM_PORTA) && (cpu_state.q <= IRAM_PORTC))
         sprintf(label_text + strlen(label_text),
                 " -> (Port %s)",
-                port_to_str[cpu_state.q - PORTA_OFFSET]);
+                port_to_str[cpu_state.q - IRAM_PORTA]);
     if (cpu_state.q != cpu_state_past.q)
     {
         format = "<span foreground=\"red\">\%s</span>";
@@ -377,7 +372,7 @@ void display_core_info(void)
     g_free(markup);
 
     // All the scratchpad registers.
-    for (i = 0; i < 12; i++)
+    for (int i = 0; i < 12; i++)
         print_scratchpad_reg(i);
 
     // PC
@@ -512,7 +507,7 @@ void display_core_info(void)
     print_bcd_reg(2, "label_reg_ZReg");
     print_bcd_reg(3, "label_reg_WReg");
 
-    for (i = 0; i < sizeof(cpu_state.imem); i++)
+    for (int i = 0; i < sizeof(cpu_state.imem); i++)
     {
         sprintf(label_name, "label_scratchpad_%d", i);
         this_label = gtk_builder_get_object(builder, label_name);

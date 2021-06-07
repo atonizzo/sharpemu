@@ -1,12 +1,19 @@
 # Build
 
+Currently the calculator that build are:
+
+* PC-1245 (fully functional)
+* PC-1251 (fully functional)
+* PC-1255 (Fully functional)
+* PC-1262 (Displays prompt but no keyboard)
+
 ```> make pc1245```
 
 or
 
 ```> make pc1251```
 
-will create an executable of the only supported calculators.
+will create an executable of supported calculators.
 
 #Breakpoint File
 The user can define a file named `events.dbg` where breakpoints can be set so that execution is stopped when the breakpoint is hit. The syntax for this file is the following:
@@ -55,6 +62,6 @@ The contents of scratchpad memory 0x20 are set to 10.
 # TODO
 A short list of the things that need some work:
 * Better handling of the LCD. Currently there is garbage that is printed out when computations are performed.
-* Remove flakiness of the keyboard
 * IO routines, to be able to store the content of memory. This is timing dependent and thus will have to use the cycle counter.
 * Implement the dialog box that changes the value of registers
+* PC-1262 support.
