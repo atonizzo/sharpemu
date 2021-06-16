@@ -293,14 +293,11 @@ void emulate_instruction(void)
 {
     // Check if either the 512ms or the 2s counters expired.
     double ms_diff = ms_time_diff(timeval_start);
-    if (ms_diff >= 512)
-        cpu_state.test.ct1 = 1;
-    if (ms_diff >= 2000)
-        cpu_state.test.ct2 = 1;
+    cpu_state.test.ct1 = (ms_diff >= 512) ? 1 : 0;
+    cpu_state.test.ct2 = (ms_diff >= 2000) ? 1 : 0;
 
-
-    if (cpu_state.test.kon != 0)
-        printf("cpu_state.test.kon = 1\r\n");
+//    if (cpu_state.test.kon != 0)
+//        printf("cpu_state.test.kon = 1\r\n");
     if ((cpu_state.portc & PORTC_CPU_HLT) != 0)
     {
         // We are not going to execute instructions as long as the CPU is

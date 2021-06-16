@@ -121,11 +121,11 @@ extern FILE *fp_memaccess;
 // This is the image of the calculator memory. The sc61860 can address up to
 //  16 bits of memory, thus 65536 bytes.
 extern uint8_t memory_image[65536];
-extern const char *regs_to_str[12];
+extern const char *regs_to_str[10];
 
 // This is the number of rows shown in the memory view window. Each row is
 //  made of a fixed 16 bytes of memory.
-#define MEM_VIEW_ROWS                   16
+#define MEM_VIEW_ROWS               16
 extern uint8_t mem_view_past[MEM_VIEW_ROWS * 16];
 
 #define CALC_MODE_RUN               0
@@ -216,8 +216,8 @@ struct __cpu_state
 extern struct __cpu_state cpu_state;
 extern struct __cpu_state cpu_state_past;
 
-#define DISASSEMBLY_LENGTH          25
-#define DISASSEMBLY_CURSOR_MAX      (DISASSEMBLY_LENGTH * 2 / 3)
+#define DISASSEMBLY_LENGTH              25
+#define DISASSEMBLY_CURSOR_MAX          (DISASSEMBLY_LENGTH * 2 / 3)
 
 #define BREAKPOINT_LIST_LENGTH          128
 

@@ -327,7 +327,7 @@ void display_core_info(void)
                 regs_to_str[cpu_state.p]);
     else
         sprintf(label_text + strlen(label_text),
-                " ($%02X)",
+                " (%02X)",
                 cpu_state.imem[cpu_state.p]);
     if ((cpu_state.p >= IRAM_PORTA) && (cpu_state.p <= IRAM_PORTC))
         sprintf(label_text + strlen(label_text),
@@ -372,7 +372,7 @@ void display_core_info(void)
     g_free(markup);
 
     // All the scratchpad registers.
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < sizeof(regs_to_str) / sizeof(char *); i++)
         print_scratchpad_reg(i);
 
     // PC

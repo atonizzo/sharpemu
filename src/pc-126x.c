@@ -30,10 +30,16 @@ GtkWidget *lcd_display[LCD_ROWS_PER_DISPLAY][LCD_CHARACTERS_PER_ROW]
                                 [LCD_CHARACTER_WIDTH][LCD_CHARACTER_HEIGHT];
 address_descriptor_t address_descriptors[] =
 {
-    {0x0222, "Y <- [B, A] - 1"},       {0x0225, "X <- [B, A] - 1"},
-    {0x022A, "X <- 0x67AF"},           {0x0232, "X <- 0x664F"},
-    {0x0238, "X <- 0x207F"},           {0x023E, "Y <- 0x67AF"},
-    {0x0437, "Turn ON display."},      {0x043B, "Turn OFF display."},
+    {0x0222, "Y <- [B, A] - 1"},    {0x0225, "X <- [B, A] - 1"},
+    {0x022A, "X <- 0x67AF"},        {0x0232, "X <- 0x664F"},
+    {0x0238, "X <- 0x207F"},        {0x023E, "Y <- 0x67AF"},
+    {0x03C1, "Scan Keyboard"},
+    {0x0437, "Turn ON display"},    {0x043B, "Turn OFF display"},
+    {0x1047, "memcpy"},
+    {0x1353, "DP <- 0x203D"},       {0x1357, "DP <- 0x662B"},
+    {0x135B, "DP <- 0x66DA"},
+    {0x1C05, "X <- 0x664E"},        {0x1C01, "X <- 0x6666"},
+    {0x1BE0, "Y <- 0x664E"},        {0x1BE7, "Y <- 0x6666"},
     {0, 0}
 };
 
@@ -302,7 +308,6 @@ static int32_t pc1262_setup(void)
     int i, j;
     memset(porta_kbd, '\0', sizeof(porta_kbd));
     memset(porta_kbd_past, '\0', sizeof(porta_kbd_past));
-    memset(&keyboard_count, '\0', sizeof(keyboard_count));
 
     // Create a new hbox to hold the LCD labels.
     GtkWidget *lcd_label_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
@@ -343,11 +348,14 @@ static int32_t pc1262_setup(void)
     gtk_widget_show(GTK_WIDGET(lcd_window));
     memset(lcd_status, '\0', sizeof(lcd_status));
     lcd_off();
-    cpu_state.test.kon = 1;
+    cpu_state.test.kon = 0;
 
     // Debug.
 //    porta_kbd[KEYBOARD_PORT_INDEX_B3] = KEYBOARD_PORT_BIT_A2; // 0x38 - '8'
-    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A4; // 'P'
+//    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A8; // 'B'
+    porta_kbd[KEYBOARD_PORT_INDEX_A1] = KEYBOARD_PORT_BIT_A8; // 'B'
+//    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A6; // 'T'
+//    porta_kbd[KEYBOARD_PORT_INDEX_A2] = KEYBOARD_PORT_BIT_A4; // 'P'
     return 0;
 }
 
@@ -639,7 +647,7 @@ static void pc1262_keypress(uint16_t key)
         break;
     case 0xFF13:                    // Break
         if (cpu_state.mode == CALC_MODE_OFF)
-            cpu_state.test.kon = 0;
+            cpu_state.test.kon = 1;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] |= KEYBOARD_PORT_BIT_A5;
@@ -681,9 +689,6 @@ static void pc1262_keypress(uint16_t key)
 
 static void pc1262_keyrelease(uint16_t key)
 {
-    keyboard_count.id = 0;
-    keyboard_count.kbd = 0;
-    keyboard_count.count = 0;
     if (key < 0x20)
         return;
 
@@ -704,7 +709,7 @@ static void pc1262_keyrelease(uint16_t key)
         porta_kbd[KEYBOARD_PORT_INDEX_A6] &= ~KEYBOARD_PORT_BIT_A8;
         break;
     case 0xFF13:                    // Break
-        cpu_state.test.kon = 1;
+        cpu_state.test.kon = 0;
         break;
     case 0xFF52:                    // ARROW-UP
         porta_kbd[KEYBOARD_PORT_INDEX_A1] &= ~KEYBOARD_PORT_BIT_A5;

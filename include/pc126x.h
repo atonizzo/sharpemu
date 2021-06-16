@@ -54,14 +54,6 @@
 #define KEYBOARD_PORT_BIT_A7           (1 << 6)
 #define KEYBOARD_PORT_BIT_A8           (1 << 7)
 
-struct
-{
-    uint16_t  id;
-    uint8_t   kbd;
-    uint8_t   count;
-} keyboard_count;
-
-
 #include <lcd.h>
 
 extern label_layout_t lcd_labels[15];

@@ -363,26 +363,26 @@
 021F: 0F           sbw
 0220: D1           rc
 0221: 37           rtn
-0222: 86           lp       0x06         ; Y <- [B, A] - 1
-0223: 2C 02        jrp      0x0226       ;
-0225: 84           lp       0x04         ; X <- [B, A] - 1
-0226: 13 02        liq      0x02         ;
+0222: 86           lp       0x06        ; Y <- [B, A] - 1
+0223: 2C 02        jrp      0x0226      ;
+0225: 84           lp       0x04        ; X <- [B, A] - 1
+0226: 13 02        liq      0x02        ;
 0228: 0A           mvb                  ;
 0229: 37           rtn                  ;
-022A: 02 B0        lia      0xB0         ; X <- 0x67AF
-022C: 03 67        lib      0x67         ;
-022E: E2 25        cal      0x0225       ;
+022A: 02 B0        lia      0xB0        ; X <- 0x67AF
+022C: 03 67        lib      0x67        ;
+022E: E2 25        cal      0x0225      ;
 0230: 05           dx                   ;
 0231: 37           rtn                  ;
-0232: 02 50        lia      0x50         ; X <- 0x664F
-0234: 03 66        lib      0x66         ;
-0236: 2D 09        jrm      0x022E       ;
-0238: 02 80        lia      0x80         ; X <- 0x207F
-023A: 03 20        lib      0x20         ;
-023C: 2D 0F        jrm      0x022E       ;
-023E: 02 B0        lia      0xB0         ; Y <- 0x67AF
-0240: 03 67        lib      0x67         ;
-0242: E2 22        cal      0x0222       ;
+0232: 02 50        lia      0x50        ; X <- 0x664F
+0234: 03 66        lib      0x66        ;
+0236: 2D 09        jrm      0x022E      ;
+0238: 02 80        lia      0x80        ; X <- 0x207F
+023A: 03 20        lib      0x20        ;
+023C: 2D 0F        jrm      0x022E      ;
+023E: 02 B0        lia      0xB0        ; Y <- 0x67AF
+0240: 03 67        lib      0x67        ;
+0242: E2 22        cal      0x0222      ;
 0244: 07           dy                   ;
 0245: 37           rtn                  ;
 0246: 02 80        lia      0x80
@@ -647,9 +647,13 @@
 ; The second phase drives the B[2:0] one bit at a time and reads the entire
 ;  A[7:0] port.
 ;
-; Returns: A = Offset into character table and C = 1 if any key pressed.
+; Returns: A = character code and C = 1 if any key pressed.
 ;          A = 0x07 and C = 1 if BRK is pressed.
 ;          A = 0xFF and C = 0 if no key is pressed.
+;
+; The character code returned is understood by looking at the keyboard. Since
+;  the A port is scanned first, the letter "B" returns 0, "7" returns 6,
+;  and in the next row, "B" returns 7 and "=" returns 12 etc.
 ; ------------------------------------------------------------------------------
 03C1: 02 34        lia      0x34
 03C3: 6B 08        test     0x08        ; Check if BRK key is pressed.
@@ -1331,24 +1335,31 @@
 078A: 57           ldd
 078B: 29 57        jrnzm    0x0735
 078D: 79 51 31     jp       0x5131
-0790: 99           lp       0x19
-0791: 90           lp       0x10
-0792: 43           deca
-0793: 42           inca
-0794: 94           lp       0x14
-0795: 48           inck
-0796: 19           exwd
-0797: 03 00        lib      0x00
-0799: 10 57 29     lidp     0x5729
-079C: 57           ldd
-079D: 79 51 31     jp       0x5131
-07A0: 00 00        lii      0x00
-07A2: 31           stq
-07A3: 41           deci
-07A4: 59           ldm
-07A5: 26           iys
-07A6: 53           mvdm
-07A7: 59           ldm
+
+; This is the constant log10(e) (0.434294481903) encoded in the internal
+;  BCD representation that is used by the code that interprets expressions.
+; Notice that this constant contains more digits than are printed. In the BCD
+;  representation of SHARP calculators the last 2 digits are used for
+;  computations but are rounded off before printing out the number.
+0790: 99 90 43 42  .db      99, 90, 43, 42
+0794: 94 48 19 03  .db      94, 48, 19, 03
+
+; This is the constant degrees/radiant (57.2957795131) encoded in the internal
+;  BCD representation that is used by the code that interprets expressions.
+; Notice that this constant contains more digits than are printed. In the BCD
+;  representation of SHARP calculators the last 2 digits are used for
+;  computations but are rounded off before printing out the number.
+0798: 00 10 57 29  .db      00, 10, 57, 29
+0798: 57 79 51 31  .db      57, 79, 51, 31
+
+; This is the constant PI (3.14159265359) encoded in the internal BCD
+; representation that is used by the code that interprets expressions.
+; Notice that this constant contains more digits than are printed. In the BCD
+;  representation of SHARP calculators the last 2 digits are used for
+;  computations but are rounded off before printing out the number.
+07A0: 00 00 31 41  .db      00, 00, 31, 41
+07A4: 59 26 53 59  .db      59, 26, 53, 59
+
 07A8: F3 DD        cal      0x13DD
 07AA: 3A 08        jrcp     0x07B3
 07AC: 8E           lp       0x0E
@@ -1743,7 +1754,7 @@
 0A37: 26 0D 5C     .case    0x26, 0x0D5C
 0A3A: 0B C7        .default 0x0BC7
 0A3C: 2C 29        jrp      0x0A66
-0A3E: EF C1        cal      0x0FC1
+0A3E: EF C1        cal      0x0FC1      ; Issue "Syntax Error".
 0A40: 2C 3D        jrp      0x0A7E
 0A42: 67 BA        cpia     0xBA
 0A44: 38 0B        jrzp     0x0A50
@@ -1822,7 +1833,7 @@
 0AC9: 3B 1B        jrcm     0x0AAF
 0ACB: 86           lp       0x06
 0ACC: 63 AF        cpim     0xAF
-0ACE: 7D 0F CD     jpnc     0x0FCD
+0ACE: 7D 0F CD     jpnc     0x0FCD      ; Issue "Nesting Error".
 0AD1: 26           iys
 0AD2: 02 01        lia      0x01
 0AD4: 88           lp       0x08
@@ -1865,11 +1876,11 @@
 0B0E: 37           rtn
 0B0F: EF 9C        cal      0x0F9C
 0B11: 3A 0B        jrcp     0x0B1D
-0B13: 02 A0        lia      0xA0
-0B15: 03 07        lib      0x07
-0B17: 90           lp       0x10
-0B18: 00 07        lii      0x07
-0B1A: 35           data
+0B13: 02 A0        lia      0xA0        ; Point to the PI (3.14) constant
+0B15: 03 07        lib      0x07        ;  in ROM.
+0B17: 90           lp       0x10        ;
+0B18: 00 07        lii      0x07        ;
+0B1A: 35           data                 ; Read constant into scratchpad.
 0B1B: EF E6        cal      0x0FE6
 0B1D: 37           rtn
 0B1E: EF AB        cal      0x0FAB
@@ -1974,12 +1985,12 @@
 0BCB: EF FD        cal      0x0FFD
 0BCD: 28 0A        jrnzp    0x0BD8
 0BCF: EF F4        cal      0x0FF4
-0BD1: 7C 0F C1     jpnz     0x0FC1
+0BD1: 7C 0F C1     jpnz     0x0FC1      ; Issue "Syntax Error".
 0BD4: B3           lp       0x33
 0BD5: 61 01        orim     0x01
 0BD7: 37           rtn
 0BD8: F0 04        cal      0x1004
-0BDA: 7D 0F C1     jpnc     0x0FC1
+0BDA: 7D 0F C1     jpnc     0x0FC1      ; Issue "Syntax Error".
 0BDD: EF 65        cal      0x0F65
 0BDF: 78 80 09     call     0x8009
 0BE2: EF 65        cal      0x0F65
@@ -2030,7 +2041,7 @@
 0C36: B7           lp       0x37
 0C37: 62 80        tsim     0x80
 0C39: 29 6B        jrnzm    0x0BCF
-0C3B: EF C1        cal      0x0FC1
+0C3B: EF C1        cal      0x0FC1      ; Issue "Syntax Error".
 0C3D: 37           rtn
 0C3E: 57           ldd
 0C3F: 67 2C        cpia     0x2C
@@ -2072,7 +2083,7 @@
 0C78: 2A 05        jrncp    0x0C7E
 0C7A: 67 AA        cpia     0xAA
 0C7C: 2A 06        jrncp    0x0C83
-0C7E: EF DD        cal      0x0FDD
+0C7E: EF DD        cal      0x0FDD      ; Issue "Other Error".
 0C80: EF 65        cal      0x0F65
 0C82: 37           rtn
 0C83: 7A 02 0C 90  dtj      0x02, 0x0C90
@@ -2105,7 +2116,7 @@
 0CB6: ED 12        cal      0x0D12
 0CB8: 88           lp       0x08
 0CB9: 63 03        cpim     0x03
-0CBB: 7D 0F C5     jpnc     0x0FC5
+0CBB: 7D 0F C5     jpnc     0x0FC5      ; Issue "DIM Error/Range Error".
 0CBE: F5 36        cal      0x1536
 0CC0: 3B 8C        jrcm     0x0C35
 0CC2: 10 66 D0     lidp     0x66D0
@@ -2188,7 +2199,7 @@
 0D47: 26           iys
 0D48: 48           inck
 0D49: 2B 10        jrncm    0x0D3A
-0D4B: EF CD        cal      0x0FCD
+0D4B: EF CD        cal      0x0FCD      ; Issue "Nesting Error".
 0D4D: 37           rtn
 0D4E: 05           dx
 0D4F: 88           lp       0x08
@@ -2364,7 +2375,7 @@
 0E63: 37           rtn
 0E64: 63 00        cpim     0x00
 0E66: 38 09        jrzp     0x0E70
-0E68: EF DD        cal      0x0FDD
+0E68: EF DD        cal      0x0FDD      ; Issue "Other Error".
 0E6A: 37           rtn
 0E6B: 50           incp
 0E6C: 63 00        cpim     0x00
@@ -2411,12 +2422,12 @@
 0EAF: E2 42        cal      0x0242
 0EB1: 28 28        jrnzp    0x0EDA
 0EB3: 67 90        cpia     0x90
-0EB5: 7E 0F CD     jpz      0x0FCD
+0EB5: 7E 0F CD     jpz      0x0FCD      ; Issue "Nesting Error".
 0EB8: EF 14        cal      0x0F14
 0EBA: 10 66 F5     lidp     0x66F5
 0EBD: 57           ldd
 0EBE: 67 83        cpia     0x83
-0EC0: 7E 0F CD     jpz      0x0FCD
+0EC0: 7E 0F CD     jpz      0x0FCD      ; Issue "Nesting Error".
 0EC3: 10 66 F5     lidp     0x66F5
 0EC6: 57           ldd
 0EC7: 03 20        lib      0x20
@@ -2466,7 +2477,7 @@
 0F08: 10 66 F6     lidp     0x66F6
 0F0B: 57           ldd
 0F0C: 67 90        cpia     0x90
-0F0E: 38 BE        jrzp     0x0FCD
+0F0E: 38 BE        jrzp     0x0FCD      ; Issue "Nesting Error".
 0F10: 03 28        lib      0x28
 0F12: E2 42        cal      0x0242
 0F14: 8A           lp       0x0A
@@ -2564,7 +2575,7 @@
 0F9D: D1           rc
 0F9E: 62 22        tsim     0x22
 0FA0: 38 03        jrzp     0x0FA4
-0FA2: EF C1        cal      0x0FC1
+0FA2: EF C1        cal      0x0FC1      ; Issue "Syntax Error".
 0FA4: 37           rtn
 0FA5: B7           lp       0x37
 0FA6: D1           rc
@@ -2580,26 +2591,26 @@
 0FB6: 10 66 3C     lidp     0x663C
 0FB9: 57           ldd
 0FBA: 32           str
-0FBB: 02 02        lia      0x02
-0FBD: B4           lp       0x34
-0FBE: DB           exam
-0FBF: D0           sc
-0FC0: 37           rtn
-0FC1: 02 01        lia      0x01
-0FC3: 2D 07        jrm      0x0FBD
-0FC5: 02 03        lia      0x03
-0FC7: 2D 0B        jrm      0x0FBD
-0FC9: 02 04        lia      0x04
-0FCB: 2D 0F        jrm      0x0FBD
-0FCD: 02 05        lia      0x05
-0FCF: 2D 13        jrm      0x0FBD
-0FD1: 02 06        lia      0x06
-0FD3: 2D 17        jrm      0x0FBD
-0FD5: 02 07        lia      0x07
-0FD7: 2D 1B        jrm      0x0FBD
-0FD9: 02 08        lia      0x08
-0FDB: 2D 1F        jrm      0x0FBD
-0FDD: 02 09        lia      0x09
+0FBB: 02 02        lia      0x02        ; 2 Calulation Error
+0FBD: B4           lp       0x34        ;
+0FBE: DB           exam                 ;
+0FBF: D0           sc                   ;
+0FC0: 37           rtn                  ;
+0FC1: 02 01        lia      0x01        ; 1 Syntax Error
+0FC3: 2D 07        jrm      0x0FBD      ;
+0FC5: 02 03        lia      0x03        ; 3 DIM Error/Range Error
+0FC7: 2D 0B        jrm      0x0FBD      ;
+0FC9: 02 04        lia      0x04        ; 4 Line number error
+0FCB: 2D 0F        jrm      0x0FBD      ;
+0FCD: 02 05        lia      0x05        ; 5 Nesting Error
+0FCF: 2D 13        jrm      0x0FBD      ;
+0FD1: 02 06        lia      0x06        ; 6 Memory Overflow Error
+0FD3: 2D 17        jrm      0x0FBD      ;
+0FD5: 02 07        lia      0x07        ; 7 Print Format Error
+0FD7: 2D 1B        jrm      0x0FBD      ;
+0FD9: 02 08        lia      0x08        ; 8 I/O Device Error
+0FDB: 2D 1F        jrm      0x0FBD      ;
+0FDD: 02 09        lia      0x09        ; 9 Other
 0FDF: 2D 23        jrm      0x0FBD
 0FE1: EF F0        cal      0x0FF0
 0FE3: 61 01        orim     0x01
@@ -2649,7 +2660,7 @@
 1028: 37           rtn
 1029: 5B           pop
 102A: 5B           pop
-102B: EF DD        cal      0x0FDD
+102B: EF DD        cal      0x0FDD      ; Issue "Other Error".
 102D: 37           rtn
 102E: 22           ldr
 102F: 43           deca
@@ -2745,28 +2756,28 @@
 10BD: 49           deck
 10BE: 2B 14        jrncm    0x10AB
 10C0: 37           rtn
-10C1: 92           lp       0x12
-10C2: 13 22        liq      0x22
-10C4: 00 02        lii      0x02
-10C6: 09           exw
-10C7: 37           rtn
-10C8: 9A           lp       0x1A
-10C9: 13 12        liq      0x12
-10CB: 00 03        lii      0x03
-10CD: 08           mvw
-10CE: 37           rtn
-10CF: 94           lp       0x14
-10D0: 13 1C        liq      0x1C
-10D2: 00 02        lii      0x02
-10D4: 0E           adw
-10D5: 37           rtn
-10D6: 13 1D        liq      0x1D
-10D8: 2C 03        jrp      0x10DC
-10DA: 13 15        liq      0x15
-10DC: 84           lp       0x04
-10DD: 0A           mvb
-10DE: 05           dx
-10DF: 37           rtn
+10C1: 92           lp       0x12        ; [12, 13, 14] <-> [22, 23, 24]
+10C2: 13 22        liq      0x22        ;
+10C4: 00 02        lii      0x02        ;
+10C6: 09           exw                  ;
+10C7: 37           rtn                  ;
+10C8: 9A           lp       0x1A        ; [1A, 1B, 1C, 1D] <- [12, 13, 14, 15]
+10C9: 13 12        liq      0x12        ;
+10CB: 00 03        lii      0x03        ;
+10CD: 08           mvw                  ;
+10CE: 37           rtn                  ;
+10CF: 94           lp       0x14        ; [14, 15, 16] += [1C, 1D, 1E]
+10D0: 13 1C        liq      0x1C        ;
+10D2: 00 02        lii      0x02        ;
+10D4: 0E           adw                  ;
+10D5: 37           rtn                  ;
+10D6: 13 1D        liq      0x1D        ; X <- [1D, 1E] - 1
+10D8: 2C 03        jrp      0x10DC      ;
+10DA: 13 15        liq      0x15        ; X <- [15, 16] - 1
+10DC: 84           lp       0x04        ;
+10DD: 0A           mvb                  ;
+10DE: 05           dx                   ;
+10DF: 37           rtn                  ;
 10E0: B0           lp       0x30
 10E1: 61 02        orim     0x02
 10E3: E0 E4        cal      0x00E4
@@ -3203,7 +3214,7 @@
 13E0: 60 F0        anim     0xF0
 13E2: 47           orma
 13E3: F3 40        cal      0x1340
-13E5: 7D 0F DD     jpnc     0x0FDD
+13E5: 7D 0F DD     jpnc     0x0FDD      ; Issue "Other Error".
 13E8: B2           lp       0x32
 13E9: 60 7F        anim     0x7F
 13EB: 91           lp       0x11
@@ -3251,7 +3262,7 @@
 142B: 13 18        liq      0x18
 142D: 0A           mvb
 142E: 2B 22        jrncm    0x140D
-1430: EF C5        cal      0x0FC5
+1430: EF C5        cal      0x0FC5      ; Issue "DIM Error/Range Error".
 1432: 37           rtn
 1433: B2           lp       0x32
 1434: 59           ldm
@@ -3479,7 +3490,7 @@
 157C: 3A 3D        jrcp     0x15BA
 157E: B3           lp       0x33
 157F: 62 40        tsim     0x40
-1581: 7C 0F C5     jpnz     0x0FC5
+1581: 7C 0F C5     jpnz     0x0FC5      ; Issue "DIM Error/Range Error".
 1584: 04           ix
 1585: 04           ix
 1586: 24           ixl
@@ -3488,13 +3499,13 @@
 1589: C7           cpma
 158A: DB           exam
 158B: DA           exab
-158C: 7F 0F C5     jpc      0x0FC5
+158C: 7F 0F C5     jpc      0x0FC5      ; Issue "DIM Error/Range Error".
 158F: 24           ixl
 1590: 8D           lp       0x0D
 1591: DB           exam
 1592: C7           cpma
 1593: DB           exam
-1594: 7F 0F C5     jpc      0x0FC5
+1594: 7F 0F C5     jpc      0x0FC5      ; Issue "DIM Error/Range Error".
 1597: 59           ldm
 1598: 8A           lp       0x0A
 1599: DB           exam
@@ -3525,7 +3536,7 @@
 15B9: 37           rtn
 15BA: B3           lp       0x33
 15BB: 62 40        tsim     0x40
-15BD: 7E 0F C5     jpz      0x0FC5
+15BD: 7E 0F C5     jpz      0x0FC5      ; Issue "DIM Error/Range Error".
 15C0: D1           rc
 15C1: 37           rtn
 15C2: B0           lp       0x30
@@ -3631,7 +3642,7 @@
 1654: 67 00        cpia     0x00
 1656: 39 25        jrzm     0x1632
 1658: F0 39        cal      0x1039
-165A: EF CD        cal      0x0FCD
+165A: EF CD        cal      0x0FCD      ; Issue "Nesting Error".
 165C: 2D 1E        jrm      0x163F
 165E: 04           ix
 165F: 90           lp       0x10
@@ -3641,7 +3652,7 @@
 1664: 63 F5        cpim     0xF5
 1666: 29 2B        jrnzm    0x163C
 1668: F0 39        cal      0x1039
-166A: EF DD        cal      0x0FDD
+166A: EF DD        cal      0x0FDD      ; Issue "Other Error".
 166C: 37           rtn
 166D: B3           lp       0x33
 166E: 62 40        tsim     0x40
@@ -3663,7 +3674,7 @@
 168B: 84           lp       0x04
 168C: 15           sbb
 168D: 2D 98        jrm      0x15F6
-168F: EF C5        cal      0x0FC5
+168F: EF C5        cal      0x0FC5      ; Issue "DIM Error/Range Error".
 1691: 37           rtn
 1692: 10 66 D8     lidp     0x66D8
 1695: D6 08        tsid     0x08
@@ -3680,7 +3691,7 @@
 16A7: 15           sbb
 16A8: F3 44        cal      0x1344
 16AA: F5 3A        cal      0x153A
-16AC: 7D 0F D1     jpnc     0x0FD1
+16AC: 7D 0F D1     jpnc     0x0FD1      ; Issue "Memory Overflow Error".
 16AF: 10 66 D8     lidp     0x66D8
 16B2: D5 08        orid     0x08
 16B4: F5 67        cal      0x1567
@@ -3700,7 +3711,7 @@
 16CB: 02 40        lia      0x40
 16CD: DB           exam
 16CE: F4 FC        cal      0x14FC
-16D0: 7F 0F C5     jpc      0x0FC5
+16D0: 7F 0F C5     jpc      0x0FC5      ; Issue "DIM Error/Range Error".
 16D3: 24           ixl
 16D4: DA           exab
 16D5: 24           ixl
@@ -3717,7 +3728,7 @@
 16E4: 05           dx
 16E5: 24           ixl
 16E6: 67 40        cpia     0x40
-16E8: 7C 0F C5     jpnz     0x0FC5
+16E8: 7C 0F C5     jpnz     0x0FC5      ; Issue "DIM Error/Range Error".
 16EB: F3 44        cal      0x1344
 16ED: 04           ix
 16EE: 98           lp       0x18
@@ -3733,7 +3744,7 @@
 16FC: 86           lp       0x06
 16FD: 15           sbb
 16FE: F5 3A        cal      0x153A
-1700: 7D 0F D1     jpnc     0x0FD1
+1700: 7D 0F D1     jpnc     0x0FD1      ; Issue "Memory Overflow Error".
 1703: F5 67        cal      0x1567
 1705: F5 5F        cal      0x155F
 1707: 24           ixl
@@ -3775,9 +3786,9 @@
 173A: DB           exam
 173B: 59           ldm
 173C: 67 5B        cpia     0x5B
-173E: 7D 0F C1     jpnc     0x0FC1
+173E: 7D 0F C1     jpnc     0x0FC1      ; Issue "Syntax Error".
 1741: 67 41        cpia     0x41
-1743: 7F 0F C1     jpc      0x0FC1
+1743: 7F 0F C1     jpc      0x0FC1      ; Issue "Syntax Error".
 1746: 24           ixl
 1747: 67 28        cpia     0x28
 1749: 28 2C        jrnzp    0x1776
@@ -3877,7 +3888,7 @@
 17E4: 3A 0D        jrcp     0x17F2
 17E6: 24           ixl
 17E7: 67 29        cpia     0x29
-17E9: 7C 0F C1     jpnz     0x0FC1
+17E9: 7C 0F C1     jpnz     0x0FC1      ; Issue "Syntax Error".
 17EC: EF 65        cal      0x0F65
 17EE: F6 6D        cal      0x166D
 17F0: EF 65        cal      0x0F65
@@ -3885,7 +3896,7 @@
 17F3: 62 10        tsim     0x10
 17F5: 38 12        jrzp     0x1808
 17F7: 62 40        tsim     0x40
-17F9: 7C 0F DD     jpnz     0x0FDD
+17F9: 7C 0F DD     jpnz     0x0FDD      ; Issue "Other Error".
 17FC: 8A           lp       0x0A
 17FD: 59           ldm
 17FE: 75 41        sbia     0x41
@@ -3942,12 +3953,12 @@
 1857: EF 65        cal      0x0F65
 1859: 37           rtn
 185A: 5B           pop
-185B: EF C1        cal      0x0FC1
+185B: EF C1        cal      0x0FC1      ; Issue "Syntax Error".
 185D: 37           rtn
 185E: 5B           pop
 185F: 37           rtn
 1860: 62 40        tsim     0x40
-1862: 7C 0F C1     jpnz     0x0FC1
+1862: 7C 0F C1     jpnz     0x0FC1      ; Issue "Syntax Error".
 1865: EF 65        cal      0x0F65
 1867: F4 FC        cal      0x14FC
 1869: 3A 0D        jrcp     0x1877
@@ -3985,9 +3996,9 @@
 189B: 03 00        lib      0x00
 189D: 86           lp       0x06
 189E: 15           sbb
-189F: 7F 0F D1     jpc      0x0FD1
+189F: 7F 0F D1     jpc      0x0FD1      ; Issue "Memory Overflow Error".
 18A2: F5 3E        cal      0x153E
-18A4: 7D 0F D1     jpnc     0x0FD1
+18A4: 7D 0F D1     jpnc     0x0FD1      ; Issue "Memory Overflow Error".
 18A7: F5 25        cal      0x1525
 18A9: 02 00        lia      0x00
 18AB: 26           iys
@@ -4320,7 +4331,7 @@
 1AB2: 70 0F        adim     0x0F
 1AB4: CB           decn
 1AB5: 29 22        jrnzm    0x1A94
-1AB7: EF C9        cal      0x0FC9
+1AB7: EF C9        cal      0x0FC9      ; Issue "Line number error".
 1AB9: F9 53        cal      0x1953
 1ABB: 37           rtn
 1ABC: F9 53        cal      0x1953
@@ -4357,7 +4368,7 @@
 1AEF: 24           ixl
 1AF0: 2D 0A        jrm      0x1AE7
 1AF2: FA 26        cal      0x1A26
-1AF4: EF C9        cal      0x0FC9
+1AF4: EF C9        cal      0x0FC9      ; Issue "Line number error".
 1AF6: F9 53        cal      0x1953
 1AF8: 37           rtn
 1AF9: 59           ldm

@@ -3462,7 +3462,7 @@ LBL1546:            CAL     MDL16AE
                     JRCP    LBL1558
 
 ; ------------------------------------------------------------------------------
-; This code interprets the word PI (3.14) in BASIC.
+; This code interprets the word PI (3.14159265359) in BASIC.
 ; ------------------------------------------------------------------------------
 LBL154E:        LIA     0x59        ; The constant is located at address
                 LIB     0x15        ;  0x1559 in inner ROM code.
