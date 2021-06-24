@@ -19,7 +19,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <gtk/gtk.h>
-#include <sc61860_emu.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 uint16_t mem_view_start_address = 0;
 

@@ -21,7 +21,8 @@
 #include <sys/time.h>
 #include <gtk/gtk.h>
 
-#include <sc61860_emu.h>
+#include <sc61860.h>
+#include <sharpemu.h>
 
 GtkBuilder *builder;
 
@@ -246,59 +247,18 @@ gboolean on_buttonbar_run_clicked(GtkWidget *widget, gpointer user_data)
 
 static void on_menu_mode_activate(GtkMenuItem *menuItem, gpointer user_data)
 {
-    long mode = (long)user_data;
-    if (mode == CALC_MODE_OFF)
-    {
-/*        // The buttons that execute assembly instructions must be disabled until
-        //  the calculator mode is changed to one of the operative ones.
-        // Disable the button and menu that perform the "Step" function.
-        GObject *this_widget = gtk_builder_get_object(builder,
-                                                      "buttonbar_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);
-        this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-        gtk_widget_set_sensitive(GTK_WIDGET(this_widget), FALSE);*/
-    }
+    uint8_t previous_mode = cpu_state.mode;
+    GObject *mode_label = gtk_builder_get_object(builder, "mode_combobox");
+    cpu_state.mode = (long)user_data;
+    gtk_combo_box_set_active (GTK_COMBO_BOX(mode_label), cpu_state.mode);
+
+    if (cpu_state.mode == CALC_MODE_OFF)
+        lcd_off();
     else
     {
-        if (cpu_state.mode == CALC_MODE_OFF)
-        {
-            // We are coming out of the OFF state. Enable the debug buttons.
-            // The calculator mode is changed to one of the operative ones.
-            GObject *this_widget = gtk_builder_get_object(builder,
-                                                          "buttonbar_step");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "buttonbar_next");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "buttonbar_run");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "buttonbar_stop");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "menu_debug_step");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "menu_debug_next");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "menu_debug_run");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-            this_widget = gtk_builder_get_object(builder, "menu_debug_stop");
-            gtk_widget_set_sensitive(GTK_WIDGET(this_widget), TRUE);
-        }
+        if (previous_mode == CALC_MODE_OFF)
+            lcd_refresh();
     }
-
-    GObject *mode_label = gtk_builder_get_object(builder, "mode_combobox");
-    cpu_state.mode = mode;
-    gtk_combo_box_set_active (GTK_COMBO_BOX(mode_label), cpu_state.mode);
 }
 
 void on_menu_mode_off_activate(GtkMenuItem *menuItem, gpointer user_data)
@@ -450,9 +410,9 @@ int main(int argc, char *argv[])
     diag_level = 0;
     user_file_name[0] = '\0';
     save_start = 0;
-    save_end = 0;
+    save_end = 0x10000;
 
-    while ((c = getopt (argc, argv, "f:hi:r")) != -1)
+    while ((c = getopt (argc, argv, "f:hir")) != -1)
     {
         switch (c)
         {
@@ -466,9 +426,6 @@ int main(int argc, char *argv[])
             strcpy(user_file_name, optarg);
             break;
         case 'h':
-            print_usage();
-            exit(1);
-            break;
         case '?':
             print_usage();
             exit(1);
@@ -477,11 +434,6 @@ int main(int argc, char *argv[])
             break;
         }
     }
-
-    diag_level |= DIAG_LEVEL_DISASSEMBLE_LINE;
-    diag_level |= DIAG_LEVEL_DISASSEMBLE_LINE_REGS;
-    save_start = 0;
-    save_end = 100000;
 
     int emulator_ok = setup_emulator();
     if (emulator_ok != 0)

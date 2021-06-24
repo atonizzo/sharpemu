@@ -23,7 +23,9 @@
 #include <unistd.h>
 #include <termios.h>
 #include <gtk/gtk.h>
-#include <sc61860_emu.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 GSList *disassembly_list = NULL;
 static int table_items = -1;
@@ -120,9 +122,8 @@ static void print_scratchpad_reg(uint16_t reg)
 
 static void print_bcd_reg(uint16_t reg, char *s)
 {
-    // XReg
     int i;
-    int k = 0x10 + reg * 8;
+    int k = 0x20 + reg * 8;
     char label_text[128];
     char *markup;
     for (i = k; i < k + 8; i++)
@@ -139,7 +140,7 @@ static void print_bcd_reg(uint16_t reg, char *s)
     for (i = k; i < k + 8; i++)
         if (cpu_state.imem[i] != cpu_state_past.imem[i])
             break;
-    if (i < 8)
+    if (i < (k + 8))
     {
         strcpy(label_text, "<span foreground=\"red\">");
         for (i = k; i < k + 8; i++)
@@ -148,14 +149,14 @@ static void print_bcd_reg(uint16_t reg, char *s)
     else
         strcpy(label_text, "<span foreground=\"black\">");
 
-    if ((cpu_state_past.imem[k + 1] & 0x0F) != 0)
+    if ((cpu_state.imem[k + 1] & 0x08) != 0)
         strcat(label_text, "-");
 
     int16_t exp = ((cpu_state.imem[k] & 0xF0) >> 4) * 100 +
                    (cpu_state.imem[k] & 0x0F) * 10 +
                    ((cpu_state.imem[k+1] & 0xF0) >> 4);
     if (exp > 500)
-        exp = -(1000 - exp);
+        exp -= 1000;
 
     strcat(label_text, "%c.%c%c%c%c%c%c%c%c%cE%d</span>");
     markup = g_markup_printf_escaped(label_text,

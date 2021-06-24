@@ -18,7 +18,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <sc61860_emu.h>
+#include <gtk/gtk.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 static int32_t hex_to_int(char ch)
 {

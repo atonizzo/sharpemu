@@ -109,7 +109,7 @@ LBL009C:        OUTC
 ; Each time one is cleared one of the bits is also cleared.
 clr_bcd_X:      LP      0x11        ; BCD register 0 clear.
                 ANIM    0xFE        ; Xreg is now clear.
-                LP      0x20        ;    Clear XReg.
+                LP      0x20        ; Clear BCD[20:27].
 clr_bcd:        LII     0x07        ;
                 LIA     0x00        ;
                 FILM                ;
@@ -131,34 +131,34 @@ LBL00B9:        ANIM    0xF0        ; Mask off sign nibble.
                 LII     0x05        ; 6 bytes.
                 FILM                ;
                 RTN                 ;
-MDL00C2:        LP    0x29          ; Clear mantissa and sign of YReg.
-                JRM   LBL00B9       ;
-MDL00C5:        LP    0x31          ; Clear mantissa and sign of ZReg.
-                JRM   LBL00B9
-MDL00C8:        LP      0x20        ; Zeroes the exponent of XReg.
+MDL00C2:        LP      0x29        ; Clear mantissa and sign of BCD[28:2F].
+                JRM     LBL00B9     ;
+MDL00C5:        LP      0x31        ; Clear mantissa and sign of BCD[30:37].
+                JRM     LBL00B9     ;
+MDL00C8:        LP      0x20        ; Zeroes the exponent of BCD[20:27].
 LBL00C9:        ANIM    0x00        ;
                 INCP                ;
                 ANIM    0x0F        ;
                 RTN                 ;
-MDL00CF:        LP      0x28        ; Zeroes the exponent of YReg.
+MDL00CF:        LP      0x28        ; Zeroes the exponent of BCD[28:2F].
                 JRM     LBL00C9     ;
-MDL00D2:        LP      0x20        ; Shift XReg one nibble to the left.
+MDL00D2:        LP      0x20        ; BCD[20:27] >> 4.
 LBL00D3:        LII     0x07        ;
                 SRW                 ;
                 RTN                 ;
-                LP      0x30        ; Shift ZReg one nibble to the left.
+                LP      0x30        ; Shift BCD[30:37] one nibble to the left.
                 JRM     LBL00D3     ;
-                LP      0x38        ; Shift WReg one nibble to the left.
+                LP      0x38        ; Shift BCD[38:3F] one nibble to the left.
                 JRM     LBL00D3     ;
-MDL00DD:        LP      0x22        ; Xreg mantissa.
-                LII     0x05        ; 6 bytes of mantissa.
-                SRW                 ; Shift right mantissa (divide by 10).
+MDL00DD:        LP      0x22        ;
+                LII     0x05        ; Shift right BCD[20:27] mantissa (divide
+                SRW                 ;  by 10).
                 LP      0x21        ;
 LBL00E2:        LDM                 ; Load exponent/sign byte.
-                ANIM    0xF0        ; Remove XReg sign.
+                ANIM    0xF0        ; Remove BCD[20:27] sign.
                 SWP                 ; Swap nibbles.
                 ANIA    0xF0        ; Isolate sign.
-                INCP                ; Point to most signficant digit of XReg.
+                INCP                ; Point to MS digit of BCD[20:27].
                 ORMA                ; Store sign.
                 RTN                 ;
 MDL00EB:        LP      0x2A        ; Yreg mantissa.
@@ -175,10 +175,10 @@ MDL00F9:        LP      0x27        ; Shift YReg left by 1.
 LBL00FA:        LII     0x07        ;
                 SLW                 ;
                 RTN                 ;
-MDL00FE:        LP    0x37          ;  Shift ZReg left by 1.
-                JRM   LBL00FA       ;
-                LP    0x3F          ;  Shift ZReg left by 1.
-                JRM   LBL00FA       ;
+MDL00FE:        LP      0x37        ; Shift BCD[30:37] left by 1.
+                JRM     LBL00FA     ;
+                LP      0x3F        ; Shift BCD[38:3F] left by 1.
+                JRM     LBL00FA     ;
 MDL0104:        LP      0x22        ; Shift the mantissa of XReg 1
 LBL0105:        LDM                 ;  nibble to the left.
                 SWP                 ; Isolate valid nibble
@@ -210,22 +210,22 @@ LBL0123:        CPIM  0x00
                 RTN
 LBL012D:        RC
                 RTN
-MDL012F:        LP      0x11        ; YReg = 1.0
+MDL012F:        LP      0x11        ; BCD[28:2F] = 1.0
                 ANIM    0xFD        ;
-                LP      0x28        ; Clear 8 bytes starting at 0x20
-                LII     0x07        ;  with 0x00.
+                LP      0x28        ; Clear BCD[28:2F].
+                LII     0x07        ;
                 LIA     0x00        ;
                 FILM                ;
                 LP      0x2A        ;
                 ORIM    0x10        ; 1.0
                 RTN                 ;
-MDL013C:        LP    0x11        ; Invert bit 1 of scratchpad register 0x11.
-                TSIM  0x01        ; This roundabout way of doing things is
-                JRNZP LBL0144     ; required because of the lack of an XOR
-                ORIM  0x01        ; instruction.
-                RTN
-LBL0144:        ANIM  0xFE
-                RTN
+MDL013C:        LP      0x11        ; Invert bit 0 of scratchpad register 0x11.
+                TSIM    0x01        ; This roundabout way of doing things is
+                JRNZP   LBL0144     ; required because of the lack of an XOR
+                ORIM    0x01        ; instruction.
+                RTN                 ;
+LBL0144:        ANIM    0xFE        ;
+                RTN                 ;
 MDL0147:        RC
                 LP    0x11
                 LDM
@@ -240,12 +240,12 @@ MDL0147:        RC
                 ANIM  0xFE
                 ORMA
                 RTN
-MDL0159:        LP    0x27        ; YReg += XReg (BCD)
-                LII   0x07        ;
-                LIQ   0x2F        ;
-                ADW               ;
-                RC                ;
-                RTN               ;
+MDL0159:        LP    0x27          ; BCD[20:27] += BCD[28:2F]
+                LII   0x07          ;
+                LIQ   0x2F          ;
+                ADW                 ;
+                RC                  ;
+                RTN                 ;
 MDL0161:        LP    0x29
                 LDM
                 ANIA  0x0F
@@ -259,13 +259,13 @@ MDL0161:        LP    0x29
                 LP    0x29
                 ORMA
                 RTN
-MDL0172:        LP    0x29
-                LDM
-                ANIA  0xF0
-                LP    0x2F
-                LIQ   0x27
-LBL0179:        LII   0x06
-                ADW
+MDL0172:        LP    0x29          ; Load WReg exponent+sign byte.
+                LDM                 ;
+                ANIA  0xF0          ; Mask off sign.
+                LP    0x2F          ;
+                LIQ   0x27          ;
+LBL0179:        LII   0x06          ;
+                ADW                 ; WReg += Zreg (Mantissa of BCD)
                 INCP
                 ANIM  0x0F
                 ORMA
@@ -309,81 +309,82 @@ MDL01A4:        LP    0x29
                 LP    0x2F
                 LIQ   0x27
                 JRM   LBL019B
-MDL01B6:        LP    0x21
-                LDM
-                ANIA  0x0F
-                ANIM  0xF0
-                LP    0x29
-                LIQ   0x21
-                LII   0x01
-                SBW
-                LP    0x21
-                ORMA
-                RTN
-MDL01C5:        LP    0x29        ; Add 1 to the
-LBL01C6:        LII   0x01
-                LIA   0x10
-                ADN
-                RC
-                  RTN
-MDL01CD:          LP    0x21
-                  JRM   LBL01C6
-MDL01D0:          LP    0x39
-LBL01D1:          LII   0x01
-                  LIA   0x10
-                  SBN
-                  RTN
-MDL01D7:          LP    0x29
-                  JRM   LBL01D1
-MDL01DA:          LP    0x21
-                  JRM   LBL01D1
-                  LP    0x21
-LBL01DE:          LDM
-                  ANIM  0x0F
-                  ANIA  0xF0
-                  EXAB
-                  DECP
-                  LIA   0x00
-                  EXAM
-                  INCP
-                  LII   0x01
-                  LIQ   0x03
-                  SBW
-                  RC
-                  RTN
-MDL01F0:          LP    0x29
-                  JRM   LBL01DE
-                  LP    0x30
-                  JRP   LBL0200
+MDL01B6:        LP      0x21        ; Subtract the exponent of BCD[20:27] from
+                LDM                 ;   the exponent of BCD[28:2F].
+                ANIA    0x0F        ;
+                ANIM    0xF0        ; Don't subtract the sign.
+                LP      0x29        ;
+                LIQ     0x21        ;
+                LII     0x01        ;
+                SBW                 ;
+                LP      0x21        ;
+                ORMA                ;
+                RTN                 ;
+MDL01C5:        LP      0x29        ; Add 1 to the exponent of BCD[28:2F]
+LBL01C6:        LII     0x01        ; Exponent is 2 bytes.
+                LIA     0x10        ;
+                ADN                 ;
+                RC                  ;
+                RTN                 ;
+MDL01CD:        LP      0x21        ; Add 1 to the exponent of BCD[20:27]
+                JRM     LBL01C6     ;
+MDL01D0:        LP      0x39        ; Subtract 1 from the exponent of BCD[30:37]
+LBL01D1:        LII     0x01        ; Exponent is 2 bytes.
+                LIA     0x10        ;
+                SBN                 ;
+                RTN                 ;
+MDL01D7:        LP      0x29        ; Subtract 1 from the exponent of BCD[28:2F]
+                JRM     LBL01D1     ;
+MDL01DA:        LP      0x21        ; Subtract 1 from the exponent of BCD[20:27]
+                JRM     LBL01D1     ;
+                LP      0x21        ; Inverts the exponent of BCD[20:27].
+LBL01DE:        LDM                 ;
+                ANIM    0x0F        ; Zero the LS digit of the exponent bu save
+                                    ;  the sign of the BCD number.
+                ANIA    0xF0        ; Zero .
+                EXAB                ;
+                DECP                ;
+                LIA     0x00        ; Zero the rest of the exponent.
+                EXAM                ;
+                INCP                ;
+                LII     0x01        ;
+                LIQ     0x03        ;
+                SBW                 ; Subtract exponent from 0, thus inverting
+                RC                  ;  it.
+                RTN                 ;
+MDL01F0:        LP      0x29        ; Inverts the exponent of BCD[28:2F].
+                JRM     LBL01DE     ;
+                LP      0x30        ; [30..37] <- [20..27]
+                JRP     LBL0200     ;
 MDL01F6:          LP    0x11
                   ANIM  0xF7
                   TSIM  0x01
                   JRZP  LBL01FF
                   ORIM  0x08
-LBL01FF:          LP    0x38        ; WReg = XReg
-LBL0200:          LIQ   0x20
-LBL0202:          LII   0x07
-                  MVW
-                  RTN
+LBL01FF:        LP      0x38        ; [38..3F] <- [20..27]
+LBL0200:        LIQ     0x20        ;
+LBL0202:        LII     0x07        ;
+                MVW                 ;
+                RTN                 ;
                   LP    0x11
                   ANIM  0xFE
                   TSIM  0x08
                   JRZP  LBL020F
                   ORIM  0x01
-LBL020F:          LP    0x20        ; XReg = WReg
-                  LIQ   0x38
-                  JRM   LBL0202
-MDL0214:          LP    0x21
-                  LDM
-                  ANIA  0xF0
-                  LP    0x39
-                  ANIM  0x0F
-                  ORMA
-                  LP    0x20
-                  LDM
-                  LP    0x38
-                  EXAM
-                  RTN
+LBL020F:        LP      0x20        ; [20..27] <- [38..3F]
+                LIQ     0x38        ;
+                JRM     LBL0202     ;
+MDL0214:        LP      0x21        ; Copies the exponent of BCD[20:27] to
+                LDM                 ;  BCD[38:3F].
+                ANIA    0xF0        ; Mask off sign of source.
+                LP      0x39        ;
+                ANIM    0x0F        ;
+                ORMA                ; OR LS digit of exponet to destination.
+                LP      0x20        ;
+                LDM                 ;
+                LP      0x38        ;
+                EXAM                ; Copy entire first byte.
+                RTN                 ;
 MDL0221:          LP    0x11
                   ANIM  0xFD
                   TSIM  0x01
@@ -397,43 +398,44 @@ MDL022F:          LP    0x11
                   TSIM  0x02
                   JRZP  LBL0238
                   ORIM  0x01
-LBL0238:          LP    0x20
-LBL0239:          LIQ   0x28
-                  JRM   LBL0202
-MDL023D:          LP    0x30            ; ZReg <- YReg
-                  JRM   LBL0239
-MDL0240:          LP    0x21
-                  LDM
-                  DECP
-                  LIQ   0x28
-                  LII   0x01
-                  MVW
-                  DECP
-                  ANIM  0xF0
-                  ANIA  0x0F
-                  ORMA
-                  RTN
-MDL024F:          LP    0x21            ; Copies mantissa and sign of Wreg to Zreg.
-                  LDM
-                  LIQ   0x29
-                  LII   0x06
-                  MVW
-                  LP    0x21
-                  ANIM  0x0F
-                  ANIA  0xF0
-                  ORMA
-                  RTN
-MDL025D:        LP    0x21            ; Copies the exponent of Zreg to Wreg.
-                LDM
-                ANIA  0xF0
-                LP    0x29
-                ANIM  0x0F
-                ORMA
-                LP    0x20
-                LDM
-                LP    0x28
-                EXAM
-                RTN
+LBL0238:        LP      0x20        ; [20:27] <- [28:2F]
+LBL0239:        LIQ     0x28        ;
+                JRM     LBL0202     ;
+MDL023D:        LP      0x30        ; [30:37] <- [28:2F]
+                JRM     LBL0239     ;
+MDL0240:        LP      0x21        ; Copies the exponent of BCD[28:2F] to the
+                LDM                 ;  exponent of BCD[20:27]. Save the sign.
+                DECP                ;
+                LIQ     0x28        ;
+                LII     0x01        ;
+                MVW                 ; Move 2 bytes.
+                DECP                ;
+                ANIM    0xF0        ; Mask off sign (it is the sign of
+                                    ;  BCD[28:2F]
+                ANIA    0x0F        ; Mask on the sign of BCD[20:27]...
+                ORMA                ; .. and save it.
+                RTN                 ;
+MDL024F:        LP      0x21        ; Copies mantissa and sign of BCD[28:2F]
+                LDM                 ;  to BCD[20:27]. This also overwrites the
+                LIQ     0x29        ;  sign, which is saved in the accumulator.
+                LII     0x06        ;
+                MVW                 ;
+                LP      0x21        ; Load exponent/sign byte of BCD[20:27].
+                ANIM    0x0F        ; Keep sign.
+                ANIA    0xF0        ; Mask off with MS digit of exponent...
+                ORMA                ; ...and save.
+                RTN                 ;
+MDL025D:        LP      0x21        ; Copies the exponent of BCD[20:27] to
+                LDM                 ;  BCD[28:2F].
+                ANIA    0xF0        ;
+                LP      0x29        ;
+                ANIM    0x0F        ;
+                ORMA                ;
+                LP      0x20        ;
+                LDM                 ;
+                LP      0x28        ;
+                EXAM                ;
+                RTN                 ;
 MDL026A:          LP    0x11
                   ANIM  0xFD
                   TSIM  0x08
@@ -478,50 +480,50 @@ MDL0298:        LP      0x11        ; Exchanges bit 0 and 3 of
                 ANIA    0x04        ;
                 ORMA                ;
                 RTN                 ;
-MDL02A9:          LP    0x21
-                  LDM
-                  ANIM  0x0F
-                  ANIA  0xF0
-                  LP    0x0A
-                  EXAM
-                  LP    0x29
-                  LDM
-                  ANIM  0x0F
-                  ANIA  0xF0
-                  SWP
-                  LP    0x0A
-                  ORMA
-                  RTN
-MDL02BB:          LP    0x0A
-                  LDM
-                  ANIA  0xF0
-                  LP    0x21
-                  ANIM  0x0F
-                  ORMA
-                  LP    0x0A
-                  LDM
-                  SWP
-                  ANIA  0xF0
-                  LP    0x29
-                  ANIM  0x0F
-                  ORMA
-                  RTN
-MDL02CD:        LP      0x27        ; XReg += YReg
+MDL02A9:        LP      0x21        ; Stores the least significant digit of
+                LDM                 ;  the exponent of BCD[20:27] in the high
+                ANIM    0x0F        ;  nibble of register M, and the least
+                ANIA    0xF0        ;  significant digit of the exponent of
+                LP      0x0A        ;  BCD[28:2F] in the low nibble of register
+                EXAM                ;  M.
+                LP      0x29        ;
+                LDM                 ;
+                ANIM    0x0F        ;
+                ANIA    0xF0        ;
+                SWP                 ;
+                LP      0x0A        ;
+                ORMA                ;
+                RTN                 ;
+MDL02BB:        LP      0x0A
+                LDM
+                ANIA    0xF0
+                LP      0x21
+                ANIM    0x0F
+                ORMA
+                LP      0x0A
+                LDM
+                SWP
+                ANIA    0xF0
+                LP      0x29
+                ANIM    0x0F
+                ORMA
+                RTN
+MDL02CD:        LP      0x27        ; BCD[20:27] += BCD[28:2F]
                 LIQ     0x2F        ;
                 LII     0x06        ;
                 ADW                 ;
                 RTN                 ;
-MDL02D4:        LP      0x2F        ; YReg += XReg
+MDL02D4:        LP      0x2F        ; BCD[28:2F] += BCD[20:27]
                 LIQ     0x27        ;
                 LII     0x06        ;
                 ADW                 ;
                 RTN                 ;
-MDL02DB:        LP      0x2F        ; YReg -= XReg
+MDL02DB:        LP      0x2F        ; BCD[28:2F] -= BCD[20:27]
                 LIQ     0x27        ;
                 LII     0x06        ;
                 SBW                 ;
                 RTN                 ;
-MDL02E2:        LP      0x27        ; XReg -= YReg
+MDL02E2:        LP      0x27        ; BCD[20:27] -= BCD[28:2F]
                 LIQ     0x2F        ;
                 LII     0x06        ;
                 SBW                 ;
@@ -623,8 +625,8 @@ LBL038C:          ANIA  0x0F
                   EXAM
 LBL0390:          DECK
                   JRCP  LBL0397
-                  CAL   MDL02CD         ; XReg += YReg
-                  JRM   LBL0390
+                CAL     MDL02CD     ; BCD[20:27] += BCD[28:2F]
+                JRM     LBL0390
 LBL0397:          DECL
                   JRZP  LBL039E
                   CAL   MDL00DD
@@ -632,8 +634,8 @@ LBL0397:          DECL
 LBL039E:          CAL   MDL02BB
                   CAL   MDL0330
                   RTN
-MDL03A3:          CAL   MDL012F         ; YReg = 1.0
-MDL03A5:          CAL   MDL01CD
+MDL03A3:          CAL   MDL012F         ; BCD[28:2F] <- 1.0
+MDL03A5:          CAL   MDL01CD         ; Add 1 to the exponent of BCD[20:27].
                   CAL   MDL01B6
                   CAL   MDL0240
                   CAL   MDL02A9
@@ -689,25 +691,25 @@ LBL03F2:          CAL   MDL02BB
                   CAL   MDL0330
                   RTN
 MDL03FB:          LP    0x21        ; Copies the mantissa and sign of
-                  LDM               ; Zreg to XReg.
+                  LDM               ; BCD[30:37] to BCD[20:27].
                   LIQ   0x31        ;
                   LII   0x06        ;
                   MVW               ;
                   LP    0x21        ;
-                  ANIM  0x0F        ;
+                  ANIM  0x0F        ; Mask off exponent nibble.
                   ANIA  0xF0        ;
-                  ORMA              ;
+                  ORMA              ; Restore exponent nubble with old one.
                   RTN               ;
 MDL0409:          LP    0x11
                   TSIM  0x01
                   JPNZ  LBL0B41
                   CAL   MDL04B4
-                  CAL   MDL00D2
+                  CAL   MDL00D2     ; BCD[20:27] >> 4
                   CAL   MDL0221
-                  CAL   MDL0159      ; YReg += XReg (BCD)
-                  CAL   MDL0159      ; YReg += XReg (BCD)
-                  CAL   MDL0159      ; YReg += XReg (BCD)
-                  CAL   MDL0159      ; YReg += XReg (BCD)
+                CAL     MDL0159      ; BCD[20:27] += BCD[28:2F]
+                CAL     MDL0159      ; BCD[20:27] += BCD[28:2F]
+                CAL     MDL0159      ; BCD[20:27] += BCD[28:2F]
+                CAL     MDL0159      ; BCD[20:27] += BCD[28:2F]
                   LP    0x11
                   ANIM  0xDF
                   LP    0x21
@@ -801,16 +803,16 @@ LBL04A1:          CAL   MDL0104
 LBL04AF:          STP
                   ORIM  0x01
                   JRM   LBL0442
-MDL04B4:          LP    0x31
-                  LDM
-                  LIQ   0x21
-                  LII   0x06
-                  MVW
-                  LP    0x31
-                  ANIM  0x0F
-                  ANIA  0xF0
-                  ORMA
-                  RTN
+MDL04B4:          LP    0x31        ; Copies the mantissa and sign of
+                  LDM               ; BCD[20:27] to BCD[30:37].
+                  LIQ   0x21        ;
+                  LII   0x06        ;
+                  MVW               ;
+                  LP    0x31        ;
+                  ANIM  0x0F        ; Mask off exponent nibble.
+                  ANIA  0xF0        ;
+                  ORMA              ; Restore exponent nubble with old one.
+                  RTN               ;
 MDL04C2:          LP    0x11
                   ORIM  0x40
                   JRP   LBL04CA
@@ -1555,21 +1557,21 @@ LBL0927:          INCK
                   JRNZM LBL0905
                   JP    0x5131
 ; This is the constant of log10(e) (0.434294481903)
-MDL0960:            LIB   0x09
-                    LIA   0x6C
-LBL0964:            LP    0x28      ; Place the BCD value in Zreg.
-                    LII   0x07
-                    RST
-                    LP    0x11
-                    ANIM  0xFD
-                    RTN
-LBL096C:            .db     0x99, 0x90, 0x43, 0x42, 0x94, 0x48, 0x19, 0x03
+MDL0960:        LIB     0x09        ;
+                LIA     0x6C        ;
+LBL0964:        LP      0x28        ; Place the BCD value in Zreg.
+                LII     0x07        ;
+                RST                 ;
+                LP      0x11        ;
+                ANIM    0xFD        ;
+                RTN                 ;
+LBL096C:        .db     0x99, 0x90, 0x43, 0x42, 0x94, 0x48, 0x19, 0x03
 
 ; This is the constant of degrees/radiant (57.2957795131)
-MDL0974:            LIB     0x09
-                    LIA     0x7A
-                    JRM     LBL0964
-LBL097A:            .db     0x00, 0x10, 0x57, 0x29, 0x57, 0x79, 0x51, 0x31
+MDL0974:        LIB     0x09        ;
+                LIA     0x7A        ;
+                JRM     LBL0964     ;
+LBL097A:        .db     0x00, 0x10, 0x57, 0x29, 0x57, 0x79, 0x51, 0x31
 MDL0982:            CAL     MDL0284
                     CAL     MDL011B
                     JRNCP   LBL0999
@@ -1955,9 +1957,9 @@ LBL0BE3:          LP    0x27
                   DY
                   NOPW
                   NOPW
-                  CAL   MDL0D2F
-LBL0BF7:          IXL
-                  EXAB
+                CAL     MDL0D2F     ; X <- [26:25] - 1
+LBL0BF7:        IXL
+                EXAB
                   LP    0x04
                   LIQ   0x06
                   LII   0x01
@@ -2124,37 +2126,39 @@ MDL0D01:          CAL   MDL0AE1
                   JRZP  LBL0D0E
                   ANID  0xFE
                   JRP   LBL0D28
+; Round the BCD number at [20:27] up.
+;
 ; The last two digits of a BCD register (i.e. the last byte) are always rouded
-;  off. This is done by adding 50 (equivalent to adding 0.5 to the unrounded
-;  number) the the BCD register.
-LBL0D0E:          LP    0x27            ; Pointer to Xreg.
-                  LII   0x06
-                  LIA   0x50            ; Round off Xreg.
-                  ADN
-                  LP    0x21
-                  TSIM  0x0F
-                  JRZP  LBL0D28
-                  CAL   MDL00DD
-                  CAL   MDL01CD
-                  LP    0x20
-                  LDM
-                  ANIA  0xF0
-                  CPIA  0x10
-                  JRNZP LBL0D28
-                  JP    LBL0B41
-LBL0D28:          LP    0x27
-                  ANIM  0x00
-                  CAL   MDL0AF9
-                  RC
-                  RTN
-MDL0D2F:          LIQ   0x25            ; [Xl, Xh] <- (0x26, 0x25)
-LBL0D31:          LP    0x04
-                  LIJ   0x01
-                  MVB
-                  DX
-                  RTN
-MDL0D37:          LIQ   0x2D
-                  JRM   LBL0D31
+;  off and truncated. This is done by adding 50 (equivalent to adding 0.5 to
+;  the unrounded number) the the BCD register.
+LBL0D0E:        LP      0x27        ;
+                LII     0x06        ;
+                LIA     0x50        ;
+                ADN                 ; BCD[20:27] += 0.0000000005
+                LP      0x21        ;
+                TSIM    0x0F
+                JRZP    LBL0D28
+                CAL     MDL00DD
+                CAL     MDL01CD
+                LP      0x20
+                LDM
+                ANIA    0xF0
+                CPIA    0x10
+                JRNZP   LBL0D28
+                JP      LBL0B41
+LBL0D28:        LP      0x27        ; Clear up last two digits after rounding.
+                ANIM    0x00        ;
+                CAL     MDL0AF9     ;
+                RC                  ;
+                RTN                 ;
+MDL0D2F:        LIQ     0x25        ; X <- [26:25] - 1
+LBL0D31:        LP      0x04        ;
+                LIJ     0x01        ;
+                MVB                 ;
+                DX                  ;
+                RTN                 ;
+MDL0D37:        LIQ     0x2D        ; ; X <- [2E:2D] - 1
+                JRM     LBL0D31     ;
 MDL0D3B:          LP    0x10
                   ORIM  0x02
                   CAL   MDL009F         ; XReg.
@@ -2176,74 +2180,88 @@ MDL0D42:          CAL   MDL009F
                   LP    0x28
                   EXAM
                   SBB
-LBL0D5B:          LP    0x0E            ; ($0E, $0F) <- ($28, $29)
-                  LIJ   0x01
-                  LIQ   0x28
-                  MVB
-                  LP    0x08            ; K = 7.
-                  LIA   0x07
-                  EXAM
-                  CAL   MDL00A9         ; Yreg <- 0
-                  LP    0x2C
-                  ORIM  0x10
-                  CAL   MDL023D         ; (0x30 .. 0x37) <- (0x28 .. 0x2F)
-                  CAL   MDL0D8D         ; Convert (0x0E) to BCD in XReg.
-                  LIA   0x07            ; K = 7.
-                  LP    0x08            ;
-                  EXAM                  ;
-                  LP    0x0F
-                  LDM
-                  LP    0x0E
-                  EXAM                  ; (0x0E) <- (0x0F)
-                  CAL   MDL0D8D         ; Convert (0x0E) to BCD in XReg.
+; ------------------------------------------------------------------------------
+; This code converts the 16 bit number stored in [0F:0E] into a BCD number
+;  stored in [20:27].
+;
+; The conversion is based on the "Russian Peasant" multiplication algorithm
+;  with the multiplicand (starting at 0.0001) being doubled for each bit of
+;  the multiplicand (doubling is done by adding the multiplicand to itself)
+;  and the multiplier being the number to convert, halved each time by means
+;  of the SR instruction 0x0D8F. The exponent is initially set to 10000 (to
+;  offset the initial 0.0001 seed) and then adjusted down if needed at the
+;  end of the conversion.
+; ------------------------------------------------------------------------------
+LBL0D5B:        LP      0x0E        ; [0E:0F] <- [28:29]
+                LIJ     0x01        ;
+                LIQ     0x28        ;
+                MVB                 ;
+                LP      0x08        ; K = 7.
+                LIA     0x07        ;
+                EXAM                ;
+                CAL     MDL00A9     ; [28:2F] <- 0
+                LP      0x2C        ; BCD = 0.0001  which will contain all
+                ORIM    0x10        ;  BCD numbers from a 16 bit integer.
+                CAL     MDL023D     ; [30:37] <- [28:2F]
+                CAL     MDL0D8D     ; Convert (0x0E) to BCD in XReg.
+                LIA     0x07        ; K = 7.
+                LP      0x08        ;
+                EXAM                ;
+                LP      0x0F        ;
+                LDM                 ;
+                LP      0x0E        ;
+                EXAM                ; (0x0E) <- (0x0F)
+                CAL     MDL0D8D     ; Convert (0x0E) to BCD in XReg.
 ; The exponent of the floating point number XReg is set to 4, meaning 10000.
 ; This is because 9999 is the highest number that can be represented using
 ; 4 digits.
-                  LP    0x21
-                  ORIM  0x40
-; Change the exponent of the floating point number in XReg to the format X.YEZ.
-                  CAL   MDL0330
-                  LP    0x10
-                  TSIM  0x02
-                  JRNZP LBL0D8B
-                  TSIM  0x01
-                  JRZP  LBL0D8B
-                  ANIM  0xFE
-                  LP    0x21
-                  ORIM  0x08
-LBL0D8B:          RC
-                  RTN
-; This seems to be the code that converts an 8 bit number at $0e into
-; a BCD number.
-MDL0D8D:          LP    0x0E
-                  LDM
-                  SR
-                  EXAM
-                  JRNCP LBL0D95
-                  CAL   MDL0DB1
-LBL0D95:          CAL   MDL0DA3         ; (0x22 .. 0x24) <-> (0x32 .. 0x34)
-                  CAL   MDL0DAA         ; (0x22 .. 0x24) <- (0x2A .. 0x2C)
-                  CAL   MDL0DB1         ; (0x22 .. 0x24) += (0x2A .. 0x2C)
-                  CAL   MDL0DAA         ; (0x22 .. 0x24) <- (0x2A .. 0x2C)
-                  CAL   MDL0DA3         ; (0x22 .. 0x24) <-> (0x32 .. 0x34)
-                  DECK
-                  JRNCM MDL0D8D
-                  RTN
-MDL0DA3:          LP    0x22
-                  LIQ   0x32
-                  LII   0x02
-                  EXW
-                  RTN
-MDL0DAA:          LP    0x2A
-                  LIQ   0x22
-                  LII   0x02
-                  MVW
-                  RTN
-MDL0DB1:          LP    0x24
-                  LIQ   0x2C
-                  LII   0x02
-                  ADW
-                  RTN
+                LP      0x21        ; Exponent is initially 10000.
+                ORIM    0x40        ;
+; Change the exponent of the floating point number in [20:27] to the format
+;  X.YEZ.
+                CAL     MDL0330     ;
+                LP      0x10        ;
+                TSIM    0x02        ;
+                JRNZP   LBL0D8B     ;
+                TSIM    0x01        ;
+                JRZP    LBL0D8B     ;
+                ANIM    0xFE        ;
+                LP      0x21        ;
+                ORIM    0x08        ;
+LBL0D8B:        RC                  ;
+                RTN                 ;
+; Converts an 8 bit number at 0x0E into a BCD number. It is called twice (once
+;  for the LSB and then for the MSB) by the function at 0D5B.
+MDL0D8D:        LP      0x0E        ;
+                LDM                 ;
+                SR                  ; Halving of multiplier.
+                EXAM                ;
+                JRNCP   LBL0D95     ;
+                CAL     MDL0DB1     ; [22:24] +=  [2A:2C]
+LBL0D95:        CAL     MDL0DA3     ; [22:24] <-> [32:34]
+                CAL     MDL0DAA     ; [2A:2C] <- [22:24]
+                CAL     MDL0DB1     ; [22:24] +=  [2A:2C] ; Doubling of
+                                                          ;  multiplicand
+                CAL     MDL0DAA     ; [2A:2C] <- [22:24]
+                CAL     MDL0DA3     ; [22:24] <-> [32:34]
+                DECK                ;
+                JRNCM MDL0D8D       ;
+                RTN                 ;
+MDL0DA3:        LP      0x22        ; [22:24] <-> [32:34]
+                LIQ     0x32        ;
+                LII     0x02        ;
+                EXW                 ;
+                RTN                 ;
+MDL0DAA:        LP    0x2A          ; [2A:2C] <- [22:24]
+                LIQ   0x22          ;
+                LII   0x02          ;
+                MVW                 ;
+                RTN                 ;
+MDL0DB1:        LP    0x24          ; [22:24] +=  [2A:2C]
+                LIQ   0x2C          ;
+                LII   0x02          ;
+                ADW                 ;
+                RTN                 ;
 MDL0DB8:          LIB   0x28
 LBL0DBA:          LIDP  0xC6F5
                   LDD
@@ -2817,71 +2835,71 @@ LBL110F:          TEST  0x02
 LBL1113:          TEST  0x02
                   JRZM  LBL1113
                   RTN
-save_X:           LP    0x04
-                  LDM
-                  LIDP  0xC6B5
-                  STD
-                  LP    0x05
-                  LDM
-                  LIDP  0xC6B6
-                  STD
-                  RTN
-recover_X:        LIDP  0xC6B5
-                  LDD
-                  LP    0x04
-                  EXAM
-                  LIDP  0xC6B6
-                  LDD
-                  LP    0x05
-                  EXAM
-                  LIJ   0x01
-                  RTN
-                  LIA   0x1B
-                  IYS
-                  DECK
-                  JRNCP xchg_x
-                  POP
-                  POP
-                  CAL   MDL1144
-xchg_y:           LP    0x14
-                  LIA   0x05
-                  EXAM
-                  SC
-                  RTN
-MDL1144:          JP    0x4000
-                  LP    0x30            ; Clear 8 bytes of internal memory
-                  LII   0x07            ;  starting at 0x30
-                  LIA   0x00            ;
-                  FILM                  ;
-                  LP    0x30            ; Store the 0xF5 marker at the beginning
-                  ORIM  0xF5            ;  of the cleared area, thus reserving
-                  RTN                   ;  this memory for a character string.
-MDL1151:          CAL   save_X          ; ($C6B6, $C6B5) <- X
-                  LDR                   ; Save the stack pointer in $C6B3.
-                  ADIA  0x02            ; Add 2 so the stack pointer is
-                  LIDP  0xC6B3          ; adjusted for the caller.
-                  STD                   ;
-                  RTN                   ;
-MDL115B:          JP    0x4006
-MDL115E:          LIDP  0xF83E
-                  RTN
-MDL1162:          LIDP  0xF8BE
-                  RTN
-                  LIDP  0xC6B7
-                  RTN
-MDL116A:          LIDP  0xC6DA
-                  RTN
-MDL116E:          LP    0x24
-                  CPIM  0xD0
-                  RTN
-copy_y2x:         LP    0x04
-                  LIQ   0x06
-                  MVB
-                  RTN
-copy_x2y:         LP    0x06
-                  LIQ   0x04
-                  MVB
-                  RTN
+save_X:         LP      0x04        ; 0x1118
+                LDM                 ; [C6B5, C6C6] <- X
+                LIDP    0xC6B5      ;
+                STD                 ;
+                LP      0x05        ;
+                LDM                 ;
+                LIDP    0xC6B6      ;
+                STD                 ;
+                RTN                 ;
+recover_X:      LIDP    0xC6B5      ; 0x1125
+                LDD                 ; X  <- [C6B5, C6C6]
+                LP      0x04        ;
+                EXAM                ;
+                LIDP    0xC6B6      ;
+                LDD                 ;
+                LP      0x05        ;
+                EXAM                ;
+                LIJ     0x01        ;
+                RTN                 ;
+                LIA     0x1B
+                IYS
+                DECK
+                JRNCP   xchg_x
+                POP
+                POP
+                CAL     MDL1144
+MDL113E:        LP      0x14
+                LIA     0x05
+                EXAM
+                SC
+                RTN
+MDL1144:        JP      0x4000
+                LP      0x30        ; Clear 8 bytes of internal memory
+                LII     0x07        ;  starting at 0x30
+                LIA     0x00        ;
+                FILM                ;
+                LP      0x30        ; Store the 0xF5 marker at the beginning
+                ORIM    0xF5        ;  of the cleared area, thus reserving
+                RTN                 ;  this memory for a character string.
+MDL1151:        CAL     save_X      ; [C6B6, C6B5] <- X
+                LDR                 ; Save the stack pointer in $C6B3.
+                ADIA    0x02        ; Add 2 so the stack pointer is
+                LIDP    0xC6B3      ; adjusted for the caller.
+                STD                 ;
+                RTN                 ;
+MDL115B:        JP      0x4006
+MDL115E:        LIDP    0xF83E      ;
+                RTN                 ;
+MDL1162:        LIDP    0xF8BE      ;
+                RTN                 ;
+MDL1166:        LIDP    0xC6B7      ;
+                RTN                 ;
+MDL116A:        LIDP    0xC6DA      ;
+                RTN                 ;
+MDL116E:        LP      0x24
+                CPIM    0xD0
+                RTN
+copy_y2x:       LP      0x04        ; X <- Y
+                LIQ     0x06        ;
+                MVB                 ;
+                RTN                 ;
+copy_x2y:       LP      0x06        ; Y <- X
+                LIQ     0x04        ;
+                MVB                 ;
+                RTN                 ;
 MDL117C:            LIA   0x0D
                     EXAB
                     LP    0x0D
@@ -2892,193 +2910,193 @@ MDL117C:            LIA   0x0D
                     LIB   0xF8
                     CAL   load_x
                     RTN
-MDL1189:          CALL    0x44F5        ; Verify thre presence of memory at 0x2000.
-                  JRCP    basic_2x      ; If not present C = 1.
-                  RTN                   ;
-basic_2x:         LIDP    0xC6E1        ; X <- [0xC602, 0xC601]
-                  LP      0x04          ;
-                  MVBD                  ;
-                  RTN                   ;
-                  LP      0x04
-                  LIQ     0x0C
-                  EXB
-                  RTN
-kbd_bufx:         LIA     0xB0
-                  LIB     0xC7
-                  CAL     load_x
-                  RTN
-                  LIA     0x18
-                  LP      0x09
-                  EXAM
-show_screen:      LIA     0x20
-                  LP      0x08
-                  EXAM
-                  CAL     kbd_bufx
-                  CALL    0x44F8
-                  RTN
-                  LIA     0x20          ; Data will be stored starting at
-                  LP      0x08          ;  scratchpad address $20.
-                  EXAM                  ; This value is stored in K.
-                  CAL     MDL1162       ; Loads $F8BE in DP. What address is this?
-                  ANID    0xFB
-                  CAL     kbd_bufx      ; Loads the address of the keyboard
-                                        ;  buffer in X.
-                  CALL    0x44FB
-                  RTN
-                  LIDP    0xC702
-                  LP      0x1C
-                  LII     0x03
-                  MVWD
-                  CAL     MDL1899
-                  RTN
+MDL1189:        CALL    0x44F5      ; Verify thre presence of memory at 0x2000.
+                JRCP    basic_2x    ; If not present C = 1.
+                RTN                 ;
+basic_2x:       LIDP    0xC6E1      ; 0x118F
+                LP      0x04        ; X <- [0xC6E2, 0xC6E1]
+                MVBD                ;
+                RTN                 ;
+                LP      0x04        ; 0x1195
+                LIQ     0x0C        ; X <-> [0C:0D]
+                EXB                 ;
+                RTN                 ;
+kbd_bufx:       LIA     0xB0        ; 0x119A
+                LIB     0xC7        ; X <- C7AF
+                CAL     load_x      ;
+                RTN                 ;
+                LIA     0x18
+                LP      0x09
+                EXAM
+show_screen:    LIA     0x20
+                LP      0x08
+                EXAM
+                CAL     kbd_bufx
+                CALL    0x44F8
+                RTN
+                LIA     0x20        ; Data will be stored starting at
+                LP      0x08        ;  scratchpad address $20.
+                EXAM                ; This value is stored in K.
+                CAL     MDL1162     ; Loads $F8BE in DP. What address is this?
+                ANID    0xFB        ;
+                CAL     kbd_bufx    ; Loads the address of the keyboard
+                                    ;  buffer in X.
+                CALL    0x44FB
+                RTN
+                LIDP    0xC702
+                LP      0x1C
+                LII     0x03
+                MVWD
+                CAL     MDL1899
+                RTN
 ;
 ; Tucks the X register in the stack, just after (i.e. above) the return value.
 ; The callee will then find the X register on the top of the stack.
-MDL11C7:          LDR                   ; Make room on the stack for 2 bytes.
-                  DECA                  ;
-                  DECA                  ;
-                  STP                   ;
-                  LIQ     0x04          ; Point to register X
-                  MVB                   ; Store it in the stack.
-                  STQ                   ;
-                  EXB                   ; Exchange P and Q.
-                  STR                   ; Store the new stack pointer.
-                  RTN                   ;
+MDL11C7:        LDR                 ; Make room on the stack for 2 bytes.
+                DECA                ;
+                DECA                ;
+                STP                 ;
+                LIQ     0x04        ; Point to register X
+                MVB                 ; Store it in the stack.
+                STQ                 ;
+                EXB                 ; Exchange P and Q.
+                STR                 ; Store the new stack pointer.
+                RTN                 ;
 ; Read X from the stack where it is stored just above the return address.
-MDL11D2:          LDR                   ; Load stack pointer.
-                  INCA                  ; Increment by 2, bypassing current
-                  INCA                  ;  return address.
-                  LP      0x04          ; Address for X register.
-                  STQ                   ;
-                  MVB                   ; Move tucked address to X.
-                  STP                   ; Destination address to move the return address to.
-                  EXAB                  ; Save updated stack pointer.
-                  LDR                   ; Source address for move in Q.
-                  STQ                   ;
-                  MVB                   ; Move return address.
-                  EXAB                  ; Recover updated stack pointer
-                  STR                   ; Update stack pointer.
-                  RTN                   ;
-lcd_on:           LIA     0x01          ; (0x11E0)
-LBL11E2:          CAL     wr_portc      ;
-                  RTN                   ;
-lcd_off:          LIA     0x00          ; (0x11E5)
-                  JRM     LBL11E2
-copy_x:           LP      0x04          ; (0x11E9) Destination: X
-LBL11EA:          LIQ     0x02          ; Source A
-                  MVB                   ; Always 16 bit since J=1.
-                  RTN                   ;
-copy_y:           LP      0x06          ; (0x11EE) Destination: Y
-                  JRM     LBL11EA       ;
-load_x:             CAL     copy_x      ; (0x11F1) X <- (B, A) - 1
-                    DX                  ;
-                    RTN                 ;
-load_y:             CAL     copy_y      ; (0x11F5) Y <- (B, A) - 1
-                  DY                    ;
-                  RTN                   ;
-kbd_bufy:         LIA     0xB0          ; (0x11F9) Y <- 0xC7B0
-                  LIB     0xC7          ;
-                  CAL     load_y        ;
-                  RTN                   ;
-                  LP      0x1C          ; (0x1200) [$1C, $1D] <- Xvb
-                  LIQ     0x04          ;
-                  MVB                   ;
-                  RTN                   ;
-MDL1205:          LP      0x17
-                  ANIM    0xC0
-                  TSIM    0x40
-                  JRNZP   LBL1212
-                  LIDP    0xC6F7
-                  LIA     0x60
-                  STD
-LBL1212:          LIDP    0xC6F5
-                  LIA     0x40
-                  STD
-                  LIDL    0xF6
-                  LIA     0x00
-                  STD
-                  LP      0x13
-                  ANIM    0xFE
-                  LP      0x17
-                  ANIM    0xC0
-                  ORIM    0x01
-                  LIDP    0xC6F2
-                  LIA     0x01
-                  STD
-LBL122B:            IXL                 ; Get character.
-                    CPIA    'Z' + 1     ; When beyond printable the character
-                    JRNCP   LBL128A     ;  likely to be a BASIC command.
-                    CPIA    0x51        ; Compare with 'A'.
-                    JRNCP   LBL1286     ; Jump if between 'A' and 'Z'.
-                    CPIA    0x40        ; Compare with '0'.
-                    JRNCP   LBL1282     ; Jump if numeric.
-                    PTC     0x10, LBL126F ;
-                    DTC                 ;
-                    .CASE   0x35, LBL12F0 ; '+'
-                    .CASE   0x36, LBL12F0 ; '-'
-                    .CASE   0x37, LBL130D ; '*'
-                    .CASE   0x38, LBL130D ; '/'
-                    .CASE   0x39, LBL130D ; '^'
-                    .CASE   0x32, LBL130D ; '>'
-                    .CASE   0x33, LBL130D ; '<'
-                    .CASE   0x34, LBL130D ; '='
-                    .CASE   0x00, MDL13D5 ; End of line.
-                    .CASE   0x1B, LBL13F5 ; ','
-                    .CASE   0x30, LBL1417 ; '('
-                    .CASE   0x31, LBL1420 ; ')'
-                    .CASE   0x12, LBL151D ; '"'
-                    .CASE   0x1A, LBL1561 ; Square root.
-                    .CASE   0x19, LBL1546 ; PI (3.14)
-                    .CASE   0x1F, LBL1566 ; '&'. Convert Hex character.
-                    .DEFAULT MDL13D5    ;
-LBL126F:          JRCP  LBL1281
-                  LP    0x13
-                  TSIM  0x01
-                  JRZM  LBL122B
-                  CAL   MDL116E
-                  JRNCP LBL127C
-                  CAL   MDL0D01
-LBL127C:          DX
-                  RC
-                  LP    0x17
-                  ANIM  0x3F
-LBL1281:          RTN
-LBL1282:          CAL   MDL12AE
-                  JRM   LBL126F
-LBL1286:          CAL   MDL12D1
-                  JRM   LBL126F
-LBL128A:          CPIA  0xA0
-                  JRCP  LBL12A2
-                  CPIA  0xB0
-                  JRCP  LBL12AA
-                  CPIA  0xB2
-                  JRZP  LBL12AA
-                  CPIA  0xBD
-                  JRZP  LBL12AA
-                  CPIA  0xBF
-                  JRZP  LBL12AA
-LBL129E:          CAL   MDL13D5
-                  JRM   LBL126F
-LBL12A2:          CPIA  0x90
-                  JRNCM LBL129E
-                  CPIA  0x76
-                  JRCM  LBL129E
-LBL12AA:          CAL   MDL1312
-                  JRM   LBL126F
-MDL12AE:          CAL   MDL16A5
-                  JRCP  LBL12BC
-                  DX
-                  LP    0x13
-                  ANIM  0xFD
-                  CAL   MDL15A3
-                  JRCP  LBL12BC
-                  CAL   MDL1CCD
-LBL12BC:          RTN
-ClrXReg:          LP    0x20        ; This code is identical to the one
-                  LIA   0x00        ;  beginning at address 0x00A2.
-                  LII   0x07
-                  FILM
-                  RTN
+MDL11D2:        LDR                 ; Load stack pointer.
+                INCA                ; Increment by 2, bypassing current
+                INCA                ;  return address.
+                LP      0x04        ; Address for X register.
+                STQ                 ;
+                MVB                 ; Move tucked address to X.
+                STP                 ; Destination address to move the return address to.
+                EXAB                ; Save updated stack pointer.
+                LDR                 ; Source address for move in Q.
+                STQ                 ;
+                MVB                 ; Move return address.
+                EXAB                ; Recover updated stack pointer
+                STR                 ; Update stack pointer.
+                RTN                 ;
+lcd_on:         LIA     0x01        ; (0x11E0)
+LBL11E2:        CAL     wr_portc    ;
+                RTN                 ;
+lcd_off:        LIA     0x00        ; (0x11E5)
+                JRM     LBL11E2
+copy_x:         LP      0x04        ; (0x11E9) Destination: X
+LBL11EA:        LIQ     0x02        ; Source A
+                MVB                 ; Always 16 bit since J=1.
+                RTN                 ;
+copy_y:         LP      0x06        ; (0x11EE) Destination: Y
+                JRM     LBL11EA     ;
+load_x:         CAL     copy_x      ; (0x11F1) X <- (B, A) - 1
+                DX                  ;
+                RTN                 ;
+load_y:         CAL     copy_y      ; (0x11F5) Y <- (B, A) - 1
+                DY                  ;
+                RTN                 ;
+kbd_bufy:       LIA     0xB0        ; (0x11F9) Y <- 0xC7B0 - 1
+                LIB     0xC7        ;
+                CAL     load_y      ;
+                RTN                 ;
+                LP      0x1C        ; (0x1200) [$1C, $1D] <- Xvb
+                LIQ     0x04        ;
+                MVB                 ;
+                RTN                 ;
+MDL1205:        LP      0x17
+                ANIM    0xC0
+                TSIM    0x40
+                JRNZP   LBL1212
+                LIDP    0xC6F7
+                LIA     0x60
+                STD
+LBL1212:        LIDP    0xC6F5
+                LIA     0x40
+                STD
+                LIDL    0xF6
+                LIA     0x00
+                STD
+                LP      0x13
+                ANIM    0xFE
+                LP      0x17
+                ANIM    0xC0
+                ORIM    0x01
+                LIDP    0xC6F2
+                LIA     0x01
+                STD
+LBL122B:        IXL                 ; Get character.
+                CPIA    'Z' + 1     ; When beyond printable the character
+                JRNCP   LBL128A     ;  likely to be a BASIC command.
+                CPIA    0x51        ; Compare with 'A'.
+                JRNCP   LBL1286     ; Jump if between 'A' and 'Z'.
+                CPIA    0x40        ; Compare with '0'.
+                JRNCP   LBL1282     ; Jump if numeric.
+                PTC     0x10, LBL126F ;
+                DTC                 ;
+                .CASE   0x35, LBL12F0 ; '+'
+                .CASE   0x36, LBL12F0 ; '-'
+                .CASE   0x37, LBL130D ; '*'
+                .CASE   0x38, LBL130D ; '/'
+                .CASE   0x39, LBL130D ; '^'
+                .CASE   0x32, LBL130D ; '>'
+                .CASE   0x33, LBL130D ; '<'
+                .CASE   0x34, LBL130D ; '='
+                .CASE   0x00, MDL13D5 ; End of line.
+                .CASE   0x1B, LBL13F5 ; ','
+                .CASE   0x30, LBL1417 ; '('
+                .CASE   0x31, LBL1420 ; ')'
+                .CASE   0x12, LBL151D ; '"'
+                .CASE   0x1A, LBL1561 ; Square root.
+                .CASE   0x19, LBL1546 ; PI (3.14)
+                .CASE   0x1F, LBL1566 ; '&'. Convert Hex character.
+                .DEFAULT MDL13D5    ;
+LBL126F:        JRCP   LBL1281
+                LP     0x13
+                TSIM   0x01
+                JRZM   LBL122B
+                CAL    MDL116E
+                JRNCP  LBL127C
+                CAL    MDL0D01
+LBL127C:        DX
+                RC
+                LP      0x17
+                ANIM    0x3F
+LBL1281:        RTN
+LBL1282:        CAL     MDL12AE
+                JRM     LBL126F
+LBL1286:        CAL     MDL12D1
+                JRM     LBL126F
+LBL128A:        CPIA    0xA0
+                JRCP    LBL12A2
+                CPIA    0xB0
+                JRCP    LBL12AA
+                CPIA    0xB2
+                JRZP    LBL12AA
+                CPIA    0xBD
+                JRZP    LBL12AA
+                CPIA    0xBF
+                JRZP    LBL12AA
+LBL129E:        CAL     MDL13D5
+                JRM     LBL126F
+LBL12A2:        CPIA    0x90
+                JRNCM   LBL129E
+                CPIA    0x76
+                JRCM    LBL129E
+LBL12AA:        CAL     MDL1312
+                JRM     LBL126F
+MDL12AE:        CAL     MDL16A5
+                JRCP    LBL12BC
+                DX
+                LP      0x13
+                ANIM    0xFD
+                CAL     MDL15A3
+                JRCP    LBL12BC
+                CAL     MDL1CCD
+LBL12BC:        RTN
+ClrXReg:        LP      0x20        ; 02BD: This code is identical to the one
+                LIA     0x00        ;  beginning at address 0x00A2.
+                LII     0x07        ;
+                FILM                ;
+                RTN                 ;
 MDL12C4:          LII   0x04
 LBL12C6:          INCB
                   LP    0x03
@@ -3129,118 +3147,118 @@ LBL130D:          CAL   MDL16BA
                   JRNCM LBL12F6
                   RTN
 ; Enters with the token of the BASIC instruction in A.
-MDL1312:            EXAB
-                    CAL     MDL16A5
-                    EXAB
-                    JRCP    LBL13C1
-                    CPIA    0x90        ;
-                    JRCP    LBL132E     ; Jump if token < 0x90.
-                    CPIA    0xA0        ;
-                    JRCP    LBL132B     ; Jump if  0x90 <= token < 0x9F
-                    CPIA    0xB0        ;
-                    JRNCP   LBL138E     ; Jump if token >= 0xB0
-LBL1324:            CAL     MDL1CD7
-                    ORIM    0x10
-                    CAL     MDL1AE0
-                    RTN
-LBL132B:            CAL     err_syntax
-                    RTN
-LBL132E:            CPIA    0x80
-                    JRCM    LBL1324     ; Jump if token < 0x80.
-                    CPIA    0x86
-                    JRCP    LBL13C1     ; Jump if token < 0x86.
-                    CPIA    0x89
-                    JRZP    LBL1381     ; Jump if token is below 0x86.
-                    CPIA    0x8A
-                    JRNZM   LBL1324     ; Jump if token != 0x8A
-                  CAL   MDL16B4
-                  JRCP  LBL1375
-                  CAL   MDL1CDB
-                  CALL  0x44FE
-                  JRCP  LBL1375
-                  LP    0x27
-                  CPIM  0x00
-                  JRNZP LBL135E
-                  CAL   MDL1ACF
-                  CAL   scan_keybd
-                  CAL   MDL1ACF
-                  JRCP  LBL1361
-LBL1356:          LIA   0x00
-                  LP    0x27
-                  EXAM
-                  CAL   MDL1CCD
-                  RC
-                  RTN
-LBL135E:          CAL   MDL153D
-                  RTN
-LBL1361:          CPIA  0x10
-                  JRCM  LBL1356
-                  LP    0x06
-                  CPIM  0xAF
-                  JRNCP LBL1373
-                  IYS
-                  LIA   0x01
-                  LP    0x08
-                  EXAM
-                  CAL   MDL1539
-                  RC
-                  RTN
-LBL1373:          CAL   exchg_Xh
-LBL1375:          RTN
-LBL1376:          CAL   MDL1CF2
-                  JRCP  LBL1380
-                  CAL   MDL115B
-                  JRCP  LBL1380
-                  CAL   MDL1CCD
-LBL1380:          RTN
-LBL1381:          CAL   MDL16B4
-                  JRCM  LBL1375
-                  CAL   MDL1CDB
-                  CALL  0x4501
-                  JRCM  LBL1375
-                  JRM   LBL135E
-LBL138E:            CPIA    0xB2        ; Compare with BASIC token "MEM".
-                    JRZP    LBL13A0
-                    CPIA    0xBF        ; Compare with BASIC token "INSTAT".
-                    JRZM    LBL1376
-                    CPIA    0xBD        ; Compare with BASIC token "PI".
-                    JRNZM LBL132B
-                  CAL   MDL1CF2
-                  JPNC  LBL154E
-                  RTN
+MDL1312:        EXAB
+                CAL     MDL16A5
+                EXAB
+                JRCP    LBL13C1
+                CPIA    0x90        ;
+                JRCP    LBL132E     ; Jump if token < 0x90.
+                CPIA    0xA0        ;
+                JRCP    LBL132B     ; Jump if  0x90 <= token < 0x9F
+                CPIA    0xB0        ;
+                JRNCP   LBL138E     ; Jump if token >= 0xB0
+LBL1324:        CAL     MDL1CD7
+                ORIM    0x10
+                CAL     MDL1AE0
+                RTN
+LBL132B:        CAL     err_syntax
+                RTN
+LBL132E:        CPIA    0x80
+                JRCM    LBL1324     ; Jump if token < 0x80.
+                CPIA    0x86        ;
+                JRCP    LBL13C1     ; Jump if token < 0x86.
+                CPIA    0x89        ;
+                JRZP    LBL1381     ; Jump if token is below 0x86.
+                CPIA    0x8A        ;
+                JRNZM   LBL1324     ; Jump if token != 0x8A
+                CAL     MDL16B4
+                JRCP    LBL1375
+                CAL     MDL1CDB
+                CALL    0x44FE
+                JRCP    LBL1375
+                LP      0x27
+                CPIM    0x00
+                JRNZP   LBL135E
+                CAL     MDL1ACF
+                CAL     scan_keybd
+                CAL     MDL1ACF
+                JRCP    LBL1361
+LBL1356:        LIA     0x00
+                LP      0x27
+                EXAM
+                CAL     MDL1CCD
+                RC
+                RTN
+LBL135E:        CAL     MDL153D
+                RTN
+LBL1361:        CPIA    0x10
+                JRCM    LBL1356
+                LP      0x06
+                CPIM    0xAF
+                JRNCP   LBL1373
+                IYS
+                LIA     0x01
+                LP      0x08
+                EXAM
+                CAL     MDL1539
+                RC
+                RTN
+LBL1373:        CAL     exchg_Xh
+LBL1375:        RTN
+LBL1376:        CAL     MDL1CF2
+                JRCP    LBL1380
+                CAL     MDL115B
+                JRCP    LBL1380
+                CAL     MDL1CCD
+LBL1380:        RTN
+LBL1381:        CAL     MDL16B4
+                JRCM    LBL1375
+                CAL     MDL1CDB
+                CALL    0x4501
+                JRCM    LBL1375
+                JRM     LBL135E
+LBL138E:        CPIA    0xB2        ; Compare with BASIC token "MEM".
+                JRZP    LBL13A0     ;
+                CPIA    0xBF        ; Compare with BASIC token "INSTAT".
+                JRZM    LBL1376     ;
+                CPIA    0xBD        ; Compare with BASIC token "PI".
+                JRNZM   LBL132B     ;
+                CAL     MDL1CF2
+                JPNC    LBL154E
+                RTN
 ; Implement the BASIC 'MEM' command.
-LBL13A0:          CAL   MDL1CF2
-                  JRCP  LBL13C0
-                  LIDP  0xC6FC          ; End of BASIC RAM.
-                  LP    0x0A            ;
-                  MVBD                  ; Store in [N, M]
-                  LIDP  0xC6E3          ; Last byte used by BASIC.
-                  LP    0x02            ;
-                  MVBD                  ; Store in [B, A]
-                  LP    0x0A            ;
-                  SBB                   ; [N, M] <- [N, M] - [B, A]
-                  LP    0x02            ;
-                  LIQ   0x0A            ;
-                  MVB                   ; [B, A] <- [N, M]
-                  DECA                  ;
-                  JRNCP LBL13B8         ;
-                  DECB                  ; [B, A] <- [B, A] - 1
-LBL13B8:          LP    0x28            ;
-                  LIQ   0x02            ;
-                  MVB                   ; (0x28, 0x29) <- (B, A)
-                  CAL   MDL0D3B
-                  CAL   MDL1CCD
-LBL13C0:          RTN
-LBL13C1:          CAL   MDL16BA
-                  JRCM  LBL13C0
-                  CPIA  0x81
-                  JRZM  LBL12F6
-                  CPIA  0x85
-                  JRZM  LBL12F6
-                  JRNCM LBL132B
-                  CPIA  0x82
-                  JRCM  LBL132B
-                  JRM   LBL12F6
+LBL13A0:        CAL     MDL1CF2
+                JRCP    LBL13C0
+                LIDP    0xC6FC          ; End of BASIC RAM.
+                LP      0x0A            ;
+                MVBD                    ; Store in [N, M]
+                LIDP    0xC6E3          ; Last byte used by BASIC.
+                LP      0x02            ;
+                MVBD                    ; Store in [B, A]
+                LP      0x0A            ;
+                SBB                     ; [N, M] <- [N, M] - [B, A]
+                LP      0x02            ;
+                LIQ     0x0A            ;
+                MVB                     ; [B, A] <- [N, M]
+                DECA                    ;
+                JRNCP   LBL13B8         ;
+                DECB                    ; [B, A] <- [B, A] - 1
+LBL13B8:        LP      0x28            ;
+                LIQ     0x02            ;
+                MVB                     ; [28, 29] <- [B, A]
+                CAL     MDL0D3B
+                CAL     MDL1CCD
+LBL13C0:        RTN
+LBL13C1:        CAL     MDL16BA
+                JRCM    LBL13C0
+                CPIA    0x81
+                JRZM    LBL12F6
+                CPIA    0x85
+                JRZM    LBL12F6
+                JRNCM   LBL132B
+                CPIA    0x82
+                JRCM    LBL132B
+                JRM     LBL12F6
 
 ; Handle end of input line.
 MDL13D5:          CAL   MDL16BA
@@ -3359,16 +3377,16 @@ LBL1478:          LP    0x06
                   JRCP  LBL1503
                   CPIA  0x8F
                   JRNCP LBL151A
-                    PTC     0x02, LBL14AD
-                    DTC
-                    .CASE   0x8C, LBL0DD3
-                    .CASE   0x8D, LBL0E5D
-                    .DEFAULT LBL0E09
-LBL14AD:            LIA     0x01
-                    LIDP    0xC6F2
-                    STD
-                    CAL     MDL1ACF     ; X <-> ($1C, $1D)
-                    RTN
+                PTC     0x02, LBL14AD
+                DTC
+                .CASE   0x8C, LBL0DD3
+                .CASE   0x8D, LBL0E5D
+                .DEFAULT LBL0E09
+LBL14AD:        LIA     0x01
+                LIDP    0xC6F2
+                STD
+                CAL     MDL1ACF     ; X <-> [1C, 1D]
+                RTN
 LBL14B6:            LP    0x0A
                     EXAM
                     LDM
@@ -3462,11 +3480,11 @@ LBL1546:            CAL     MDL16AE
                     JRCP    LBL1558
 
 ; ------------------------------------------------------------------------------
-; This code interprets the word PI (3.14159265359) in BASIC.
+; Load PI (3.14159265359) from ROM.
 ; ------------------------------------------------------------------------------
 LBL154E:        LIA     0x59        ; The constant is located at address
                 LIB     0x15        ;  0x1559 in inner ROM code.
-                LP      0x20        ; Xreg is the destination
+                LP      0x20        ; Zreg is the destination
                 LII     0x07        ; 8 bytes to transfer.
                 RST                 ; Perform the transfer.
                 CAL     MDL1CCD     ;
@@ -3487,48 +3505,48 @@ LBL1561:        LIA     0x87        ; Token for BASIC command for square root.
 ;  point we have the zero terminated string to convert starting at
 ;  address 0xC7B0.
 ; ------------------------------------------------------------------------------
-LBL1566:            CAL     MDL16A5
-                    JRCP    LBL1596
-                    LP      0x08        ; Load 4 in K.
-                    LIA     0x04        ; K is used as counters for the
-                    EXAM                ; number of characters to convert. In case of
-                                        ; a HEX number we convert up to 4 characters
-                                        ; or a 16 bit number.
-                    LP      0x28        ; Clear up 2 bytes (4 nibbles or 4 characters)
-                    LIA     0x00        ;  starting at 28.
-                    LII     0x01
-                    FILM
-LBL1574:            IXL                 ; Get next hex character.
-                    CPIA    0x40        ; Compare with '0'.
-                    JRZM    LBL1574     ; Jump taken if character is symbol.
-LBL1579:            CPIA    0x4A        ; Check if beyond numeric.
-                    JRNCP   LBL1597
-                    CPIA    0x40
-                    JRCP    LBL158B     ; Taken at end of conversion.
-                    ANIA    0x0F        ; Mask off numeric part.
-LBL1583:            LP      0x29
-                    SLW                 ; Shift [28, 29] 4 bits left
-                    LP      0x29          ; OR the digit into the low
-                    ORMA                ; order nibble of [29].
-                    IXL                 ; Get next char.
-                    DECK
-                    JRNZM   LBL1579
-LBL158B:            LP      0x28        ; We come here at the end of the
-                    LII     0x00        ;  conversion, when we find the termination
-                    LIQ     0x29        ;  value.
-                    EXW                 ; Swap high and low byte. LSB is now first.
-                    CAL     MDL0D3B     ; This is where the bug is.
-                    CAL     MDL1CCD
-                    DX
-LBL1596:            RTN
-LBL1597:            CPIA    0x51        ; Compare with 'A'
-                    JRCM    LBL158B
-                    CPIA    0x57        ; Compare with 'G' (compare for hex digit).
-                    JRNCM   LBL158B
-                    SBIA    0x47        ; Subtract HEX numeric offset 'A' - 10
-                    JRM     LBL1583
+LBL1566:        CAL     MDL16A5
+                JRCP    LBL1596
+                LP      0x08        ; Load 4 in K.
+                LIA     0x04        ; K is used as counters for the
+                EXAM                ; number of characters to convert. In case of
+                                    ; a HEX number we convert up to 4 characters
+                                    ; or a 16 bit number.
+                LP      0x28        ; Clear up 2 bytes (4 nibbles or 4 characters)
+                LIA     0x00        ;  starting at 28.
+                LII     0x01
+                FILM
+LBL1574:        IXL                 ; Get next hex character.
+                CPIA    0x40        ; Compare with '0'.
+                JRZM    LBL1574     ; Jump taken if character is symbol.
+LBL1579:        CPIA    0x4A        ; Check if beyond numeric.
+                JRNCP   LBL1597
+                CPIA    0x40
+                JRCP    LBL158B     ; Taken at end of conversion.
+                ANIA    0x0F        ; Mask off numeric part.
+LBL1583:        LP      0x29
+                SLW                 ; Shift [28, 29] 4 bits left
+                LP      0x29          ; OR the digit into the low
+                ORMA                ; order nibble of [29].
+                IXL                 ; Get next char.
+                DECK
+                JRNZM   LBL1579
+LBL158B:        LP      0x28        ; We come here at the end of the
+                LII     0x00        ;  conversion, when we find the termination
+                LIQ     0x29        ;  value.
+                EXW                 ; Swap high and low byte. LSB is now first.
+                CAL     MDL0D3B     ; This is where the bug is.
+                CAL     MDL1CCD
+                DX
+LBL1596:        RTN
+LBL1597:        CPIA    0x51        ; Compare with 'A'
+                JRCM    LBL158B
+                CPIA    0x57        ; Compare with 'G' (compare for hex digit).
+                JRNCM   LBL158B
+                SBIA    0x47        ; Subtract HEX numeric offset 'A' - 10
+                JRM     LBL1583
 
-MDL15A3:          LP    0x13
+MDL15A3:        LP    0x13
                   ORIM  0x10
                   ANIM  0xF3
                   CAL   ClrZReg
@@ -4004,19 +4022,19 @@ LBL1878:          LIA   0xCF
                   JRNCM LBL1878
 LBL188C:          SC
 LBL188D:          RTN
-MDL188E:           LP      0x02     ; (B, A) <- X - (B, A)
-                   LIQ     0x04
-                   EXB
-                   LP      0x04
-                   SBB
-                   LP      0x02
-                   LIQ     0x04
-                   EXB
-                   RTN
-MDL1899:           LP    0x04       ; X <- ($1D, $1C)
-                   LIQ   0x1C
-                   MVB
-                   RTN
+MDL188E:        LP      0x02        ; [B, A] <- X - [B, A]
+                LIQ     0x04        ;
+                EXB                 ;
+                LP      0x04        ;
+                SBB                 ;
+                LP      0x02        ;
+                LIQ     0x04        ;
+                EXB                 ;
+                RTN                 ;
+MDL1899:        LP      0x04        ; X <- [$1D, $1C]
+                LIQ     0x1C        ;
+                MVB                 ;
+                RTN                 ;
 MDL189E:          LP    0x28
                   LDM
                   SBIA  0x1A
@@ -4047,33 +4065,35 @@ MDL18C0:          DY
                   RTN
 
 ; Print the '>' cursor on the LCD.
-                   CAL     MDL116A     ; DP <- $C6DA
-                   ANID    0xC0
-                   CAL     MDL1162     ; DP <- $F8BE
-                   ANID    0xE1
-                   LP      0x20        ; Load cursor sign '>'
-                   LIA     0x32        ; Store in LCD buffer.
-                   EXAM
-                   LP      0x21        ; Fill rest of buffer with blanks.
-                   LIA     0x11        ;
-                   LII     0x16        ; 23 of them.
-                   FILM
-                   CALL    0x400C      ; Print the line with the characters
-                                       ;  starting at address 0x20.
-                   RTN
-MDL18DB:           LP      0x06        ; (Xl, Xh) <- (B, A)
-                   LIQ     0x02        ; Oddly, this code is the same as that
-                   MVB                 ;   at 0x11F5.
-                   RTN
-MDL18E0:           LIDP    0xC6FC      ; (0xC6FC) <- Y
-                   CAL     MDL18E7
-                   LIDL    0xCE        ; (0xC6CE) <- Y
-MDL18E7:          LP    0x0C
-                  LIQ   0x06
-                  MVB
-                  LP    0x0C
-                  EXBD
-                  RTN
+; Creates a string starting starting at scratchpad address 0x20 with a ">"
+;  character followed by as many blanks "0x21" as needed for fill the display.
+                CAL     MDL116A     ; DP <- $C6DA
+                ANID    0xC0        ;
+                CAL     MDL1162     ; DP <- $F8BE
+                ANID    0xE1        ;
+                LP      0x20        ; Load cursor sign '>'
+                LIA     0x32        ; Store in LCD buffer.
+                EXAM                ;
+                LP      0x21        ; Fill rest of buffer with blanks.
+                LIA     0x11        ;
+                LII     0x16        ; 23 of them.
+                FILM                ;
+                CALL    0x400C      ; Print the line with the characters
+                                    ;  starting at address 0x20.
+                RTN                 ;
+MDL18DB:        LP      0x06        ; (Xl, Xh) <- (B, A)
+                LIQ     0x02        ; Oddly, this code is the same as that
+                MVB                 ;   at 0x11F5.
+                RTN                 ;
+MDL18E0:        LIDP    0xC6FC      ; (0xC6FC) <- Y
+                CAL     MDL18E7     ;
+                LIDL    0xCE        ; (0xC6CE) <- Y
+MDL18E7:        LP      0x0C        ;
+                LIQ     0x06        ;
+                MVB                 ;
+                LP      0x0C        ;
+                EXBD                ;
+                RTN                 ;
 MDL18EE:          LP    0x12
                   ANIM  0xF0
                   ORIM  0x04
@@ -4476,9 +4496,9 @@ LBL1B30:          LP    0x0A
 LBL1B44:          LP    0x0A
                   LDM
                   PUSH
-                  CAL   MDL1ACF         ; [$1C, $1D] <-> X
+                  CAL   MDL1ACF         ; [1C, 1D] <-> X
                   CAL   MDL1B9E
-                  CAL   MDL1ACF         ; [$1C, $1D] <-> X
+                  CAL   MDL1ACF         ; [1C, 1D] <-> X
                   POP
                   LP    0x0A
                   EXAM
@@ -4520,16 +4540,10 @@ LBL1B8D:          LIA   0x06
                   RTN
 LBL1B90:          LIA   0x07
                   RTN
-                  EXW
-                  MVW
-                  IY
-                  IY
-                  IY
-                  DX
-                  DX
-                  IX
-                  IX
-                  LIA   0x03
+
+; ROM version number
+                .db     09, 08, 06, 06, 06, 05, 05, 04, 04, 02, 03
+
 MDL1B9E:          LDD
                   LP    0x06
                   LIDP  0xC6F6
@@ -4706,96 +4720,96 @@ MDL1CDB:          LIA   0x00
                   MVB
                   DY
                   RTN
-MDL1CF2:            IXL                 ; Get next charater.
-                    CPIA  'A'           ; 0x51
-                    JRCP  LBL1CFB       ; Jump if A < 'A'
-                    CPIA  'Z' + 1       ; 0x6B
-                    JRCP  LBL1CFD       ; Jump if A < 'Z' - 1
-LBL1CFB:            CAL   err_syntax    ; Syntax error for no printable char.
-LBL1CFD:            DX
-                    RC
-                    RTN
-LBL1D00:            LIA   0x47          ; Push the $472A return address into
-                    PUSH                ;  the stack.
-                    LIA   0x2A          ;
-                    PUSH                ;
-                    LIDP  0xF8BE
-                    TSID  0x02
-                    JRNZP LBL1D11
-                    LIA   0x03          ; Display on, counter clear.
-                    CAL   wr_portc      ;
-LBL1D11:            TSID  0x08
-                    JRNZP LBL1D17
-                    TEST  0x01          ; Test for 0.5s timeout.
-LBL1D17:            LIA   0xBA
-                    LIB   0xF8
-                    CAL   load_y
-                    LIA   0x00
-                    IYS
-                    LIA   0xFB
-                    IYS
+MDL1CF2:        IXL                 ; Get next charater.
+                CPIA    'A'         ; 0x51
+                JRCP    LBL1CFB     ; Jump if A < 'A'
+                CPIA    'Z' + 1     ; 0x6B
+                JRCP    LBL1CFD     ; Jump if A < 'Z' - 1
+LBL1CFB:        CAL     err_syntax  ; Syntax error for no printable char.
+LBL1CFD:        DX                  ;
+                RC                  ;
+                RTN                 ;
+LBL1D00:        LIA     0x47        ; Push the $472A return address into
+                PUSH                ;  the stack.
+                LIA     0x2A        ;
+                PUSH                ;
+                LIDP    0xF8BE      ;
+                TSID    0x02        ;
+                JRNZP   LBL1D11     ;
+                LIA     0x03        ; Display on, counter clear.
+                CAL     wr_portc    ;
+LBL1D11:        TSID    0x08
+                JRNZP   LBL1D17
+                TEST    0x01          ; Test for 0.5s timeout.
+LBL1D17:        LIA     0xBA
+                LIB     0xF8
+                CAL     load_y
+                LIA     0x00
+                IYS
+                LIA     0xFB
+                IYS
 ; ------------------------------------------------------------------------------
 ; Synchronous scan of the keyboard. Returns when a key has been pressed.
 ; Uses the asynchronous scan at 0x1F44.
 ; ------------------------------------------------------------------------------
-LBL1D23:            LIA   0xFB          ;
-                    LP    0x00          ;
-                    EXAM                ; I = 0xFB
-LBL1D27:            LIP   0x5C          ; Set Port A to 0xFF.
-                    ORIM  0xFF          ; Why?
-                    OUTA                ;
-                    CAL   MDL115E       ; DP <- 0xF83E
-                    INCP                ; Port B
-                    ANIM  0xF0          ; Clear Keyboard lines.
-                    ORIM  0x08          ; Assert power switch keys line.
-                    OUTB                ;
-                    WAIT  0x0F          ;
-                    INB                 ; Read status of on/off slider.
-                                        ; IB1 - RSV
-                                        ; IB2 - PRO
-                                        ; IB3 - OFF
-                    ANIA  0x07          ; Masks off IB1, IB2 and IB3.
-                    JRZP  LBL1D59       ; Taken if RUN pressed
-                    SR                  ;
-                    JRCP  LBL1D4F       ; Taken if RSV pressed.
-                    SR                  ;
-                    JRCP  LBL1D44       ; Taken if PRO pressed.
-                    LIA   0x01          ; Calculator is OFF.
-                    RTN                 ; Return to $472A
-LBL1D44:            TSID  0x01          ;
-                    JRNZP LBL1D63       ;
-                    ANID  0xF8          ;
-                    ORID  0x01          ;
-LBL1D4C:            LIA   0x08          ;
-                    RTN                 ; Return to $472A
-LBL1D4F:            TSID  0x04          ;
-                    JRNZP LBL1D63       ;
-                    ANID  0xF8          ;
-                    ORID  0x04          ;
-                    JRM   LBL1D4C       ;
-LBL1D59:            TSID  0x02          ; Is the RUN symbol already showing
-                                        ;  on the LCD?
-                    JRNZP LBL1D63       ; If so, scan keyboard.
-                    ANID  0xF8          ; Clear all the LCD symbols.
-                    ORID  0x02          ; Turn on the RUN symbol.
-                    JRM   LBL1D4C       ; Return with A = 0x08
-LBL1D63:            CAL   scan_keybd    ; Code at 0x1F44.
-                    JPNC  0x4003        ; C = 0 for no key pressed.
-                    PUSH                ; Save the key scanned.
-                    CAL   scan_keybd    ; Scan again (debouncing?).
-                    EXAB                ;
-                    POP                 ;
-                    JPNC  0x4003        ; No key pressed if taken.
-                    LP    0x03          ; Compare A with B.
-                    CPMA                ;
-                    JRNZP LBL1E66       ; Taken if the 2 characters are
-                                        ;  different.
-LBL1D74:            CAL   MDL1162       ; DP <- $F8BE
-                    TSID  0x01          ;
-                    JRNZP LBL1E3B       ;
-                    ORID  0x01          ;
-                    LIDL  0xBF          ;
-                    STD                 ; Store the character in 0xF8BF.
+LBL1D23:        LIA     0xFB        ;
+                LP      0x00        ;
+                EXAM                ; I = 0xFB
+LBL1D27:        LIP     0x5C        ; Set Port A to 0xFF.
+                ORIM    0xFF        ; Why?
+                OUTA                ;
+                CAL     MDL115E     ; DP <- 0xF83E
+                INCP                ; Port B
+                ANIM    0xF0        ; Clear Keyboard lines.
+                ORIM    0x08        ; Assert power switch keys line.
+                OUTB                ;
+                WAIT    0x0F        ;
+                INB                 ; Read status of on/off slider.
+                                    ; IB1 - RSV
+                                    ; IB2 - PRO
+                                    ; IB3 - OFF
+                ANIA    0x07        ; Masks off IB1, IB2 and IB3.
+                JRZP    LBL1D59     ; Taken if RUN pressed
+                SR                  ;
+                JRCP    LBL1D4F     ; Taken if RSV pressed.
+                SR                  ;
+                JRCP    LBL1D44     ; Taken if PRO pressed.
+                LIA     0x01        ; Calculator is OFF.
+                RTN                 ; Return to $472A
+LBL1D44:        TSID    0x01        ;
+                JRNZP   LBL1D63     ;
+                ANID    0xF8        ;
+                ORID    0x01        ;
+LBL1D4C:        LIA     0x08        ;
+                RTN                 ; Return to $472A
+LBL1D4F:        TSID    0x04        ;
+                JRNZP   LBL1D63     ;
+                ANID    0xF8        ;
+                ORID    0x04        ;
+                JRM     LBL1D4C     ;
+LBL1D59:        TSID    0x02        ; Is the RUN symbol already showing
+                                    ;  on the LCD?
+                JRNZP   LBL1D63     ; If so, scan keyboard.
+                ANID    0xF8        ; Clear all the LCD symbols.
+                ORID    0x02        ; Turn on the RUN symbol.
+                JRM     LBL1D4C     ; Return with A = 0x08
+LBL1D63:        CAL     scan_keybd  ; Code at 0x1F44.
+                JPNC    0x4003      ; C = 0 for no key pressed.
+                PUSH                ; Save the key scanned.
+                CAL     scan_keybd  ; Scan again (debouncing?).
+                EXAB                ;
+                POP                 ;
+                JPNC    0x4003      ; No key pressed if taken.
+                LP      0x03        ; Compare A with B.
+                CPMA                ;
+                JRNZP   LBL1E66     ; Taken if the 2 characters are
+                                    ;  different.
+LBL1D74:        CAL     MDL1162     ; DP <- $F8BE
+                    TSID  0x01      ;
+                    JRNZP LBL1E3B   ;
+                    ORID  0x01      ;
+                    LIDL  0xBF      ;
+                    STD             ; Store the character in 0xF8BF.
                     LIDL  0x3D
                     CPIA  0x20
                     JRNCP LBL1DF1
@@ -4971,7 +4985,7 @@ LBL1EA8:          EXAM
 LBL1EB6:          LIDL  0xBE
                   TSID  0x04
                   JRNZP LBL1ECF
-LBL1EBC:          CAL   MDL1162
+LBL1EBC:        CAL     MDL1162     ; DP <- $F8BE
                   TSID  0x01
                   JPNZ  LBL1D27
                   LIP   0x5D
@@ -5020,7 +5034,7 @@ LBL1F05:          TSID  0x08
                   LIA   0xB0
                   STD
                   CALL  0x45DB
-                  CAL   MDL1162
+                CAL     MDL1162     ; DP <- $F8BE
                   ANID  0xE1
                   JP    LBL1D23
                   LIDL  0x69
@@ -5038,22 +5052,22 @@ LBL1F05:          TSID  0x08
                   LII   0x00
 ;                  LII   0xC2
                     .db     0x00
-MDL1F32:          INCB
-                  JRNCP LBL1F3C
-LBL1F35:          RC                    ; Rotate left to search the first bit
-                  SL                    ;  set.
-                  JRCP  LBL1F3C
-                  INCK                  ; K holds the count of the number of 0s
-                                        ;  before the first 1.
-                  JRM   LBL1F35
-LBL1F3C:          LIA   0x34            ; Offset to unrecognized character.
-                  JRNZP LBL1F42
-                  LP    0x08            ; Load offset within table.
-                  LDM                   ;
-LBL1F42:          EXAB                  ; Return offset in B. A holds the leftover
-                                        ;  bits, if more than one key was pressed
-                                        ;  simultaneously, otherwise 0.
-                  RTN
+MDL1F32:        INCB                ;
+                JRNCP   LBL1F3C     ;
+LBL1F35:        RC                  ; Rotate left to search the first bit
+                SL                  ;  set.
+                JRCP    LBL1F3C     ;
+                INCK                ; K holds the count of the number of 0s
+                                    ;  before the first 1.
+                JRM     LBL1F35     ;
+LBL1F3C:        LIA     0x34        ; Offset to unrecognized character.
+                JRNZP   LBL1F42     ;
+                LP      0x08        ; Load offset within table.
+                LDM                 ;
+LBL1F42:        EXAB                ; Return offset in B. A holds the leftover
+                                    ;  bits, if more than one key was pressed
+                                    ;  simultaneously, otherwise 0.
+                RTN                 ;
 ; ------------------------------------------------------------------------------
 ; 0x1F44
 ; Keyboard scan routine.
@@ -5071,112 +5085,112 @@ LBL1F42:          EXAB                  ; Return offset in B. A holds the leftov
 ;          A = 0x07 and C = 1 if BRK is pressed.
 ;          A = 0xFF and C = 0 if no key is pressed.
 ; ------------------------------------------------------------------------------
-scan_keybd:     TEST  0x08            ; Check if BRK key is pressed.
-                JRZP  LBL1F4C         ; If not, scan keyboard.
-                LIA   0x07            ;
-                JRP   LBL1FAF         ;
-LBL1F4C:        LP    0x08            ; Clear K. K is used as the running
-                ANIM  0x00            ; offset within the character table.
-                LP    0x09            ; L is 7 and has dual use:
-                LIA   0x07            ;  1) count the number of keys that have
-                EXAM                  ;       already been scanned
-                                      ;  2) as loop counter
-                LP    0x0A            ; M = 0xFF.
-                ORIM  0xFF            ; This is the mask used to AND against
-                                      ;  the data read from PortA.
-                LIB   0xFF            ;
-                LIP   0x5C            ; Drive A0 HIGH.
-                LIA   0x01            ;
-                EXAM                  ;
-                OUTA                  ;
-                INCP                  ; Point to 0x5D, PortB.
-                ANIM  0xF0            ; Clear the first 4 bits of PortB.
-                                      ; These are used by the keyboard.
-                                      ; During the first part of the keyboard
-                                      ; scan we want Port B inactive and thus
-                                      ; we drive it LOW.
-                OUTB                  ;
-                DECP                  ; Point back to PortA.
-LBL1F63:        LDM                   ; Shift left the A Port to select the
-                RC                    ; next row to scan.
-                SL                    ;
-                EXAM                  ;
-                LP    0x0A            ; The value read from porta goes to M.
-                INA                   ; Read the status of the A Port
-                OUTA                  ; Drive the new value of PORTA.
-                EXAM                  ; Store value read from Port A in M.
-                RC                    ; Clear the carry for the shift.
-                SL                    ; Shift the mask left by 1.
-                ANMA                  ; Mask out the kline that are currently
-                                      ; being driven HIGH to avoid confusing
-                                      ; them with actual key presses. At this
-                                      ;  point any bit set in M is key
-                                      ;  pressed. Z=1 if no key pressed.
-                EXAM                  ; A != 0 if any key pressed.
-                JRZP  LBL1F73         ; Branch if no key pressed.
-                CAL   MDL1F32         ;
-LBL1F73:        LP    0x09            ; Increment the number of keys that we
-                LDM                   ;  have gone through.
-                LP    0x08            ;
-                ADM                   ;
-                DECL                  ; During the first part of the scan the
-                                      ;  number of keys scanned decreases by 1
-                                      ;  each loop because of the peculiar
-                                      ;  wiring of the keyboard.
-                LIP   0x5C            ;
-                JRNZM LBL1F63         ;
-                ANIM  0x00            ; Drive low on all Porta A pins.
-                OUTA                  ;
-                INCP                  ;
-                ORIM  0x01            ; Drive HIGH on PortB:0
-                LP    0x09            ; L used as counter to count the
-                LIA   0x03            ; 3 lines of Port B used for the
-                EXAM                  ; keyboard.
-LBL1F86:        LIP   0x5D            ;
-                OUTB                  ; Drive out PORTB with the new mask.
-                LDM                   ;
-                ANIA  0x03            ;
-                ADM                   ; Add the contents of PORTB (ldm) with
-                                      ;  itself, thus multiplying by 2
-                                      ;  (equivalent to a shift LEFT by 1).
-                                      ; This prepares Port B for the next bit
-                                      ;  to send out.
-                WAIT  0x17            ;
-                INA                   ; Read PortA.
-                JRZP  LBL1F94         ; If no key pressed skip decode.
-                CAL   MDL1F32         ;
-LBL1F94:        LP    0x08            ; Add 8 characters to the counter in K
-                ADIM  0x08            ;  since this scan of the B did not
-                                      ;  find any button pressed.
-                DECL                  ; Decrement counter and loop if not
-                JRNZM LBL1F86         ; done.
-                LIP   0x5D            ; Done scanning. Release all the Port B
-                ANIM  0xF0            ; lines.
-                OUTB                  ;
-                EXAB                  ; Fetch character.
-                CPIA  0x35            ; Check if the offset is past the ROM
-                                      ;  table.
-                JRCP  LBL1FA5         ;
-                RTN                   ;
-LBL1FA5:        ADIA  0x2F            ; Add the offset within the table to the
-                                      ;  address of the beginning of said
-                                      ;  table.
-                LIB   0x44
-                JRNCP LBL1FAC
-                INCB
-LBL1FAC:        CAL   load_x
-                IXL
-LBL1FAF:        SC
-                RTN
-wr_portc:       LIP   0x5F
-                EXAM
-                OUTC
-                RTN
-memcpy:         IXL                   ; 0x1FB6
-                IYS                   ;
-                DECB                  ;
-                JRNZM memcpy          ;
-                RTN                   ;
+scan_keybd:     TEST    0x08        ; Check if BRK key is pressed.
+                JRZP    LBL1F4C     ; If not, scan keyboard.
+                LIA     0x07        ;
+                JRP     LBL1FAF     ;
+LBL1F4C:        LP      0x08        ; Clear K. K is used as the running
+                ANIM    0x00        ; offset within the character table.
+                LP      0x09        ; L is 7 and has dual use:
+                LIA     0x07        ;  1) count the number of keys that have
+                EXAM                ;       already been scanned
+                                    ;  2) as loop counter
+                LP      0x0A        ; M = 0xFF.
+                ORIM    0xFF        ; This is the mask used to AND against
+                                    ;  the data read from PortA.
+                LIB     0xFF        ;
+                LIP     0x5C        ; Drive A0 HIGH.
+                LIA     0x01        ;
+                EXAM                ;
+                OUTA                ;
+                INCP                ; Point to 0x5D, PortB.
+                ANIM    0xF0        ; Clear the first 4 bits of PortB.
+                                    ; These are used by the keyboard.
+                                    ; During the first part of the keyboard
+                                    ; scan we want Port B inactive and thus
+                                    ; we drive it LOW.
+                OUTB                 ;
+                DECP                ; Point back to PortA.
+LBL1F63:        LDM                 ; Shift left the A Port to select the
+                RC                  ; next row to scan.
+                SL                  ;
+                EXAM                ;
+                LP      0x0A        ; The value read from porta goes to M.
+                INA                 ; Read the status of the A Port
+                OUTA                ; Drive the new value of PORTA.
+                EXAM                ; Store value read from Port A in M.
+                RC                  ; Clear the carry for the shift.
+                SL                  ; Shift the mask left by 1.
+                ANMA                ; Mask out the kline that are currently
+                                    ; being driven HIGH to avoid confusing
+                                    ; them with actual key presses. At this
+                                    ;  point any bit set in M is key
+                                    ;  pressed. Z=1 if no key pressed.
+                EXAM                ; A != 0 if any key pressed.
+                JRZP    LBL1F73     ; Branch if no key pressed.
+                CAL     MDL1F32     ;
+LBL1F73:        LP      0x09        ; Increment the number of keys that we
+                LDM                 ;  have gone through.
+                LP      0x08        ;
+                ADM                 ;
+                DECL                ; During the first part of the scan the
+                                    ;  number of keys scanned decreases by 1
+                                    ;  each loop because of the peculiar
+                                    ;  wiring of the keyboard.
+                LIP     0x5C        ;
+                JRNZM   LBL1F63     ;
+                ANIM    0x00        ; Drive low on all Porta A pins.
+                OUTA                ;
+                INCP                ;
+                ORIM    0x01        ; Drive HIGH on PortB:0
+                LP      0x09        ; L used as counter to count the
+                LIA     0x03        ; 3 lines of Port B used for the
+                EXAM                ; keyboard.
+LBL1F86:        LIP     0x5D        ;
+                OUTB                ; Drive out PORTB with the new mask.
+                LDM                 ;
+                ANIA    0x03        ;
+                ADM                 ; Add the contents of PORTB (ldm) with
+                                    ;  itself, thus multiplying by 2
+                                    ;  (equivalent to a shift LEFT by 1).
+                                    ; This prepares Port B for the next bit
+                                    ;  to send out.
+                WAIT    0x17        ;
+                INA                 ; Read PortA.
+                JRZP    LBL1F94     ; If no key pressed skip decode.
+                CAL     MDL1F32     ;
+LBL1F94:        LP      0x08        ; Add 8 characters to the counter in K
+                ADIM    0x08        ;  since this scan of the B did not
+                                    ;  find any button pressed.
+                DECL                ; Decrement counter and loop if not
+                JRNZM   LBL1F86     ; done.
+                LIP     0x5D        ; Done scanning. Release all the Port B
+                ANIM    0xF0        ; lines.
+                OUTB                ;
+                EXAB                ; Fetch character.
+                CPIA    0x35        ; Check if the offset is past the ROM
+                                    ;  table.
+                JRCP    LBL1FA5     ;
+                RTN                 ;
+LBL1FA5:        ADIA    0x2F        ; Add the offset within the table to the
+                                    ;  address of the beginning of said
+                                    ;  table.
+                LIB     0x44        ; high byte of table.
+                JRNCP   LBL1FAC     ;
+                INCB                ;
+LBL1FAC:        CAL     load_x      ;
+                IXL                 ; Get character from table.
+LBL1FAF:        SC                  ; Flag for key pressed.
+                RTN                 ;
+wr_portc:       LIP     0x5F        ; 0x1FB1 Write the value in the accumulator
+                EXAM                ;  to port C.
+                OUTC                ;
+                RTN                 ;
+memcpy:         IXL                 ; 0x1FB6
+                IYS                 ;
+                DECB                ;
+                JRNZM   memcpy      ;
+                RTN                 ;
 ; Loads X with the address of character ROM corresponding to the character in A.
 MDL1FBC:        PUSH
                 LIA     0x64        ; $4464 start of Character ROM.
@@ -5211,21 +5225,21 @@ LBL1FD9:        LP    0x04          ; Load Xl Pointer.
                 RTN
 LBL1FDC:        SBIA  0x20          ; Subtract the $20 offset.
                 JRM   LBL1FCC
-LBL1FE0:        CAL   MDL1FEE
-                CAL   MDL1FF6
+LBL1FE0:        CAL   MDL1FEE       ; [F800:F80F] <-> [30:3F]
+                CAL   MDL1FF6       ; [C6A7:C6AE] <-> [30:37]
                 CALL  0x44EF
-                CAL   MDL1FF6
-                CAL   MDL1FEE
-                JP    LBL0ED7
-MDL1FEE:        LIDP  0xF800        ; Write the string starting at
-                LII   0x0F          ;  scratchpad address $30 to the LCD.
-                LP    0x30
-                EXWD
-                RTN
-MDL1FF6:        LIDP  0xC6A7
-                LII   0x07
-                LP    0x30
-                EXWD
-                RTN
+                CAL   MDL1FF6       ; [C6A7:C6AE] <-> [30:37]
+                CAL   MDL1FEE       ; [F800:F80F] <-> [30:3F]
+                JP    LBL0ED7       ;
+MDL1FEE:        LIDP  0xF800        ; [F800:F80F] <-> [30:3F]
+                LII   0x0F          ;
+                LP    0x30          ;
+                EXWD                ;
+                RTN                 ;
+MDL1FF6:        LIDP    0xC6A7      ; [C6A7:C6AE] <-> [30:37]
+                LII     0x07        ;
+                LP      0x30        ;
+                EXWD                ;
+                RTN                 ;
 MDL1FFE:          .db     0xC8
 MDL1FFF:          .db     0x00

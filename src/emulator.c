@@ -23,7 +23,9 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <gtk/gtk.h>
-#include <sc61860_emu.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 uint8_t memory_image[65536];
 int personality;
@@ -207,7 +209,6 @@ int read_debug_events(void)
 int setup_emulator(void)
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
-//    memset((void *)&disassembly_buffer, 0xff, sizeof(disassembly_buffer));
     memset((void *)&mem_view_past, 0, sizeof(mem_view_past));
 
     int personality = load_roms();
@@ -280,8 +281,6 @@ int setup_emulator(void)
     read_debug_events();
 
     gettimeofday(&timeval_start, NULL);
-    write_mem(0xF8BA, 0xFF);
-    write_mem(0xC6E9, 0xFF);
     emulated_instructions = 0;
 
     // Debug.

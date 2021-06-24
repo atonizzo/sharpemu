@@ -263,7 +263,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 41EA: 555E54                    .string "END"
 41ED: D4                        .db     $D4
 41EE: 5287                      .dw     $5287
-41F0: D45287A3                  .db     $A3
+41F0: A3                        .db     $A3
+41F0: A3                        .db     $A3
 41F1: 556860                    .string "EXP"
 41F4: A6                        .db     $A6
 41F5: 1312                      .dw     $1312
@@ -869,8 +870,8 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 46B9: 87                        LP      $07
 46BA: DB                        EXAM
 46BB: 2D6B                      JRM     LBL4651
-46BD: FF44                      CAL     $1F44        ; Scan keyboard.
-46BF: 2A06                      JRNCP   LBL46C6      ; Jump if no key pressed.
+46BD: FF44                      CAL     $1F44       ; Scan keyboard.
+46BF: 2A06                      JRNCP   LBL46C6     ; Jump if no key pressed.
 46C1: 93                        LP      $13
 46C2: 607F                      ANIM    $7F
 46C4: 2DC1                      JRM     LBL4604
@@ -879,7 +880,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 46CB: 82                        LP      $02
 46CC: 1B                        EXBD
 46CD: 2DCA                      JRM     LBL4604
-46CF: F162      LBL46CF:        CAL     $1162
+46CF: F162      LBL46CF:        CAL     $1162       ; DP <- $F8BE
 46D1: D501                      ORID    $01
 46D3: 113C                      LIDL    $3C
 46D5: D4FD                      ANID    $FD
@@ -895,7 +896,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 46EA: 60C0                      ANIM  $C0
 46EC: 97                        LP    $17
 46ED: 603F                      ANIM  $3F
-46EF: F162                      CAL   $1162
+46EF: F162                      CAL     $1162       ; DP <- $F8BE
 46F1: D4E1                      ANID  $E1
 46F3: 11BF                      LIDL  $BF
 46F5: 0200                      LIA   $00
@@ -2454,6 +2455,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 51A9: 10C6D8                    LIDP  $C6D8
 51AC: D4F7                      ANID  $F7
 51AE: 37                        RTN
+; Entry point for the 'CALL' BASIC command.
 51AF: F205                      CAL   $1205
 51B1: 3A1E                      JRCP  LBL51D0
 51B3: 92                        LP    $12
@@ -2596,6 +2598,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 5282: 113D                      LIDL  $3D       ;
 5284: D4FB                      ANID  $FB       ; Turn off RAD.
 5286: 37                        RTN             ;
+; Entry point for the 'END' BASIC command.
 5287: 95                        LP    $15
 5288: 60EF                      ANIM  $EF
 528A: 96                        LP    $16
@@ -2731,12 +2734,13 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 536E: 37                        RTN
 536F: F717      LBL536F:        CAL   $1717
 5371: 37        LBL5371:        RTN
-5372: 10F83C                    LIDP  $F83C
-5375: D4F3                      ANID  $F3
-5377: D504                      ORID  $04
-5379: 113D                      LIDL  $3D
-537B: D504                      ORID  $04
-537D: 37                        RTN
+; Entry point for the 'GRAD' BASIC command.
+5372: 10F83C                    LIDP  $F83C         ;
+5375: D4F3                      ANID  $F3           ; Turn off DE and G.
+5377: D504                      ORID  $04           ; Turn on G.
+5379: 113D                      LIDL  $3D           ;
+537B: D504                      ORID  $04           ; Turn on RAD.
+537D: 37                        RTN                 ;
 ; Entry point for the 'INPUT' BASIC command.
 537E: 24        MDL537E:        IXL
 537F: 6715                      CPIA  $15           ; '#'
@@ -5918,19 +5922,20 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 ;  and incrementing by 1 each successive compare. Return with C = 1 is
 ;  there is any compare error, C = 0 for 4 correct compares.
 ; This seems to be a way to verify the presence of memory at a specific address.
-687D: 0004      MDL687D:        LII   $04
-687F: 0350                      LIB   $50
-6881: 83                        LP    $03
-6882: 24        LBL6882:        IXL
-6883: C7                        CPMA
-6884: 3803                      JRZP  LBL6888
-6886: D0                        SC
-6887: 37                        RTN
-6888: C2        LBL6888:        INCB
-6889: 41                        DECI
-688A: 2909                      JRNZM LBL6882
-688C: D1                        RC
-688D: 37                        RTN
+687D: 0004      MDL687D:        LII   $04       ; Compare up to 4 bytes.
+687F: 0350                      LIB   $50       ; Start with 0x50.
+6881: 83                        LP    $03       ; B registers
+6882: 24        LBL6882:        IXL             ; Read char from address
+                                                ;  pointed by X.
+6883: C7                        CPMA            ; Compare with B
+6884: 3803                      JRZP  LBL6888   ; Jump is same.
+6886: D0                        SC              ; No memory.
+6887: 37                        RTN             ;
+6888: C2        LBL6888:        INCB            ;
+6889: 41                        DECI            ;
+688A: 2909                      JRNZM LBL6882   ;
+688C: D1                        RC              ;
+688D: 37                        RTN             ;
 ; Clear 80 bytes of the input buffer starting at 0xC7B0.
 688E: 10C7B0    MDL688E:        LIDP  $C7B0
 6891: 0200                      LIA   $00
@@ -6223,16 +6228,16 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6A42: D4E1                      ANID  $E1       ;
 6A44: 7869F9                    CALL  MDL69F9   ; Print the error message.
 6A47: F16A                      CAL   $116A     ; DP <- $C6DA
-6A49: D4FA                      ANID  $FA
-6A4B: D502                      ORID  $02
+6A49: D4FA                      ANID  $FA       ;
+6A4B: D502                      ORID  $02       ;
 6A4D: 784886                    CALL  MDL4886   ; Turn on E and then turn on LCD.
-6A50: 37                        RTN
-6A51: 0200      MDL6A51:        LIA   $00
-6A53: 0320                      LIB   $20
-6A55: F1F1                      CAL   $11F1       ; X <- [B, A] - 1
+6A50: 37                        RTN             ;
+6A51: 0200      MDL6A51:        LIA   $00       ;
+6A53: 0320                      LIB   $20       ;
+6A55: F1F1                      CAL   $11F1     ; X <- 0x1FFF
 6A57: 78687D                    CALL  MDL687D   ; Verify the presence of memory
                                                 ;  at address 0x2000
-6A5A: 3A0F                      JRCP  LBL6A6A
+6A5A: 3A0F                      JRCP  LBL6A6A   ; Carry set is memory not present.
 6A5C: 102004                    LIDP  $2004
 6A5F: D6FF                      TSID  $FF
 6A61: 3807                      JRZP  LBL6A69
@@ -6640,7 +6645,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6CFC: 6000                      ANIM  $00
 6CFE: 24                        IXL
 6CFF: 2DA7                      JRM   LBL6C59
-6D01: F125      LBL6D01:        CAL   $1125
+6D01: F125      LBL6D01:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6D03: 0208                      LIA   $08
 6D05: 2C03                      JRP   LBL6D09
 6D07: 0201      LBL6D07:        LIA   $01
@@ -6662,7 +6667,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6D24: A9                        LP    $29
 6D25: 6000                      ANIM  $00
 6D27: ED42                      CAL   $0D42
-6D29: F125                      CAL   $1125
+6D29: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6D2B: F144                      CAL   $1144
 6D2D: D1                        RC
 6D2E: 37        LBL6D2E:        RTN
@@ -6679,7 +6684,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6D43: F0DC      LBL6D43:        CAL   $10DC
 6D45: F737                      CAL   $1737
 6D47: 3A1D                      JRCP  LBL6D65
-6D49: F118                      CAL   $1118
+6D49: F118                      CAL   $1118         ; [C6B5, C6C6] <- X         ; [C6B5, C6C6] <- X
 6D4B: 0271                      LIA   $71
 6D4D: 787E5B                    CALL  MDL7E5B
 6D50: 3A14                      JRCP  LBL6D65
@@ -6690,7 +6695,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6D59: 787C7D                    CALL  MDL7C7D
 6D5C: 787CEE                    CALL  MDL7CEE
 6D5F: F144                      CAL   $1144
-6D61: F125      LBL6D61:        CAL   $1125
+6D61: F125      LBL6D61:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6D63: D1                        RC
 6D64: 37                        RTN
 6D65: D0        LBL6D65:        SC
@@ -6856,10 +6861,10 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6E86: 24        LBL6E86:        IXL
 6E87: 671B                      CPIA  $1B
 6E89: 284F                      JRNZP LBL6ED9
-6E8B: F118                      CAL   $1118
+6E8B: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 6E8D: 786EDF                    CALL  MDL6EDF
 6E90: 3A17                      JRCP  LBL6EA8
-6E92: F125                      CAL   $1125
+6E92: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6E94: 8C                        LP    $0C
 6E95: 130E                      LIQ   $0E
 6E97: 0101                      LIJ   $01
@@ -6870,7 +6875,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6EA1: 3A37                      JRCP  LBL6ED9
 6EA3: 786EDF                    CALL  MDL6EDF
 6EA6: 2A04                      JRNCP LBL6EAB
-6EA8: F125      LBL6EA8:        CAL   $1125
+6EA8: F125      LBL6EA8:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6EAA: 37                        RTN
 6EAB: 130C      LBL6EAB:        LIQ   $0C
 6EAD: 84                        LP    $04
@@ -6884,7 +6889,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6EB7: A8                        LP    $28
 6EB8: 15                        SBB
 6EB9: 2A07                      JRNCP LBL6EC1
-6EBB: F125                      CAL   $1125
+6EBB: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6EBD: 0209                      LIA   $09
 6EBF: 2C1B                      JRP   LBL6EDB
 6EC1: 10C6D9    LBL6EC1:        LIDP  $C6D9
@@ -6897,7 +6902,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6ECF: E210                      CAL   $0210
 6ED1: 786FD7                    CALL  MDL6FD7
 6ED4: 796F7F                    JP    LBL6F7F
-6ED7: F125                      CAL   $1125
+6ED7: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6ED9: 0201      LBL6ED9:        LIA   $01
 6EDB: 94        LBL6EDB:        LP    $14
 6EDC: DB                        EXAM
@@ -6986,7 +6991,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6F6C: 8F                        LP    $0F
 6F6D: C7                        CPMA
 6F6E: 3855                      JRZP  LBL6FC4
-6F70: F118      LBL6F70:        CAL   $1118
+6F70: F118      LBL6F70:        CAL   $1118         ; [C6B5, C6C6] <- X
 6F72: F166                      CAL   $1166         ; DP <- $C6B7
 6F74: D610                      TSID  $10
 6F76: 289B                      JRNZP LBL7012
@@ -7028,7 +7033,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 6FBA: 78704E                    CALL  MDL704E
 6FBD: F10B                      CAL   $110B
 6FBF: 787F0B                    CALL  MDL7F0B
-6FC2: F125      LBL6FC2:        CAL   $1125
+6FC2: F125      LBL6FC2:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 6FC4: D1        LBL6FC4:        RC
 6FC5: 37                        RTN
 6FC6: F15E      MDL6FC6:        CAL   $115E
@@ -7191,7 +7196,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 70D8: 24        LBL70D8:        IXL
 70D9: 6700                      CPIA  $00
 70DB: 2805                      JRNZP LBL70E1
-70DD: F118                      CAL   $1118
+70DD: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 70DF: 2C46                      JRP   LBL7126
 70E1: 6712      LBL70E1:        CPIA  $12
 70E3: 3804                      JRZP  LBL70E8
@@ -7227,7 +7232,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 711D: 91                        LP    $11
 711E: 6180                      ORIM  $80
 7120: 2C05                      JRP   LBL7126
-7122: F125      LBL7122:        CAL   $1125
+7122: F125      LBL7122:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 7124: 2D38                      JRM   LBL70ED
 7126: 787416    LBL7126:        CALL  MDL7416
 7129: 6702      LBL7129:        CPIA  $02
@@ -7280,7 +7285,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7179: 2B21                      JRNCM LBL7159
 717B: 2D2A                      JRM   LBL7152
 717D: 787F0B    LBL717D:        CALL  MDL7F0B
-7180: F125                      CAL   $1125
+7180: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 7182: D1                        RC
 7183: 37                        RTN
 7184: 797399    LBL7184:        JP    LBL7399
@@ -7401,7 +7406,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7263: 86                        LP    $06
 7264: 0101                      LIJ   $01
 7266: 1B                        EXBD
-7267: F125      LBL7267:        CAL   $1125
+7267: F125      LBL7267:        CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 7269: F15E                      CAL   $115E
 726B: D604                      TSID  $04
 726D: 2812                      JRNZP LBL7280
@@ -7564,7 +7569,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 737D: 787291    LBL737D:        CALL  MDL7291
 7380: 94        LBL7380:        LP    $14
 7381: DB                        EXAM
-7382: F125                      CAL   $1125
+7382: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 7384: 787F0B                    CALL  MDL7F0B
 7387: F144                      CAL   $1144
 7389: F166      LBL7389:        CAL   $1166         ; DP <- $C6B7
@@ -7811,7 +7816,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7536: 67FF                      CPIA  $FF
 7538: 2808                      JRNZP LBL7541
 753A: 787F0B    LBL753A:        CALL  MDL7F0B
-753D: F125                      CAL   $1125
+753D: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 753F: D1                        RC
 7540: 37                        RTN
 7541: 797184    LBL7541:        JP    LBL7184
@@ -7864,7 +7869,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7595: 7877DA                    CALL  MDL77DA
 7598: 2A61                      JRNCP LBL75FA
 759A: F144      LBL759A:        CAL   $1144
-759C: F125                      CAL   $1125
+759C: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X  <- [C6B5, C6C6]
 759E: 94                        LP    $14
 759F: 0208                      LIA   $08
 75A1: DB                        EXAM
@@ -7895,7 +7900,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 75D5: 78704E                    CALL  MDL704E
 75D8: F10B      LBL75D8:        CAL   $110B
 75DA: F10F                      CAL   $110F
-75DC: F125                      CAL   $1125
+75DC: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 75DE: 24                        IXL
 75DF: 671B                      CPIA  $1B
 75E1: 2809                      JRNZP LBL75EB
@@ -7933,7 +7938,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 761E: 2B0D                      JRNCM LBL7612
 7620: 020F      LBL7620:        LIA   $0F
 7622: 787C7D                    CALL  MDL7C7D
-7625: F125      LBL7625:        CAL   $1125
+7625: F125      LBL7625:        CAL   $1125         ; X  <- [C6B5, C6C6]
 7627: 24                        IXL
 7628: 671B                      CPIA  $1B
 762A: 2806                      JRNZP LBL7631
@@ -7975,7 +7980,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7672: 8E                        LP    $0E
 7673: 1B                        EXBD
 7674: 786EF7                    CALL  MDL6EF7
-7677: F118                      CAL   $1118
+7677: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 7679: A8                        LP    $28
 767A: 631A                      CPIM  $1A
 767C: 2A19                      JRNCP LBL7696
@@ -8048,10 +8053,10 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 76EE: 24                        IXL
 76EF: 6731                      CPIA  $31
 76F1: 29FF                      JRNZM LBL75F3
-76F3: F118                      CAL   $1118
+76F3: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 76F5: F872                      CAL   $1872
 76F7: 2A05                      JRNCP LBL76FD
-76F9: F125                      CAL   $1125
+76F9: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 76FB: 2DA4                      JRM   LBL7658
 76FD: 786EF7    LBL76FD:        CALL  MDL6EF7
 7700: 95                        LP    $15
@@ -8281,7 +8286,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 788B: DB                        EXAM
 788C: 787F0B    LBL788C:        CALL  MDL7F0B
 788F: F144                      CAL   $1144
-7891: F125                      CAL   $1125
+7891: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 7893: D0                        SC
 7894: 37                        RTN
 7895: E0A9      LBL7895:        CAL   $00A9
@@ -8443,7 +8448,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 799C: 1B                        EXBD
 799D: 10C6D8    LBL799D:        LIDP  $C6D8
 79A0: D508                      ORID  $08
-79A2: F125      LBL79A2:        CAL   $1125
+79A2: F125      LBL79A2:        CAL   $1125         ; X  <- [C6B5, C6C6]
 79A4: 24                        IXL
 79A5: 671B                      CPIA  $1B
 79A7: 280D                      JRNZP LBL79B5
@@ -8463,7 +8468,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 79C5: 2906                      JRNZM LBL79C0
 79C7: 787F0B    LBL79C7:        CALL  MDL7F0B
 79CA: F144      LBL79CA:        CAL   $1144
-79CC: F125                      CAL   $1125
+79CC: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 79CE: D1                        RC
 79CF: 37                        RTN
 79D0: 787F0B    LBL79D0:        CALL  MDL7F0B
@@ -8673,14 +8678,14 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7B41: 0300                      LIB   $00
 7B43: 98                        LP    $18
 7B44: 14                        ADB
-7B45: F118                      CAL   $1118
+7B45: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 7B47: 787DF7                    CALL  MDL7DF7
 7B4A: 2A0B                      JRNCP LBL7B56
 7B4C: 0208      LBL7B4C:        LIA   $08
 7B4E: 94                        LP    $14
 7B4F: DB                        EXAM
 7B50: F144                      CAL   $1144
-7B52: F125                      CAL   $1125
+7B52: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 7B54: D0                        SC
 7B55: 37                        RTN
 7B56: F16A      LBL7B56:        CAL   $116A
@@ -8709,9 +8714,9 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7B84: 05        LBL7B84:        DX
 7B85: F205                      CAL   $1205
 7B87: 3A11                      JRCP  LBL7B99
-7B89: F118                      CAL   $1118
+7B89: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 7B8B: 785DFB                    CALL  MDL5DFB
-7B8E: F125                      CAL   $1125
+7B8E: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 7B90: 9A                        LP    $1A
 7B91: 6300                      CPIM  $00
 7B93: 280A                      JRNZP LBL7B9E
@@ -8726,13 +8731,13 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7BA1: 299D                      JRNZM LBL7B05
 7BA3: F205                      CAL   $1205
 7BA5: 3B0D                      JRCM  LBL7B99
-7BA7: F118                      CAL   $1118
+7BA7: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 7BA9: A4                        LP    $24
 7BAA: 63D0                      CPIM  $D0
 7BAC: 39A8                      JRZM  LBL7B05
 7BAE: 787BEC                    CALL  MDL7BEC
 7BB1: 785DFB                    CALL  MDL5DFB
-7BB4: F125                      CAL   $1125
+7BB4: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 7BB6: 9A                        LP    $1A
 7BB7: 6300                      CPIM  $00
 7BB9: 3925                      JRZM  LBL7B95
@@ -8741,7 +8746,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7BBE: 6700                      CPIA  $00
 7BC0: 29BC                      JRNZM LBL7B05
 7BC2: 05                        DX
-7BC3: F118                      CAL   $1118
+7BC3: F118                      CAL   $1118         ; [C6B5, C6C6] <- X
 7BC5: 787DF7                    CALL  MDL7DF7
 7BC8: 3B7D                      JRCM  LBL7B4C
 7BCA: 10C6B9                    LIDP  $C6B9
@@ -8807,7 +8812,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7C2F: 0273                      LIA   $73
 7C31: 787E5B                    CALL  MDL7E5B
 7C34: 3A1D                      JRCP  LBL7C52
-7C36: F125                      CAL   $1125
+7C36: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]
 7C38: 10C6D7    LBL7C38:        LIDP  $C6D7
 7C3B: D504                      ORID  $04
 7C3D: 785A78                    CALL  MDL5A78
@@ -8839,7 +8844,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7C71: 785CCF    LBL7C71:        CALL  MDL5CCF
 7C74: 10C6D7                    LIDP  $C6D7
 7C77: D520                      ORID  $20
-7C79: F125                      CAL   $1125         ; X <- ($C6B6, $C6B5)
+7C79: F125                      CAL   $1125         ; X  <- [C6B5, C6C6]         ; X <- ($C6B6, $C6B5)
 7C7B: D1        LBL7C7B:        RC
 7C7C: 37                        RTN
 7C7D: 10C6B4    MDL7C7D:        LIDP  $C6B4
@@ -9184,7 +9189,7 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7EED: 95                        LP    $15
 7EEE: 6120                      ORIM  $20
 7EF0: D1                        RC
-7EF1: F125      LBL7EF1:        CAL   $1125
+7EF1: F125      LBL7EF1:        CAL   $1125         ; X  <- [C6B5, C6C6]
 7EF3: 11D7                      LIDL  $D7
 7EF5: D4DB                      ANID  $DB
 7EF7: 37                        RTN

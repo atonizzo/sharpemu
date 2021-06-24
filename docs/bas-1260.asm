@@ -2171,55 +2171,62 @@
 8E1A: 39 15        jrzm     0x8E06
 8E1C: E4 49        cal      0x0449
 8E1E: 2D 19        jrm      0x8E06
-8E20: 9F           lp       0x1F
-8E21: 03 09        lib      0x09
-8E23: 50           incp
-8E24: 20           ldp
-8E25: DB           exam
-8E26: C3           decb
-8E27: 2B 05        jrncm    0x8E23
-8E29: A0           lp       0x20
-8E2A: 10 40 00     lidp     0x4000
-8E2D: 1B           exbd
-8E2E: 10 48 00     lidp     0x4800
-8E31: 1B           exbd
-8E32: 10 50 00     lidp     0x5000
-8E35: 1B           exbd
-8E36: 10 58 00     lidp     0x5800
-8E39: 1B           exbd
-8E3A: 10 60 00     lidp     0x6000
-8E3D: 1B           exbd
-8E3E: 10 40 00     lidp     0x4000
-8E41: A0           lp       0x20
-8E42: 1A           mvbd
-8E43: 10 48 00     lidp     0x4800
-8E46: 1A           mvbd
-8E47: 10 50 00     lidp     0x5000
-8E4A: 1A           mvbd
-8E4B: 10 58 00     lidp     0x5800
-8E4E: 1A           mvbd
-8E4F: 10 60 00     lidp     0x6000
-8E52: 1A           mvbd
-8E53: AA           lp       0x2A
-8E54: 51           decp
-8E55: 20           ldp
-8E56: C7           cpma
-8E57: 39 04        jrzm     0x8E54
-8E59: 03 60        lib      0x60
-8E5B: 67 27        cpia     0x27
-8E5D: 38 17        jrzp     0x8E75
-8E5F: 03 58        lib      0x58
-8E61: 67 25        cpia     0x25
-8E63: 38 11        jrzp     0x8E75
-8E65: 03 50        lib      0x50
-8E67: 67 23        cpia     0x23
-8E69: 38 0B        jrzp     0x8E75
-8E6B: 03 48        lib      0x48
-8E6D: 67 21        cpia     0x21
-8E6F: 38 05        jrzp     0x8E75
-8E71: 03 40        lib      0x40
-8E73: 67 1F        cpia     0x1F
-8E75: 37           rtn
+; This code determines the RAM memory size.
+; Scratchpad registers 0x20 through 0x2A ar ewritten with their own memory
+;  address, and then 2 bytes at a time are written to increasing RAM memory
+;  addresses starting at 0x4000 and ending at 0x6000 at increments of 0x0800.
+; The values are then checked.
+; Returns with Z = 1 and the most significant byte of the lowest RAM address
+;  in the B register.
+8E20: 9F           lp       0x1F        ;
+8E21: 03 09        lib      0x09        ; Write 10 bytes.
+8E23: 50           incp                 ; 0x20 is the first address.
+8E24: 20           ldp                  ;
+8E25: DB           exam                 ;  [p] = p
+8E26: C3           decb                 ;
+8E27: 2B 05        jrncm    0x8E23      ; Loop 10 times.
+8E29: A0           lp       0x20        ; Exchanges the first 2 bytes in the
+8E2A: 10 40 00     lidp     0x4000      ;  scratchpad with 2 at address 0x4000.
+8E2D: 1B           exbd                 ;
+8E2E: 10 48 00     lidp     0x4800      ; 2 more at 0x4800.
+8E31: 1B           exbd                 ;
+8E32: 10 50 00     lidp     0x5000      ; 2 more at 0x5000.
+8E35: 1B           exbd                 ;
+8E36: 10 58 00     lidp     0x5800      ;  2 more at 0x5800.
+8E39: 1B           exbd                 ;
+8E3A: 10 60 00     lidp     0x6000      ;  Last 2 at 0x5800.
+8E3D: 1B           exbd                 ;
+8E3E: 10 40 00     lidp     0x4000      ;
+8E41: A0           lp       0x20        ; This section reads back into the
+8E42: 1A           mvbd                 ;  scratchpad the values exchanged
+8E43: 10 48 00     lidp     0x4800      ;  before.
+8E46: 1A           mvbd                 ;
+8E47: 10 50 00     lidp     0x5000      ;
+8E4A: 1A           mvbd                 ;
+8E4B: 10 58 00     lidp     0x5800      ;
+8E4E: 1A           mvbd                 ;
+8E4F: 10 60 00     lidp     0x6000      ;
+8E52: 1A           mvbd                 ;
+8E53: AA           lp       0x2A        ; Start the search for the lower RAM
+8E54: 51           decp                 ;  address from 0x5800
+8E55: 20           ldp                  ;
+8E56: C7           cpma                 ;
+8E57: 39 04        jrzm     0x8E54      ; Loops as long as [p] = p
+8E59: 03 60        lib      0x60        ; B holds the MS byte of the memory
+8E5B: 67 27        cpia     0x27        ;  address. B is deremented by 8
+8E5D: 38 17        jrzp     0x8E75      ;  each htime we compare a lower memory
+8E5F: 03 58        lib      0x58        ;  address.
+8E61: 67 25        cpia     0x25        ;
+8E63: 38 11        jrzp     0x8E75      ;
+8E65: 03 50        lib      0x50        ;
+8E67: 67 23        cpia     0x23        ;
+8E69: 38 0B        jrzp     0x8E75      ;
+8E6B: 03 48        lib      0x48        ;
+8E6D: 67 21        cpia     0x21        ;
+8E6F: 38 05        jrzp     0x8E75      ;
+8E71: 03 40        lib      0x40        ;
+8E73: 67 1F        cpia     0x1F        ;
+8E75: 37           rtn                  ;
 8E76: E5 A3        cal      0x05A3
 8E78: E4 70        cal      0x0470
 8E7A: E0 F8        cal      0x00F8

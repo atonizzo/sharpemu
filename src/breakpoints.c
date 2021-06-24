@@ -17,7 +17,10 @@
 // 02110-1301, USA.
 
 #include <stdint.h>
-#include <sc61860_emu.h>
+#include <gtk/gtk.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
 

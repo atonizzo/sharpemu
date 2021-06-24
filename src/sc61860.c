@@ -20,7 +20,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <sc61860_emu.h>
+#include <gtk/gtk.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 #define HEX_COLUMN                                   6
 #define INSTRUCTION_COLUMN                           14
@@ -43,7 +46,7 @@
 
 const char *regs_to_str[] =
 {
-    "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L"
+    "I", "J", "A", "B", "Xl", "Xh", "Yl", "Yh", "K", "L", "M", "N"
 };
 
 void sim_not_implemented(void)
@@ -165,7 +168,6 @@ void sim_arith(void)
         cpu_state.cycles += 3;
         break;
     case 0xc4:          // "adcm"       [P] + A + C -> [P]
-        g_print("Untested instruction: ADCM\r\n");
         tmp0 = cpu_state.imem[cpu_state.p] + cpu_state.imem[IRAM_REG_A];
         tmp0 += cpu_state.flags.carry;
         cpu_state.imem[cpu_state.p] = tmp0;
@@ -174,7 +176,6 @@ void sim_arith(void)
         cpu_state.cycles += 3;
         break;
     case 0xc5:          // "sbcm"       [P] - A - C -> [P]
-        g_print("Untested instruction: SBCM\r\n");
         tmp0 = cpu_state.imem[cpu_state.p] - cpu_state.imem[IRAM_REG_A];
         tmp0 -= cpu_state.flags.carry;
         cpu_state.imem[cpu_state.p] = tmp0;
@@ -502,7 +503,7 @@ void sim_cp(void)
 
 void sim_data(void)
 {
-    // (BA)...(BA+1)→(P)...(P+1)
+    // (BA)...(BA+1)->(P)...(P+1)
     cpu_state.d = cpu_state.imem[IRAM_REG_I];
     cpu_state.cycles += 11 + 4 * cpu_state.d;
     uint16_t src = (cpu_state.imem[IRAM_REG_B] << 8);
@@ -701,85 +702,79 @@ void sim_io(void)
 void sim_jr(void)
 {
     uint8_t instruction = read_mem(cpu_state.pc);
+    cpu_state.pc += 1;
+    uint16_t next_pc = cpu_state.pc + 1;
     switch (instruction)
     {
     case 0x28:      // "jrnzp"
         if (cpu_state.flags.zero == 0)
         {
-            cpu_state.pc += read_mem(cpu_state.pc + 1) + 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc + read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x29:      // "jrnzm"
         if (cpu_state.flags.zero == 0)
         {
-            cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc - read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x2a:      // "jrncp"
         if (cpu_state.flags.carry == 0)
         {
-            cpu_state.pc += read_mem(cpu_state.pc + 1) + 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc + read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x2b:      // "jrncm"
         if (cpu_state.flags.carry == 0)
         {
-            cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc - read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x38:      // "jrzp"
         if (cpu_state.flags.zero == 1)
         {
-            cpu_state.pc += read_mem(cpu_state.pc + 1) + 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc + read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x39:      // "jrzm"
         if (cpu_state.flags.zero == 1)
         {
-            cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc - read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x3a:      // "jrcp"
         if (cpu_state.flags.carry != 0)
         {
-            cpu_state.pc += read_mem(cpu_state.pc + 1) + 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc + read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x3b:      // "jrcm"
         if (cpu_state.flags.carry != 0)
         {
-            cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
-            cpu_state.cycles += 7;
-            return;
+            next_pc = cpu_state.pc - read_mem(cpu_state.pc);
+            cpu_state.cycles += 3;
         }
         break;
     case 0x2c:      // "jrp"
-        cpu_state.pc += read_mem(cpu_state.pc + 1) + 1;
-        cpu_state.cycles += 7;
-        return;
+        next_pc = cpu_state.pc + read_mem(cpu_state.pc);
+        cpu_state.cycles += 3;
+        break;
     case 0x2d:      // "jrm"
-        cpu_state.pc -= read_mem(cpu_state.pc + 1) - 1;
-        cpu_state.cycles += 7;
-        return;
+        next_pc = cpu_state.pc - read_mem(cpu_state.pc);
+        cpu_state.cycles += 3;
+        break;
     default:
         sim_not_implemented();
         break;
     }
-    cpu_state.pc += 2;
+    cpu_state.pc = next_pc;
     cpu_state.cycles += 4;
 }
 
@@ -1546,7 +1541,7 @@ static size_t print_instruction(uint16_t address,
                                operand0,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        g_string_append_printf(p, "0x%02X", operand0);
+        g_string_append_printf(p, "%02X", operand0);
         if ((instruction == 0x12) || (instruction == 0x13))
         {
             if (operand0 < 10)
@@ -1560,19 +1555,19 @@ static size_t print_instruction(uint16_t address,
                 {
                 case 0x20:
                     print_shift(p, COMMENT_COLUMN);
-                    g_string_append_printf(p, "; XReg");
+                    g_string_append_printf(p, "; BCD[20:27]");
                     break;
                 case 0x28:
                     print_shift(p, COMMENT_COLUMN);
-                    g_string_append_printf(p, "; YReg");
+                    g_string_append_printf(p, "; BCD[28:2F]");
                     break;
                 case 0x30:
                     print_shift(p, COMMENT_COLUMN);
-                    g_string_append_printf(p, "; ZReg");
+                    g_string_append_printf(p, "; BCD[30:37]");
                     break;
                 case 0x38:
                     print_shift(p, COMMENT_COLUMN);
-                    g_string_append_printf(p, "; WReg");
+                    g_string_append_printf(p, "; BCD[38:3F]");
                     break;
                 case 0x5C:
                     print_shift(p, COMMENT_COLUMN);
@@ -1650,7 +1645,7 @@ static size_t print_instruction(uint16_t address,
                                instruction,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        g_string_append_printf(p, "$%02X", operand0);
+        g_string_append_printf(p, "%02X", operand0);
         if (operand0 < 10)
         {
             print_shift(p, COMMENT_COLUMN);
@@ -1662,19 +1657,19 @@ static size_t print_instruction(uint16_t address,
             {
             case 0x20:
                 print_shift(p, COMMENT_COLUMN);
-                g_string_append_printf(p, "; XReg");
+                g_string_append_printf(p, "; BCD[20:27]");
                 break;
             case 0x28:
                 print_shift(p, COMMENT_COLUMN);
-                g_string_append_printf(p, "; YReg");
+                g_string_append_printf(p, "; BCD[28:2F]");
                 break;
             case 0x30:
                 print_shift(p, COMMENT_COLUMN);
-                g_string_append_printf(p, "; ZReg");
+                g_string_append_printf(p, "; BCD[30:37]");
                 break;
             case 0x38:
                 print_shift(p, COMMENT_COLUMN);
-                g_string_append_printf(p, "; WReg");
+                g_string_append_printf(p, "; BCD[38:3F]");
                 break;
             default:
                 break;
@@ -1691,7 +1686,7 @@ static size_t print_instruction(uint16_t address,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         target_address = operand0 * 256 + operand1;
-        g_string_append_printf(p, "$%04X", target_address);
+        g_string_append_printf(p, "%04X", target_address);
 
         // Search the address descriptors to see if we can match this address
         //  to one of the well known ones.
@@ -1717,9 +1712,27 @@ static size_t print_instruction(uint16_t address,
                                operand0,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        g_string_append_printf(p, "$%04X", address + operand0 + 1);
+        target_address = address + operand0 + 1;
+        g_string_append_printf(p, "%04X", target_address);
+
+        // Search the address descriptors to see if we can match this address
+        //  to one of the well known ones.
+        imm = 0;
+        while (address_descriptors[imm].label != 0)
+        {
+            if (target_address == address_descriptors[imm].address)
+            {
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p,
+                                       "; %s",
+                                       address_descriptors[imm].label);
+                break;
+            }
+            imm++;
+        }
         break;
     case SC61860_FORMAT_RELATIVE_MINUS:
+//        __break__
         operand0 = pt.read_memory(address + 1);
         g_string_append_printf(p,
                                "%02X %02X       %s",
@@ -1727,7 +1740,24 @@ static size_t print_instruction(uint16_t address,
                                operand0,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
-        g_string_append_printf(p, "$%04X", address - operand0 + 1);
+        target_address = address - operand0 + 1;
+        g_string_append_printf(p, "%04X", target_address);
+
+        // Search the address descriptors to see if we can match this address
+        //  to one of the well known ones.
+        imm = 0;
+        while (address_descriptors[imm].label != 0)
+        {
+            if (target_address == address_descriptors[imm].address)
+            {
+                print_shift(p, COMMENT_COLUMN);
+                g_string_append_printf(p,
+                                       "; %s",
+                                       address_descriptors[imm].label);
+                break;
+            }
+            imm++;
+        }
         break;
     case SC61860_FORMAT_PTJ:
         g_string_append_printf(p,

@@ -19,22 +19,30 @@
 #ifndef __PC12XX_H__
 #define __PC12XX_H__
 
-
 #if defined(MODEL_PC1245)
 #define LCD_ROWS_PER_DISPLAY            1
 #define LCD_CHARACTERS_PER_ROW          16
+#define LCD_NUMBER_OF_LABELS            11
 #elif defined(MODEL_PC1250)
 #define LCD_ROWS_PER_DISPLAY            1
 #define LCD_CHARACTERS_PER_ROW          24
+#define LCD_NUMBER_OF_LABELS            11
 #elif defined(MODEL_PC1251)
 #define LCD_ROWS_PER_DISPLAY            1
 #define LCD_CHARACTERS_PER_ROW          24
+#define LCD_NUMBER_OF_LABELS            11
 #elif defined(MODEL_PC1255)
 #define LCD_ROWS_PER_DISPLAY            1
 #define LCD_CHARACTERS_PER_ROW          24
+#define LCD_NUMBER_OF_LABELS            11
+#elif defined(MODEL_PC1260)
+#define LCD_ROWS_PER_DISPLAY            2
+#define LCD_CHARACTERS_PER_ROW          24
+#define LCD_NUMBER_OF_LABELS            10
 #elif defined(MODEL_PC1262)
 #define LCD_ROWS_PER_DISPLAY            2
 #define LCD_CHARACTERS_PER_ROW          24
+#define LCD_NUMBER_OF_LABELS            10
 #else
     #error Model not defined
 #endif
@@ -73,6 +81,6 @@ extern label_layout_t lcd_labels[15];
 #define KEYBOARD_PORT_BIT_A7           (1 << 6)
 #define KEYBOARD_PORT_BIT_A8           (1 << 7)
 
-#include <lcd.h>
+#include <sc43536.h>
 
 #endif

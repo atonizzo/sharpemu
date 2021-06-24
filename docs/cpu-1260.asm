@@ -718,13 +718,13 @@
 0434: 59           ldm
 0435: DA           exab
 0436: 37           rtn
-0437: 02 00        lia      $00
-0439: 2C 03        jrp      $043D
-043B: 02 01        lia      $01
-043D: 12 5F        lip      $5F
-043F: DB           exam
-0440: DF           outc
-0441: 37           rtn
+0437: 02 00        lia      $00     ; Turn ON display.
+0439: 2C 03        jrp      $043D   ;
+043B: 02 01        lia      $01     ; Turn OFF display.
+043D: 12 5F        lip      $5F     ; Write PORTC.
+043F: DB           exam             ;
+0440: DF           outc             ;
+0441: 37           rtn              ;
 0442: 02 A5        lia      $A5
 0444: A0           lp       $20
 0445: 00 07        lii      $07
@@ -3057,25 +3057,25 @@
 1336: 10 67 02     lidp     $6702
 1339: B8           lp       $38
 133A: 1A           mvbd
-133B: 84           lp       $04
-133C: 13 38        liq      $38
-133E: 0A           mvb
-133F: 37           rtn
+133B: 84           lp       $04         ; X <- [39:38]
+133C: 13 38        liq      $38         ;
+133E: 0A           mvb                  ;
+133F: 37           rtn                  ;
 1340: 94           lp       $14
 1341: 63 D0        cpim     $D0
 1343: 37           rtn
-1344: 86           lp       $06
-1345: 13 04        liq      $04
-1347: 0A           mvb
-1348: 37           rtn
-1349: 84           lp       $04
-134A: 13 06        liq      $06
-134C: 0A           mvb
-134D: 37           rtn
-134E: B8           lp       $38
-134F: 13 04        liq      $04
-1351: 0A           mvb
-1352: 37           rtn
+1344: 86           lp       $06         ; Y <- X
+1345: 13 04        liq      $04         ;
+1347: 0A           mvb                  ;
+1348: 37           rtn                  ;
+1349: 84           lp       $04         ; X <- Y
+134A: 13 06        liq      $06         ;
+134C: 0A           mvb                  ;
+134D: 37           rtn                  ;
+134E: B8           lp       $38         ; [39:38] <- X
+134F: 13 04        liq      $04         ;
+1351: 0A           mvb                  ;
+1352: 37           rtn                  ;
 1353: 10 20 3D     lidp     $203D
 1356: 37           rtn
 1357: 10 66 2B     lidp     $662B

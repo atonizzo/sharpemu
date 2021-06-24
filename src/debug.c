@@ -18,7 +18,10 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <sc61860_emu.h>
+#include <gtk/gtk.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 int debug_break(int a)
 {

@@ -20,7 +20,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
-#include <sc61860_emu.h>
+
+#include <sc61860.h>
+#include <sharpemu.h>
 
 uint32_t reg_index;
 
