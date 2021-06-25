@@ -2822,12 +2822,12 @@ LBL10EA:          LP    0x24
                   SBB
                   CAL   MDL0D42
                   RC
-LBL1102:          RTN
-                  LP    0x04
-                  LIDP  0xC6C4
-                  LIJ   0x01
-                  MVBD
-                  RTN
+LBL1102:        RTN
+LBL1103:        LP      0x04        ; X <- [C6C5, C6C4]
+                LIDP    0xC6C4      ;
+                LIJ     0x01        ;
+                MVBD                ;
+                RTN                 ;
 LBL110B:          TEST  0x02
                   JRZM  LBL110B
 LBL110F:          TEST  0x02
@@ -2835,8 +2835,8 @@ LBL110F:          TEST  0x02
 LBL1113:          TEST  0x02
                   JRZM  LBL1113
                   RTN
-save_X:         LP      0x04        ; 0x1118
-                LDM                 ; [C6B5, C6C6] <- X
+LBL1118:        LP      0x04        ; [C6B6, C6C5] <- X
+                LDM                 ;
                 LIDP    0xC6B5      ;
                 STD                 ;
                 LP      0x05        ;
@@ -2844,8 +2844,8 @@ save_X:         LP      0x04        ; 0x1118
                 LIDP    0xC6B6      ;
                 STD                 ;
                 RTN                 ;
-recover_X:      LIDP    0xC6B5      ; 0x1125
-                LDD                 ; X  <- [C6B5, C6C6]
+LBL1125:        LIDP    0xC6B5      ; X  <- [C6B5, C6C6]
+                LDD                 ;
                 LP      0x04        ;
                 EXAM                ;
                 LIDP    0xC6B6      ;
@@ -2943,12 +2943,12 @@ show_screen:    LIA     0x20
                                     ;  buffer in X.
                 CALL    0x44FB
                 RTN
-                LIDP    0xC702
-                LP      0x1C
-                LII     0x03
-                MVWD
-                CAL     MDL1899
-                RTN
+                LIDP    0xC702      ; [1C:1F] <- [C702:C705]
+                LP      0x1C        ;
+                LII     0x03        ;
+                MVWD                ;
+                CAL     MDL1899     ; X <- [1D, 1C]
+                RTN                 ;
 ;
 ; Tucks the X register in the stack, just after (i.e. above) the return value.
 ; The callee will then find the X register on the top of the stack.
@@ -2998,8 +2998,8 @@ kbd_bufy:       LIA     0xB0        ; (0x11F9) Y <- 0xC7B0 - 1
                 LIB     0xC7        ;
                 CAL     load_y      ;
                 RTN                 ;
-                LP      0x1C        ; (0x1200) [$1C, $1D] <- Xvb
-                LIQ     0x04        ;
+                LP      0x1C        ; (0x1200)
+                LIQ     0x04        ; [$1C, $1D] <- X
                 MVB                 ;
                 RTN                 ;
 MDL1205:        LP      0x17
@@ -3433,10 +3433,10 @@ LBL14FE:            CAL   MDL1ACF
 LBL1502:            RTN
 LBL1503:            CAL   MDL1BC4
                     JRM   LBL14AD
-LBL1507:            CAL   err_syntax
-                    RTN
-LBL150A:            CAL   exchg_b
-                    RTN
+LBL1507:        CAL     0X1705      ; Issue Syntax Error.
+                RTN
+LBL150A:        CAL     0X170F      ; Issue DIM Error/Range Error.
+                RTN
 LBL150D:            CAL   MDL1CA7
                     JRNZM LBL1507
                     LP    0x17
@@ -3445,8 +3445,8 @@ LBL150D:            CAL   MDL1CA7
                   LP    0x13
                   ORIM  0x01
                   RTN
-LBL151A:          CAL   exchg_l
-                  RTN
+LBL151A:        CAL     0X1727      ; Issue Other Error.
+                RTN
 LBL151D:          CAL   MDL16B4
                   JRCP  LBL1545
                   CAL   MDL1CDB
@@ -3461,8 +3461,8 @@ LBL1524:          IXL
                   IYS
                   INCK
                   JRNCM LBL1524
-LBL1535:            CAL     exchg_Xh
-                    RTN
+LBL1535:        CAL     0x1737      ; Issue Nesting Error
+                RTN
 LBL1538:            DX
 MDL1539:            LP      0x08
                     LDM
@@ -3505,8 +3505,8 @@ LBL1561:        LIA     0x87        ; Token for BASIC command for square root.
 ;  point we have the zero terminated string to convert starting at
 ;  address 0xC7B0.
 ; ------------------------------------------------------------------------------
-LBL1566:        CAL     MDL16A5
-                JRCP    LBL1596
+LBL1566:        CAL     MDL16A5     ;
+                JRCP    LBL1596     ;
                 LP      0x08        ; Load 4 in K.
                 LIA     0x04        ; K is used as counters for the
                 EXAM                ; number of characters to convert. In case of
@@ -3514,37 +3514,37 @@ LBL1566:        CAL     MDL16A5
                                     ; or a 16 bit number.
                 LP      0x28        ; Clear up 2 bytes (4 nibbles or 4 characters)
                 LIA     0x00        ;  starting at 28.
-                LII     0x01
-                FILM
+                LII     0x01        ;
+                FILM                ;
 LBL1574:        IXL                 ; Get next hex character.
                 CPIA    0x40        ; Compare with '0'.
                 JRZM    LBL1574     ; Jump taken if character is symbol.
 LBL1579:        CPIA    0x4A        ; Check if beyond numeric.
-                JRNCP   LBL1597
-                CPIA    0x40
+                JRNCP   LBL1597     ;
+                CPIA    0x40        ;
                 JRCP    LBL158B     ; Taken at end of conversion.
                 ANIA    0x0F        ; Mask off numeric part.
-LBL1583:        LP      0x29
+LBL1583:        LP      0x29        ;
                 SLW                 ; Shift [28, 29] 4 bits left
-                LP      0x29          ; OR the digit into the low
+                LP      0x29        ; OR the digit into the low
                 ORMA                ; order nibble of [29].
                 IXL                 ; Get next char.
-                DECK
-                JRNZM   LBL1579
+                DECK                ;
+                JRNZM   LBL1579     ;
 LBL158B:        LP      0x28        ; We come here at the end of the
                 LII     0x00        ;  conversion, when we find the termination
                 LIQ     0x29        ;  value.
                 EXW                 ; Swap high and low byte. LSB is now first.
                 CAL     MDL0D3B     ; This is where the bug is.
-                CAL     MDL1CCD
-                DX
-LBL1596:        RTN
+                CAL     MDL1CCD     ;
+                DX                  ;
+LBL1596:        RTN                 ;
 LBL1597:        CPIA    0x51        ; Compare with 'A'
-                JRCM    LBL158B
+                JRCM    LBL158B     ;
                 CPIA    0x57        ; Compare with 'G' (compare for hex digit).
-                JRNCM   LBL158B
+                JRNCM   LBL158B     ;
                 SBIA    0x47        ; Subtract HEX numeric offset 'A' - 10
-                JRM     LBL1583
+                JRM     LBL1583     ;
 
 MDL15A3:        LP    0x13
                   ORIM  0x10
@@ -3769,56 +3769,56 @@ LBL1702:          CAL   err_syntax
                   RTN
 ; This is where a particular error message (1 through 9) is stored in 0x14.
 ; If the command returns with c=1 then this error message is printed.
-err_syntax:         LIA   0x01        ;          1 Syntax Error
-LBL1707:            LP    0x14        ; (0x1707)
-                    EXAM              ;
-                    SC                ;
-                    RTN               ;
-err_calc:           LIA   0x02        ; (0x170B) 2 Calulation Error
-                    JRM   LBL1707     ;
-err_dim:            LIA   0x03        ; (0x170F) 3 DIM Error/Range Error
-                    JRM   LBL1707     ;
-err_linenum:        LIA   0x04        ; (0x1713) 4 Line number error
-                    JRM   LBL1707     ;
-err_nest:           LIA   0x05        ; (0x1717) 5 Nesting Error
-                    JRM   LBL1707     ;
-err_overflow:       LIA   0x06        ; (0x171B) 6 Memory Overflow Error
-                    JRM   LBL1707     ;
-err_print:          LIA   0x07        ; (0x171F) 7 Print Format Error
-                    JRM   LBL1707     ;
-err_io:             LIA   0x08        ; (0x1723) 8 I/O Device Error
-                    JRM   LBL1707     ;
-err_other:          LIA   0x09        ; (0x1727) 9 Other
-                    JRM   LBL1707     ;
-ab_mul2:          RC                ; (0x172B)
-                  SL                ;
-                  EXAB              ;
-                  SL                ;
-                  EXAB              ;
-                  RTN               ;
-ab_div2:          RC                ; (0x1731)
-                  EXAB              ;
-                  SR                ;
-                  EXAB              ;
-                  SR                ;
-                  RTN               ;
-MDL1737:          CAL   MDL116E
-                  JRNCP LBL1786
-                  LP    0x12
-                  ANIM  0x7F
-                  LP    0x21
-                  TSIM  0x08
-                  JRNZP LBL17EF
-LBL1743:          LP    0x20
-                  CPIM  0x90
-                  JRNCP LBL17E7
-                  CPIM  0x00
-                  JRNZP LBL1783
-                  INCP
-                  LIA   0x00
-                  EXAM
-                  SWP
-                  ANIA  0x0F
+err_syntax:     LIA     0x01        ;          1 Syntax Error
+LBL1707:        LP      0x14        ; (0x1707)
+                EXAM                ;
+                SC                  ;
+                RTN                 ;
+err_calc:       LIA     0x02        ; (0x170B) 2 Calulation Error
+                JRM     LBL1707     ;
+err_dim:        LIA     0x03        ; (0x170F) 3 DIM Error/Range Error
+                JRM     LBL1707     ;
+err_linenum:    LIA     0x04        ; (0x1713) 4 Line number error
+                JRM     LBL1707     ;
+err_nest:       LIA     0x05        ; (0x1717) 5 Nesting Error
+                JRM     LBL1707     ;
+err_overflow:   LIA     0x06        ; (0x171B) 6 Memory Overflow Error
+                JRM     LBL1707     ;
+err_print:      LIA     0x07        ; (0x171F) 7 Print Format Error
+                JRM     LBL1707     ;
+err_io:         LIA     0x08        ; (0x1723) 8 I/O Device Error
+                JRM     LBL1707     ;
+err_other:      LIA     0x09        ; (0x1727) 9 Other
+                JRM     LBL1707     ;
+ab_mul2:        RC                  ; (0x172B)
+                SL                  ;
+                EXAB                ;
+                SL                  ;
+                EXAB                ;
+                RTN                 ;
+ab_div2:        RC                  ; (0x1731)
+                EXAB                ;
+                SR                  ;
+                EXAB                ;
+                SR                  ;
+                RTN                 ;
+MDL1737:        CAL   MDL116E
+                JRNCP LBL1786
+                LP    0x12
+                ANIM  0x7F
+                LP    0x21
+                TSIM  0x08
+                JRNZP LBL17EF
+LBL1743:        LP    0x20
+                CPIM  0x90
+                JRNCP LBL17E7
+                CPIM  0x00
+                JRNZP LBL1783
+                INCP
+                LIA   0x00
+                EXAM
+                SWP
+                ANIA  0x0F
                   CPIA  0x05
                   JRNCP LBL1783
                   LP    0x08

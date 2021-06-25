@@ -6135,12 +6135,12 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 69C5: D0                        SC
 69C6: 37                        RTN
 69C7: 7867A9    MDL69C7:        CALL  MDL67A9
-69CA: F16A                      CAL   $116A      ; Load $C6DA in DP. What is $C6DA?
+69CA: F16A                      CAL   $116A      ; DP <- 0xC6DA. What's at C6DA?
 69CC: D601                      TSID  $01
 69CE: 2805                      JRNZP LBL69D4
 69D0: D620                      TSID  $20
 69D2: 2807                      JRNZP LBL69DA
-69D4: F162      LBL69D4:        CAL   $1162      ; Load $F8BE in DP.
+69D4: F162      LBL69D4:        CAL   $1162      ; DP <- 0xF8BE.
 69D6: D4FB                      ANID  $FB        ; Turn off the "RUN" sign.
 69D8: 2C20                      JRP   MDL69F9
 69DA: 11E9      LBL69DA:        LIDL  $E9
@@ -9216,11 +9216,11 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 7F1E: 4EBA                      WAIT  $BA
 7F20: 37        LBL7F20:        RTN
 7F21: 125E      LBL7F21:        LIP   $5E
-7F23: 60FC                      ANIM  $FC
-7F25: 5F                        OUTF
-7F26: 50                        INCP
-7F27: 6001                      ANIM  $01
-7F29: DF                        OUTC
+7F23: 60FC                      ANIM  $FC       ; Turn off Busy.
+7F25: 5F                        OUTF            ;
+7F26: 50                        INCP            ;
+7F27: 6001                      ANIM  $01       ; Turn ON LCD.
+7F29: DF                        OUTC            ;
 7F2A: 787DFE                    CALL  MDL7DFE
 7F2D: 797E08                    JP    MDL7E08
 7F30: 10F8B0    MDL7F30:        LIDP  $F8B0

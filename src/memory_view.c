@@ -25,21 +25,24 @@
 
 uint16_t mem_view_start_address = 0;
 
+#if defined(MODEL_PC1245) || defined(MODEL_PC1250) || defined(MODEL_PC1251) ||\
+                                                    defined(MODEL_PC1255)
 char sharp_char_map[] =
 {
-    '.', ' ', '\'', '?', '!', '#', '%', '.',
-    '#', '.', '.', ',', ';', ':', '.', '&',
-    '.', ' ', '\'', '?', '!', '#', '%', '.',
-    '#', '.', '.', ',', ';', ':', '.', '&',
-    '(', ')', '>', '<', '=', '+', '-', '*',
-    '/', '^', '.', '.', '.', '.', '.', '.',
-    '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', '.', '.', '.', '~', '_', ' ',
-    ' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-    'X', 'Y', 'Z', '.', '.', '.', '.', '.',
+    '.', ' ', '\'', '?', '!', '#', '%', '.',  // 0x10..0x17
+    '#', '.', '.', ',', ';', ':', '.', '&',   // 0x18..0x1F
+    '.', ' ', '\'', '?', '!', '#', '%', '.',  // 0x20..0x27
+    '#', '.', '.', ',', ';', ':', '.', '&',   // 0x28..0x2F
+    '(', ')', '>', '<', '=', '+', '-', '*',   // 0x30..0x37
+    '/', '^', '.', '.', '.', '.', '.', '.',   // 0x38..0x3F
+    '0', '1', '2', '3', '4', '5', '6', '7',   // 0x40..0x47
+    '8', '9', '.', '.', '.', '~', '_', ' ',   // 0x48..0x4F
+    ' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G',   // 0x50..0x57
+    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',   // 0x58..0x5F
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',   // 0x60..0x67
+    'X', 'Y', 'Z', '.', '.', '.', '.', '.',   // 0x68..0x6F
 };
+#endif
 
 void on_memory_view_spinbutton_value_changed (GtkSpinButton *spin_button,
                                               gpointer       user_data)
@@ -63,7 +66,6 @@ gboolean on_memory_view_spinbutton_scroll_event (GtkWidget *widget,
                                                  GdkEvent  *event,
                                                  gpointer   user_data)
 {
-//    g_print("on_memory_view_spinbutton_scroll_event\r\n");
     GdkEventScroll *this_event = (GdkEventScroll*)event;
     GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
     mem_view_start_address = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));
@@ -137,6 +139,11 @@ void print_mem_view(void)
         {
             uint16_t this_addr = mem_view_start_address + i * 16 + j;
             uint8_t this_byte = pt.read_memory(this_addr);
+
+#if defined(MODEL_PC1245) || defined(MODEL_PC1250) || defined(MODEL_PC1251) ||\
+                                                    defined(MODEL_PC1255)
+            // PC-1245 through PC-1255 models use proprietary Sharp encoding
+            //  for characters.
             if ((this_byte >= 0x10) && (this_byte < 0x70))
             {
                 char str[16];
@@ -176,6 +183,54 @@ void print_mem_view(void)
             else
                 sprintf(label_content + strlen(label_content),
                         "<span foreground=\"black\">.</span>");
+#elif defined(MODEL_PC1260) || defined(MODEL_PC1262)
+            // PC-1260 and PC-1262 models use ASCII encoding for characters
+            //  likely because the proprietary set used for other models did
+            //  not support lowercase characters.
+            if ((this_byte >= ' ') && (this_byte <= '~'))
+            {
+                char str[16];
+                switch (this_byte)
+                {
+                case '&':
+                    sprintf(str, "%s", "&amp;");
+                    break;
+                case '<':
+                    sprintf(str, "%s", "&lt;");
+                    break;
+                case '>':
+                    sprintf(str, "%s", "&gt;");
+                    break;
+                case '/':
+                    sprintf(str, "%s", "&#47;");
+                    break;
+                case '"':
+                    sprintf(str, "%s", "&quot;");
+                    break;
+                default:
+                    sprintf(str, "%c", this_byte);
+                    break;
+                }
+                if (this_byte != mem_view_past[i * 16 + j])
+                {
+                    sprintf(label_content + strlen(label_content),
+                            "<span foreground=\"red\">\%s</span>",
+                            str);
+                    mem_view_past[i * 16 + j] = this_byte;
+                }
+                else
+                    sprintf(label_content + strlen(label_content),
+                            "<span foreground=\"black\">\%s</span>",
+                            str);
+            }
+            else
+                sprintf(label_content + strlen(label_content),
+                        "<span foreground=\"black\">.</span>");
+#else
+    #error Model not defined
+#endif
+
+
         }
         gtk_label_set_markup(GTK_LABEL(this_label), label_content);
     }

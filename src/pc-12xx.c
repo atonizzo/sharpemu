@@ -43,6 +43,7 @@ address_descriptor_t address_descriptors[] =
     {0x0D2F, "X <- [26, 25] - 1"},      {0x0D37, "X <- [2E, 2D] - 1"},
     {0x0D5B, "BCD[20:27] <- INT16[0F:0E]"}, {0x0DA3, "[22:24] <-> [32:34]"},
     {0x0DAA, "[22:24] <- [2A:2C]"},     {0x0DB1, "[22:24] += [2A:2C]"},
+    {0x1103, "X <- [C6C5, C6C4]"},
     {0x1118, "[C6B6, C6B5] <- X"},      {0x1125, "X <- [C6B6, C6B5]"},
     {0x115E, "DP <- F83E"},             {0x1162, "DP <- F8BE"},
     {0x1166, "DP <- C6B7"},             {0x116A, "DP <- C6DA"},
@@ -65,20 +66,6 @@ address_descriptor_t address_descriptors[] =
     {0x688E, "Clear 80 bytes of input buffer."},
     {0, 0}
 };
-
-
-basic_2x:       LIDP    0xC6E1      ; 0x118F
-                LP      0x04        ; X <- [0xC602, 0xC601]
-                MVBD                ;
-                RTN                 ;
-                LP      0x04        ; 0x1195
-                LIQ     0x0C        ; X <-> [0C:0D]
-                EXB                 ;
-                RTN                 ;
-kbd_bufx:       LIA     0xB0        ; 0x119A
-                LIB     0xC7        ; X <- [0xC7B0, 0xC7B1] - 1
-
-
 
 sc43536_label_t sc43536_labels[LCD_NUMBER_OF_LABELS] =
 {
