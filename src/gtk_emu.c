@@ -257,7 +257,7 @@ static void on_menu_mode_activate(GtkMenuItem *menuItem, gpointer user_data)
     else
     {
         if (previous_mode == CALC_MODE_OFF)
-            lcd_refresh();
+            pt.lcd_refresh();
     }
 }
 

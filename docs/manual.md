@@ -31,8 +31,6 @@ The syntax is ```I:encoding``` or ```i:encoding```. ```I:addr``` sets a permanen
 `I:0x5B`
 
 sets a temporary breakpoint that is hit when the POP instruction (encoding of 0x5B) is hit and is then removed.
-# Display Handling
-The display RAM is used as a temporary storage during arithmetic operations. To prevent the display from diplaying garbage during operations the display should be turned off and while it is OFF no update should be done. Unfortunately I have not been able to find any datasheet for the LCD driver and so, with my limited understanding of how it works, the current code still displays garbage during calculations although it then settles on good data at the end.
 # Construction of the display During Startup
 The display is built dynamically based on information contained in the file pc12xx.h for each of the devices. For example, in the case of the PC-1251 it is only one line of 24 characters, reduced to a single line of 16 characters for the PC-1245. The PC-1260 has 2 lines of 24 characters each. Other machines that can be emulated in the future have different display sizes and effort has been expended in making sure that the way the LCD display is built for the PC1251 can be extended to machines that have larger or smaller diplays. That said, there will likely been a need to revisit this as soon as a different LCD size is emulated.
 # Disassembly of OS

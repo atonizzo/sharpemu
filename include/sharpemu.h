@@ -194,6 +194,7 @@ typedef struct __model_file_descriptor
     void (* outb)(void);
     void (* outc)(void);
     void (* outf)(void);
+    void (* lcd_refresh)(void);
     void (* keypress)(uint16_t);
     void (* keyrelease)(uint16_t);
 } model_file_descriptor_t;

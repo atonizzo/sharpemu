@@ -120,11 +120,6 @@ sc43536_descriptor_t sc43536_descriptor[LCD_ROWS_PER_DISPLAY] =
     #error Model not defined
 #endif
 
-void lcd_refresh()
-{
-    sc43536_refresh();
-}
-
 static int32_t pc_12xx_setup(void)
 {
     memset(porta_kbd, '\0', sizeof(porta_kbd));
@@ -230,7 +225,8 @@ static void pc_12xx_write_memory(uint16_t address, uint8_t data)
         return;
     }
     memory_image[address] = data;
-    sc43536_service(address, data);
+    if ((cpu_state.portc & 1) == 1)
+        sc43536_service(address, data);
 }
 
 // Port A is used exclusively for the keyboard. We scan which of the 11 bits
@@ -314,6 +310,9 @@ static void pc_12xx_outc(void)
         gettimeofday(&timeval_start, NULL);
         cpu_state.imem[IRAM_PORTC] &= ~PORTC_CNTRST;
     }
+    if (((cpu_state.portc & 1) == 0) != ((cpu_state.imem[IRAM_PORTC] & 1) == 1))
+        // We are turning on the display.
+        pt.lcd_refresh();
     cpu_state.portc = cpu_state.imem[IRAM_PORTC];
 }
 
@@ -372,6 +371,7 @@ model_file_descriptor_t pt =
     .outb = pc_12xx_outb,
     .outc = pc_12xx_outc,
     .outf = pc_12xx_outf,
+    .lcd_refresh = sc43536_refresh,
     .keypress = keyboard_keypress,
     .keyrelease = keyboard_keyrelease,
 };
