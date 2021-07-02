@@ -158,7 +158,7 @@ static void print_bcd_reg(uint16_t reg, char *s)
     if (exp > 500)
         exp -= 1000;
 
-    strcat(label_text, "%c.%c%c%c%c%c%c%c%c%cE%d</span>");
+    strcat(label_text, "%c.%c%c%c%c%c%c%c%c%c%c%cE%d</span>");
     markup = g_markup_printf_escaped(label_text,
                     ((cpu_state.imem[k + 2] & 0xF0) >> 4) + '0',
                     (cpu_state.imem[k + 2] & 0x0F) + '0',
@@ -170,6 +170,8 @@ static void print_bcd_reg(uint16_t reg, char *s)
                     (cpu_state.imem[k + 5] & 0x0F) + '0',
                     ((cpu_state.imem[k + 6] & 0xF0) >> 4) + '0',
                     (cpu_state.imem[k + 6] & 0x0F) + '0',
+                    ((cpu_state.imem[k + 7] & 0xF0) >> 4) + '0',
+                    (cpu_state.imem[k + 7] & 0x0F) + '0',
                     exp);
     GObject *this_label = gtk_builder_get_object(builder, s);
     gtk_label_set_markup(GTK_LABEL(this_label), markup);
@@ -288,6 +290,10 @@ void display_core_info(void)
     }
     else
     {
+        cpu_state.table_items = 0;
+        cpu_state.current_item = 0;
+        table_items = -1;
+        current_item = -1;
         // Have gone through a jump of some sort so that the next instruction
         //  in the list is not where the program counter is.
         this_pc = cpu_state.pc;

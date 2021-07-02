@@ -203,9 +203,8 @@ gboolean on_buttonbar_next_clicked(GtkWidget *widget, gpointer user_data )
 
     uint8_t instruction = pt.read_memory(cpu_state.pc);
 
-    // This command is accepted for the CAL and CALL
-    //  instructions. It will run and stop at the
-    //  instruction following the CAL or CALL.
+    // This command is accepted for the CAL and CALL instructions. It will
+    //  run and stop at the instruction following the CAL or CALL.
     if ((instruction & 0xE0) == 0xE0)
     {
         // CAL instruction. Set a temporary breakpoint 2 bytes past the CAL
@@ -281,7 +280,6 @@ void on_menu_mode_rsv_activate(GtkMenuItem *menuItem, gpointer user_data)
     on_menu_mode_activate(NULL, (gpointer)CALC_MODE_RSV);
 }
 
-
 gboolean on_buttonbar_reset_clicked(GtkWidget *widget, gpointer user_data )
 {
     memset((void *)&cpu_state, '\0', sizeof(cpu_state));
@@ -314,30 +312,31 @@ static gboolean label_callback_toggle_breakpoint(GtkWidget      *widget,
                                                  GdkEventButton *event,
                                                  gpointer        user_data)
 {
-/*    if (event->type != GDK_2BUTTON_PRESS)
+    if (event->type != GDK_2BUTTON_PRESS)
         return FALSE;
 
-    int line = (int64_t)user_data;
+    int gp = GPOINTER_TO_INT(g_slist_nth_data(disassembly_list,
+                                              GPOINTER_TO_INT(user_data)));
     char *image_name;
     // First find the PC at the line we have clicked.
-    int rc = check_breakpoint(disassembly_buffer.line[line].pc);
+    int rc = check_breakpoint(gp >> 16);
     if (rc == -1)
     {
         // No breakpoint set in this line. Set it at the address of the line.
-        set_breakpoint(disassembly_buffer.line[line].pc, 0);
+        set_breakpoint(gp >> 16, 0);
         image_name = "./pixmaps/disasm_breakpoint_icon_16x16.jpg";
     }
     else
     {
         // Breakpoint already at this line.
-        clear_breakpoint(disassembly_buffer.line[line].pc);
+        clear_breakpoint(gp >> 16);
         image_name = "./pixmaps/disasm_no_icon_16x16.jpg";
     }
 
     char image_id[64];
-    sprintf(image_id, "image_disassembly_line_%d", line);
+    sprintf(image_id, "image_disassembly_line_%d", GPOINTER_TO_INT(user_data));
     GObject *this_object = gtk_builder_get_object(builder, image_id);
-    gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);*/
+    gtk_image_set_from_file(GTK_IMAGE(this_object), image_name);
     return TRUE;
 }
 

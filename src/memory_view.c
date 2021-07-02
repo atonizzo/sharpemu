@@ -47,7 +47,7 @@ char sharp_char_map[] =
 void on_memory_view_spinbutton_value_changed (GtkSpinButton *spin_button,
                                               gpointer       user_data)
 {
-/*    __break__
+/*
     g_print("on_memory_view_spinbutton_value_changed\r\n");
     GObject *object = gtk_builder_get_object(builder, "memory_view_spinbutton");
     gint val = gtk_spin_button_get_value(GTK_SPIN_BUTTON(object));

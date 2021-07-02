@@ -1544,7 +1544,7 @@ static size_t print_instruction(uint16_t address,
         g_string_append_printf(p, "%02X", operand0);
         if ((instruction == 0x12) || (instruction == 0x13))
         {
-            if (operand0 < 10)
+            if (operand0 < sizeof(regs_to_str) / sizeof(char *))
             {
                 print_shift(p, COMMENT_COLUMN);
                 g_string_append_printf(p, "; %s", regs_to_str[operand0]);
@@ -1646,7 +1646,7 @@ static size_t print_instruction(uint16_t address,
                                sc61860_instr[index].opcode);
         print_shift(p, OPERAND_COLUMN);
         g_string_append_printf(p, "%02X", operand0);
-        if (operand0 < 10)
+        if (operand0 < sizeof(regs_to_str) / sizeof(char *))
         {
             print_shift(p, COMMENT_COLUMN);
             g_string_append_printf(p, "; %s", regs_to_str[operand0]);
@@ -1732,7 +1732,6 @@ static size_t print_instruction(uint16_t address,
         }
         break;
     case SC61860_FORMAT_RELATIVE_MINUS:
-//        __break__
         operand0 = pt.read_memory(address + 1);
         g_string_append_printf(p,
                                "%02X %02X       %s",
@@ -1760,33 +1759,27 @@ static size_t print_instruction(uint16_t address,
         }
         break;
     case SC61860_FORMAT_PTJ:
-        g_string_append_printf(p,
-                               "%02X          %s",
-                               instruction,
-                               sc61860_instr[index].opcode);
+        g_string_append_printf(p, "%02X          ptj", instruction);
         cpu_state.current_item = cpu_state.table_items;
         break;
     case SC61860_FORMAT_DTJ:
-        g_string_append_printf(p,
-                               "%02X           %s",
-                               instruction,
-                               sc61860_instr[index].opcode);
+        g_string_append_printf(p, "%02X          dtj", instruction);
         print_shift(p, OPERAND_COLUMN);
         operand0 = pt.read_memory(address + 1);
         int addr = (pt.read_memory(address + 2) << 8) |
                                                pt.read_memory(address + 3);
-        g_string_append_printf(p, "$%02X, $%04X", operand0, addr);
+        g_string_append_printf(p, "%02X, %04X", operand0, addr);
         cpu_state.table_items = pt.read_memory(address + 1);
         break;
     case SC61860_FORMAT_CASE:
         g_string_append_printf(p,
-                               "%02X %02X %02X     .case",
+                               "%02X %02X %02X    .case",
                                pt.read_memory(address),
                                pt.read_memory(address + 1),
                                pt.read_memory(address + 2));
         print_shift(p, OPERAND_COLUMN);
         g_string_append_printf(p,
-                               "$%02X, $%04X",
+                               "%02X, %04X",
                                pt.read_memory(address),
                                pt.read_memory(address + 1) * 256 +
                                                    pt.read_memory(address + 2));
@@ -1798,7 +1791,7 @@ static size_t print_instruction(uint16_t address,
                                pt.read_memory(address + 1));
         print_shift(p, OPERAND_COLUMN);
         g_string_append_printf(p,
-                               "$%04X",
+                               "%04X",
                                pt.read_memory(address) * 256 +
                                                    pt.read_memory(address + 1));
         break;

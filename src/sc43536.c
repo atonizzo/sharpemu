@@ -306,7 +306,6 @@ void sc43536_refresh(void)
                  address < sc43536_descriptor[row].memmap.start + 0x3C;
                  address++)
         {
-            __break__
             sc43536_service(address, pt.read_memory(address));
             sc43536_service(address + 0x40, pt.read_memory(address + 0x40));
         }

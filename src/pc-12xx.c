@@ -29,6 +29,9 @@
 
 #if defined(MODEL_PC1245) || defined(MODEL_PC1250) || defined(MODEL_PC1251) ||\
                                                     defined(MODEL_PC1255)
+// For the following address descriptors square brackets are used when the
+//  data is coming form the internal 96 bytes memory (scratchpad area) while
+//  round brackets are used when the data is coming from the external RAM area.
 address_descriptor_t address_descriptors[] =
 {
     {0x009F, "[20:27] <- 0"},           {0x00A9, "[28:2F] <- 0"},
@@ -43,15 +46,15 @@ address_descriptor_t address_descriptors[] =
     {0x0D2F, "X <- [26, 25] - 1"},      {0x0D37, "X <- [2E, 2D] - 1"},
     {0x0D5B, "BCD[20:27] <- INT16[0F:0E]"}, {0x0DA3, "[22:24] <-> [32:34]"},
     {0x0DAA, "[22:24] <- [2A:2C]"},     {0x0DB1, "[22:24] += [2A:2C]"},
-    {0x1103, "X <- [C6C5, C6C4]"},
-    {0x1118, "[C6B6, C6B5] <- X"},      {0x1125, "X <- [C6B6, C6B5]"},
+    {0x1103, "X <- (C6C5, C6C4)"},
+    {0x1118, "(C6B6, C6B5) <- X"},      {0x1125, "X <- (C6B6, C6B5)"},
     {0x115E, "DP <- F83E"},             {0x1162, "DP <- F8BE"},
     {0x1166, "DP <- C6B7"},             {0x116A, "DP <- C6DA"},
-    {0x1172, "X <- Y"},                 {0x118F, "X <- [C6E2, C6E1]"},
+    {0x1172, "X <- Y"},                 {0x118F, "X <- (C6E2, C6E1)"},
     {0x1177, "Y <- X"},                 {0x1195, "X <-> [0C, 0D]"},
     {0x119A, "X <- C7B0 - 1 (rambuf)"}, {0x11AF, "Show screen"},
-    {0x11E0, "LCD on"},                 {0x11E5, "LCD off"},
-    {0x11E9, "copy_x"},                 {0x11EE, "copy_y"},
+    {0x11E0, "LCD ON"},                 {0x11E5, "LCD OFF"},
+    {0x11E9, "X <- [B, A]"},            {0x11EE, "Y <- [B, A]"},
     {0x11F1, "X <- [B, A] - 1"},        {0x11F5, "Y <- [B, A] - 1"},
     {0x11F9, "Y <- C7B0 - 1 (kbdbuf)"}, {0x1200, "[1C, 1D] <- X"},
     {0x12BD, "[20..27] <- 0"},          {0x154E, "BCD[28:2F] <- 3.14159265359"},
@@ -62,7 +65,7 @@ address_descriptor_t address_descriptors[] =
     {0x1FB1, "Output to PORTC"},        {0x1FB6, "memcpy"},
     {0x1FF6, "[C6A7:C6AE] <-> [30:37]"},
     {0x400C, "write_lcd"},
-    {0x6787, "[C6B1, C6B2] <- X"},
+    {0x6787, "(C6B2, C6B1) <-> X"},
     {0x688E, "Clear 80 bytes of input buffer."},
     {0, 0}
 };

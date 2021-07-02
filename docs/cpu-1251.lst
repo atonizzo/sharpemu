@@ -161,17 +161,17 @@ LBL00E2:        LDM                 ; Load exponent/sign byte.
                 INCP                ; Point to MS digit of BCD[20:27].
                 ORMA                ; Store sign.
                 RTN                 ;
-MDL00EB:        LP      0x2A        ; Yreg mantissa.
+MDL00EB:        LP      0x2A        ; BCD[28:2F] mantissa.
                 LII     0x05        ; 6 bytes of mantissa.
                 SRW                 ; Shift right mantissa (divide by 10).
                 LP      0x29        ; Point to most signficant digit of YReg.
                 JRM     LBL00E2
-MDL00F2:        LP      0x3A        ; Zreg mantissa.
+MDL00F2:        LP      0x3A        ; BCD[30:38] mantissa.
                 LII     0x05        ; 6 bytes of mantissa.
                 SRW                 ; Shift right mantissa (divide by 10).
-                LP      0x39        ; Point to most signficant digit of ZReg.
+                LP      0x39        ; Point to most signficant digit of BCD[30:38].
                 JRM     LBL00E2     ;
-MDL00F9:        LP      0x27        ; Shift YReg left by 1.
+MDL00F9:        LP      0x27        ; Shift BCD[28:2F] left by 1.
 LBL00FA:        LII     0x07        ;
                 SLW                 ;
                 RTN                 ;
@@ -1804,17 +1804,17 @@ LBL0AEE:          LDR
                   LP    0x10
                   ANIM  0x00
                   RTN
-MDL0AF9:          LIA   0x00
-                  LP    0x11
-                  TSIM  0x01
-                  JRZP  LBL0B02
-                  LIA   0x08
-LBL0B02:          LP    0x21
-                  ANIM  0xF7
-                  RC
-                  ORMA
-                  LIJ   0x01
-                  RTN
+MDL0AF9:        LIA   0x00          ; Load positive sign bit.
+                LP    0x11          ; Check for sign of BCD[20:27]
+                TSIM  0x01          ;
+                JRZP  LBL0B02       ; Branch for positive.
+                LIA   0x08          ; Load negative sign bit.
+LBL0B02:        LP    0x21          ; Clear sign nibble of BCD[20:27].
+                ANIM  0xF7          ;
+                RC                  ;
+                ORMA                ; Store new sign.
+                LIJ   0x01          ;
+                RTN                 ;
 MDL0B0A:          LP    0x11
                   ANIM  0x00
                   LP    0x29
@@ -2129,17 +2129,17 @@ MDL0D01:          CAL   MDL0AE1
 ; Round the BCD number at [20:27] up.
 ;
 ; The last two digits of a BCD register (i.e. the last byte) are always rouded
-;  off and truncated. This is done by adding 50 (equivalent to adding 0.5 to
-;  the unrounded number) the the BCD register.
+;  off and truncated. This is done by adding 50 (equivalent to adding
+;  0.0000000005 to the unrounded number) the the BCD register.
 LBL0D0E:        LP      0x27        ;
                 LII     0x06        ;
                 LIA     0x50        ;
                 ADN                 ; BCD[20:27] += 0.0000000005
                 LP      0x21        ;
-                TSIM    0x0F
-                JRZP    LBL0D28
+                TSIM    0x0F        ; Check for sign.
+                JRZP    LBL0D28     ; Branch taken for positive sign.
                 CAL     MDL00DD
-                CAL     MDL01CD
+                CAL     MDL01CD     ; Add 1 to the exponent of BCD[20:27]
                 LP      0x20
                 LDM
                 ANIA    0xF0
@@ -2148,7 +2148,7 @@ LBL0D0E:        LP      0x27        ;
                 JP      LBL0B41
 LBL0D28:        LP      0x27        ; Clear up last two digits after rounding.
                 ANIM    0x00        ;
-                CAL     MDL0AF9     ;
+                CAL     MDL0AF9     ; Store sign.
                 RC                  ;
                 RTN                 ;
 MDL0D2F:        LIQ     0x25        ; X <- [26:25] - 1
@@ -2181,16 +2181,18 @@ MDL0D42:          CAL   MDL009F
                   EXAM
                   SBB
 ; ------------------------------------------------------------------------------
-; This code converts the 16 bit number stored in [0F:0E] into a BCD number
+; This code converts the 16 bit number stored in [29:28] into a BCD number
 ;  stored in [20:27].
 ;
-; The conversion is based on the "Russian Peasant" multiplication algorithm
-;  with the multiplicand (starting at 0.0001) being doubled for each bit of
-;  the multiplicand (doubling is done by adding the multiplicand to itself)
-;  and the multiplier being the number to convert, halved each time by means
-;  of the SR instruction 0x0D8F. The exponent is initially set to 10000 (to
-;  offset the initial 0.0001 seed) and then adjusted down if needed at the
-;  end of the conversion.
+; The conversion is performed by means of a multiplication between the number
+;  to convert (the multiplicand) and 0.0001, the multiplier. The multiplication
+;  is based on the "Russian Peasant" multiplication algorithm with the
+;  multiplier (starting at 0.0001) being doubled during each iteration
+;  (doubling is done by adding the multiplier to itself) and the multiplicand
+;  halved each iteration by means of the SR instruction at 0x0D8F. The partial
+;  sum of the result for odd multipliers is calculated at 0x0D93. The exponent
+;  is initially set to 10000 (to offset the initial 0.0001 seed) and then
+;  adjusted down if needed at the end of the conversion.
 ; ------------------------------------------------------------------------------
 LBL0D5B:        LP      0x0E        ; [0E:0F] <- [28:29]
                 LIJ     0x01        ;
@@ -2237,11 +2239,11 @@ MDL0D8D:        LP      0x0E        ;
                 SR                  ; Halving of multiplier.
                 EXAM                ;
                 JRNCP   LBL0D95     ;
-                CAL     MDL0DB1     ; [22:24] +=  [2A:2C]
+LBL0D93:        CAL     MDL0DB1     ; [22:24] +=  [2A:2C]
 LBL0D95:        CAL     MDL0DA3     ; [22:24] <-> [32:34]
                 CAL     MDL0DAA     ; [2A:2C] <- [22:24]
-                CAL     MDL0DB1     ; [22:24] +=  [2A:2C] ; Doubling of
-                                                          ;  multiplicand
+                CAL     MDL0DB1     ; [22:24] +=  [2A:2C] Doubling of
+                                    ;                      multiplicand
                 CAL     MDL0DAA     ; [2A:2C] <- [22:24]
                 CAL     MDL0DA3     ; [22:24] <-> [32:34]
                 DECK                ;
@@ -2823,7 +2825,7 @@ LBL10EA:          LP    0x24
                   CAL   MDL0D42
                   RC
 LBL1102:        RTN
-LBL1103:        LP      0x04        ; X <- [C6C5, C6C4]
+LBL1103:        LP      0x04        ; X <- [C6C5:C6C4]
                 LIDP    0xC6C4      ;
                 LIJ     0x01        ;
                 MVBD                ;
@@ -2835,7 +2837,7 @@ LBL110F:          TEST  0x02
 LBL1113:          TEST  0x02
                   JRZM  LBL1113
                   RTN
-LBL1118:        LP      0x04        ; [C6B6, C6C5] <- X
+LBL1118:        LP      0x04        ; [C6B6:C6C5] <- X
                 LDM                 ;
                 LIDP    0xC6B5      ;
                 STD                 ;
@@ -2844,7 +2846,7 @@ LBL1118:        LP      0x04        ; [C6B6, C6C5] <- X
                 LIDP    0xC6B6      ;
                 STD                 ;
                 RTN                 ;
-LBL1125:        LIDP    0xC6B5      ; X  <- [C6B5, C6C6]
+LBL1125:        LIDP    0xC6B5      ; X  <- [C6B5:C6C6]
                 LDD                 ;
                 LP      0x04        ;
                 EXAM                ;
@@ -2874,7 +2876,7 @@ MDL1144:        JP      0x4000
                 LP      0x30        ; Store the 0xF5 marker at the beginning
                 ORIM    0xF5        ;  of the cleared area, thus reserving
                 RTN                 ;  this memory for a character string.
-MDL1151:        CAL     save_X      ; [C6B6, C6B5] <- X
+MDL1151:        CAL     0x1118      ; [C6B6:C6B5] <- X
                 LDR                 ; Save the stack pointer in $C6B3.
                 ADIA    0x02        ; Add 2 so the stack pointer is
                 LIDP    0xC6B3      ; adjusted for the caller.
@@ -2910,40 +2912,41 @@ MDL117C:            LIA   0x0D
                     LIB   0xF8
                     CAL   load_x
                     RTN
-MDL1189:        CALL    0x44F5      ; Verify thre presence of memory at 0x2000.
-                JRCP    basic_2x    ; If not present C = 1.
+: This function returns the address of the first byte of BASIC memory in X.
+; It checks for the presence of a RAM expansion at address 0x2000.
+MDL1189:        CALL    0x44F5      ; Verify the presence of memory at 0x2000.
+                JRCP    0x118F      ; If not present C = 1.
                 RTN                 ;
-basic_2x:       LIDP    0xC6E1      ; 0x118F
-                LP      0x04        ; X <- [0xC6E2, 0xC6E1]
+MDL118F:        LIDP    0xC6E1      ; Return with first byte of memory used by
+                LP      0x04        ;  BASIC into X.
                 MVBD                ;
                 RTN                 ;
-                LP      0x04        ; 0x1195
-                LIQ     0x0C        ; X <-> [0C:0D]
+MDL1195:        LP      0x04        ; X <-> [0C:0D]
+                LIQ     0x0C        ;
                 EXB                 ;
                 RTN                 ;
-kbd_bufx:       LIA     0xB0        ; 0x119A
-                LIB     0xC7        ; X <- C7AF
+MDL119A:        LIA     0xB0        ; X <- C7AF
+                LIB     0xC7        ;
                 CAL     load_x      ;
                 RTN                 ;
                 LIA     0x18
                 LP      0x09
                 EXAM
-show_screen:    LIA     0x20
-                LP      0x08
-                EXAM
-                CAL     kbd_bufx
+LBL11A5:        LIA     0x20        ; Data will be stored starting at
+                LP      0x08        ;  scratchpad address $20.
+                EXAM                ; K = 0x20.
+                CAL     0x119A      ; X <- C7B0 - 1 (rambuf)
                 CALL    0x44F8
                 RTN
-                LIA     0x20        ; Data will be stored starting at
+LBL11A9:        LIA     0x20        ; Data will be stored starting at
                 LP      0x08        ;  scratchpad address $20.
                 EXAM                ; This value is stored in K.
                 CAL     MDL1162     ; Loads $F8BE in DP. What address is this?
                 ANID    0xFB        ;
-                CAL     kbd_bufx    ; Loads the address of the keyboard
-                                    ;  buffer in X.
+                CAL     0x119A      ; X <- C7B0 - 1 (rambuf)
                 CALL    0x44FB
                 RTN
-                LIDP    0xC702      ; [1C:1F] <- [C702:C705]
+                LIDP    0xC702      ; [1C:1F] <- (C702:C705)
                 LP      0x1C        ;
                 LII     0x03        ;
                 MVWD                ;
@@ -2977,24 +2980,24 @@ MDL11D2:        LDR                 ; Load stack pointer.
                 EXAB                ; Recover updated stack pointer
                 STR                 ; Update stack pointer.
                 RTN                 ;
-lcd_on:         LIA     0x01        ; (0x11E0)
+LBL11E0:        LIA     0x01        ; LCD ON.
 LBL11E2:        CAL     wr_portc    ;
                 RTN                 ;
-lcd_off:        LIA     0x00        ; (0x11E5)
-                JRM     LBL11E2
-copy_x:         LP      0x04        ; (0x11E9) Destination: X
+LBL11E5:        LIA     0x00        ; LCD OFF.
+                JRM     LBL11E2     ;
+LBL11E9:        LP      0x04        ; X <- [B, A]
 LBL11EA:        LIQ     0x02        ; Source A
                 MVB                 ; Always 16 bit since J=1.
                 RTN                 ;
-copy_y:         LP      0x06        ; (0x11EE) Destination: Y
+LBL11EE:        LP      0x06        ; Y <- [B, A]
                 JRM     LBL11EA     ;
-load_x:         CAL     copy_x      ; (0x11F1) X <- (B, A) - 1
+LBL11F1:        CAL     copy_x      ; X <- [B, A] - 1
                 DX                  ;
                 RTN                 ;
-load_y:         CAL     copy_y      ; (0x11F5) Y <- (B, A) - 1
+LBL11F5:        CAL     copy_y      ; Y <- [B, A] - 1
                 DY                  ;
                 RTN                 ;
-kbd_bufy:       LIA     0xB0        ; (0x11F9) Y <- 0xC7B0 - 1
+LBL11F9:        LIA     0xB0        ; Y <- 0xC7B0 - 1
                 LIB     0xC7        ;
                 CAL     load_y      ;
                 RTN                 ;
@@ -4740,7 +4743,7 @@ LBL1D00:        LIA     0x47        ; Push the $472A return address into
                 CAL     wr_portc    ;
 LBL1D11:        TSID    0x08
                 JRNZP   LBL1D17
-                TEST    0x01          ; Test for 0.5s timeout.
+                TEST    0x01        ; Test for 0.5s timeout.
 LBL1D17:        LIA     0xBA
                 LIB     0xF8
                 CAL     load_y

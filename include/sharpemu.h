@@ -228,6 +228,8 @@ extern struct __breakpoint_event breakpoint_list[BREAKPOINT_LIST_LENGTH];
 //  of addresses is saved if the proper switches are used.
 extern long save_start, save_end;
 
+extern GSList *disassembly_list;
+
 int set_breakpoint(uint16_t, uint16_t);
 int clear_breakpoint(uint16_t);
 int check_breakpoint(uint16_t);
