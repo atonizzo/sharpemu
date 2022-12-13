@@ -31,7 +31,7 @@ void abort_on_g_log(const gchar *log_domain,
                     const gchar *message,
                     gpointer user_data)
 {
-    __break__
+    g_print ("%s\n", message);
 }
 
 void write_status_bar(gchar *info)

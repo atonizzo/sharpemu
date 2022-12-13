@@ -915,13 +915,13 @@ SC61860 DISASSEMBLER Rev 0.05 - DISASSEMBLY LIST OF [bas-1251.rom]
 470B: 11D9                  LIDL  $D9
 470D: D4F9                  ANID  $F9
 470F: 787036                CALL  MDL7036
-4712: F189      MDL4712:    CAL   $1189
-4714: 04                    IX
-4715: 04                    IX
-4716: 10C70E                LIDP  $C70E
-4719: 84                    LP    $04
-471A: 1B                    EXBD
-471B: 37                    RTN
+4712: F189      MDL4712:    CAL   $1189     ; Address of the first byte of BASIC memory in X.
+4714: 04                    IX              ;
+4715: 04                    IX              ; 
+4716: 10C70E                LIDP  $C70E     ;
+4719: 84                    LP    $04       ; 
+471A: 1B                    EXBD            ;
+471B: 37                    RTN             ;
 ; Verify that the data in the scratchpad starting at $30 is $50, $51, $52, $53.
 ; This is part of the code that searches the lowest active SRAM address.
 ; Return with z = 1 if the data found in the scratchpad is correct.

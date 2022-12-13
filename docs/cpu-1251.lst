@@ -2912,7 +2912,7 @@ MDL117C:            LIA   0x0D
                     LIB   0xF8
                     CAL   load_x
                     RTN
-: This function returns the address of the first byte of BASIC memory in X.
+; This function returns the address of the first byte of BASIC memory in X.
 ; It checks for the presence of a RAM expansion at address 0x2000.
 MDL1189:        CALL    0x44F5      ; Verify the presence of memory at 0x2000.
                 JRCP    0x118F      ; If not present C = 1.
